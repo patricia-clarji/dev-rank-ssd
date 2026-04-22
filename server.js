@@ -4,15 +4,8 @@ const path = require("path");
 const connectMongoDB = require("./config/mongodb.js");
 const sequelize = require("./config/sqlite.js");
 
-const userRoutes = require("./routes/userRoutes.js");
-const projectRoutes = require("./routes/projectRoutes.js");
-const reviewRoutes = require("./routes/reviewRoutes.js");
-const skillRoutes = require("./routes/skillRoutes.js");
-const certificationRoutes = require("./routes/certificationRoutes.js");
-const activityLogRoutes = require("./routes/activityLogRoutes.js");
 const webRoutes = require("./routes/webRoutes.js");
 const { registerEventListeners } = require("./listeners/registerEventListeners.js");
-const { swaggerUi, swaggerDocument } = require("./docs/swagger.config.js");
 
 const app = express();
 app.set("view engine", "ejs");
@@ -24,39 +17,33 @@ app.use(express.static(path.join(__dirname, "public")));
 
 registerEventListeners();
 
-// Swagger/OpenAPI documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-// Mount routes
-app.use("/api/users", userRoutes);
-app.use("/api/projects", projectRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/skills", skillRoutes);
-app.use("/api/certifications", certificationRoutes);
-app.use("/api/logs", activityLogRoutes);
+// Mount web routes only (SSR app)
 app.use("/", webRoutes);
 
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api")) {
-    return next();
-  }
-
   return res.status(404).render("pages/not-found", {
     pageTitle: "Page not found",
     bodyClass: "not-found-body",
   });
 });
 
-// Global JSON error handler
+// Global error handler (render-based)
 app.use((err, req, res, next) => {
+  console.error("[Unhandled Error]", err.stack);
+
   if (err.isAppError) {
-    return res.status(err.statusCode).json({
-      error: err.message,
-      errorCode: err.errorCode || "ERR_GENERIC",
+    return res.status(err.statusCode).render("pages/not-found", {
+      pageTitle: "Something went wrong",
+      bodyClass: "not-found-body",
+      message: err.message,
     });
   }
-  console.error("[Unhandled Error]", err.stack);
-  res.status(500).json({ error: "Internal Server Error", errorCode: "ERR_INTERNAL" });
+
+  return res.status(500).render("pages/not-found", {
+    pageTitle: "Internal Server Error",
+    bodyClass: "not-found-body",
+    message: "An unexpected error occurred.",
+  });
 });
 
 const PORT = process.env.PORT || 3000;

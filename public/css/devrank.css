@@ -3582,8 +3582,9 @@ tbody tr:hover {
 }
 
 .filter-tab.active {
-  color: var(--color-text-primary);
-  background-color: var(--color-canvas-subtle);
+  color: var(--color-accent-fg);
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent-muted);
 }
 
 .filter-tab .tab-count {
@@ -4215,10 +4216,53 @@ tbody tr:hover {
   color: var(--color-text-secondary);
 }
 
+.star-rating {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  gap: 6px;
+}
+
+.star-rating input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.star-rating label {
+  cursor: pointer;
+  font-size: 1.8rem;
+  line-height: 1;
+  color: var(--color-border-default);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label {
+  color: var(--color-warning-fg);
+}
+
+.star-rating label:active {
+  transform: scale(0.95);
+}
+
 .suggestions-list {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
+}
+
+.suggestions-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.current-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-1);
+  align-items: center;
 }
 
 .suggestion-input {
@@ -4255,6 +4299,23 @@ tbody tr:hover {
 
 .suggestion-remove:hover {
   color: var(--color-danger-fg);
+}
+
+/* Disabled rating styling */
+input[data-auto-rating] {
+  cursor: not-allowed;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+input[data-auto-rating] + label {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+[data-auto-calculated] input[data-auto-rating]:checked + label {
+  opacity: 1;
+  color: var(--color-accent-fg);
 }
 
 .hire-toggle {
@@ -4349,23 +4410,55 @@ tbody tr:hover {
   color: var(--color-accent-fg);
   border-radius: var(--radius-full);
   font-size: 0.875rem;
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.skill-tag:hover {
+  padding: 4px 14px;
+  background-color: var(--color-danger-subtle);
+  color: var(--color-danger-fg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .skill-remove {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   background: none;
   border: none;
-  color: var(--color-accent-fg);
+  color: var(--color-danger-fg);
   cursor: pointer;
-  padding: 2px;
+  padding: 2px 4px;
   border-radius: 50%;
   transition: all 0.2s ease;
+  margin-left: -4px;
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.skill-tag:hover .skill-remove {
+  display: flex;
+  opacity: 1;
+  transform: scale(1);
+  animation: slideInX 0.15s ease;
 }
 
 .skill-remove:hover {
-  background-color: var(--color-accent-muted);
+  background-color: var(--color-danger-muted);
+  transform: scale(1.15);
+}
+
+@keyframes slideInX {
+  from {
+    opacity: 0;
+    transform: scale(0.7) translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
 }
 
 .skill-picker {
@@ -4510,6 +4603,8 @@ tbody tr:hover {
 }
 
 .category-pill {
+  display: inline-flex;
+  align-items: center;
   padding: 6px 14px;
   background-color: var(--color-canvas-subtle);
   border: 1px solid var(--color-border-default);
@@ -4526,9 +4621,9 @@ tbody tr:hover {
 }
 
 .category-pill.active {
-  background-color: var(--color-accent-subtle);
-  border-color: var(--color-accent-fg);
+  background: var(--color-accent-subtle);
   color: var(--color-accent-fg);
+  border-color: var(--color-accent-muted);
 }
 
 .skill-group {
@@ -5293,6 +5388,7 @@ tbody tr:hover {
   border-radius: var(--radius-small);
   font-size: 0.75rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .log-action-badge.create {
@@ -5398,12 +5494,6 @@ textarea {
 .tab:hover {
   color: var(--color-text-primary);
   background-color: var(--color-canvas-subtle);
-}
-
-.tab.active {
-  color: var(--color-text-primary);
-  background-color: var(--color-canvas-subtle);
-  border-color: var(--color-border-default);
 }
 
 .tab-count {

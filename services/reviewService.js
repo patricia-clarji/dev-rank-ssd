@@ -49,7 +49,9 @@ exports.createReview = async ({ projectId, reviewerId, overallRating, codeQualit
         throw new AppError("Reviewer user not found.", 404, ERROR_CODES.NOT_FOUND);
     }
 
-    if (!existingReviewer.isVerifiedReviewer || existingReviewer.role !== "reviewer") {
+    const isAdmin = existingReviewer.role === "admin";
+    const isVerifiedReviewer = existingReviewer.isVerifiedReviewer && existingReviewer.role === "reviewer";
+    if (!isAdmin && !isVerifiedReviewer) {
         throw new AppError("Only verified reviewers can submit reviews.", 403, ERROR_CODES.FORBIDDEN);
     }
 

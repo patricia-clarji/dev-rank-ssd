@@ -24,6 +24,7 @@
         class="header-search-input"
         aria-label="Search projects, skills, users"
         placeholder="Search projects, skills, users..."
+        value="<%= typeof exploreSearchQuery === 'string' ? exploreSearchQuery : '' %>"
       />
     </form>
 
@@ -67,6 +68,10 @@
           <div class="header-user-email">@<%= currentUserUsername %></div>
         </div>
         <div class="header-menu-items">
+          <a href="/dashboard" class="header-menu-item">
+            <i data-lucide="layout-dashboard" width="16" height="16"></i>
+            Dashboard
+          </a>
           <a href="/profile" class="header-menu-item">
             <i data-lucide="user" width="16" height="16"></i>
             Your profile
@@ -86,10 +91,12 @@
             <i data-lucide="settings" width="16" height="16"></i>
             Settings
           </a>
-          <a href="/login" class="header-menu-item danger">
-            <i data-lucide="log-out" width="16" height="16"></i>
-            Sign out
-          </a>
+          <form action="/logout" method="post">
+            <button type="submit" class="header-menu-item danger" style="width: 100%; text-align: left; background: transparent; border: 0;">
+              <i data-lucide="log-out" width="16" height="16"></i>
+              Sign out
+            </button>
+          </form>
         </div>
       </div>
     </div>

@@ -14,10 +14,22 @@
     };
   });
   const publicProfileUrl = "/user/" + (currentUser.username || "developer");
-  const certStatus = isReviewer ? "certified" : "not-applied";
+  const ownCertification = (certificationRequests || []).find((request) => {
+    const requestUserId = (request.user && request.user._id) ? String(request.user._id) : "";
+    return requestUserId && currentUser._id && requestUserId === String(currentUser._id);
+  });
+  const certStatus = isReviewer
+    ? "certified"
+    : (certificationStatus || (ownCertification ? ownCertification.status : "not-applied"));
+  const reviewsList = reviews || [];
+  const hireVotes = reviewsList.filter((reviewItem) => reviewItem.wouldHire).length;
+  const hireRate = reviewsList.length > 0 ? Math.round((hireVotes / reviewsList.length) * 100) : 0;
+  const avgProjectRating = (projects || []).length > 0
+    ? (projects || []).reduce((sum, projectItem) => sum + Number(projectItem.averageRating || 0), 0) / (projects || []).length
+    : 0;
   const certificationRequirements = [
-    { text: "At least 5 published projects", met: true },
-    { text: "Average rating of 4.0 or higher", met: true },
+    { text: "At least 5 published projects", met: (projects || []).length >= 5 },
+    { text: "Average rating of 4.0 or higher", met: avgProjectRating >= 4 },
     { text: "Minimum 10 skills on profile", met: normalizedSkills.length >= 10 },
     { text: "GitHub account connected", met: Boolean(currentUser.github) },
     { text: "Profile complete (bio, avatar, etc.)", met: Boolean(currentUser.bio) }
@@ -80,7 +92,7 @@
                 <i data-lucide="trending-up" width="24" height="24" style="color: var(--color-scale-purple-5)"></i>
               </div>
               <div class="stat-content">
-                <span class="stat-value">80%</span>
+                <span class="stat-value"><%= hireRate %>%</span>
                 <span class="stat-label">Would Hire Rate</span>
               </div>
             </div>
@@ -357,7 +369,7 @@
                 </div>
                 <div class="profile-stat">
                   <i data-lucide="check-circle" width="20" height="20"></i>
-                  <span class="stat-value">80%</span>
+                  <span class="stat-value"><%= hireRate %>%</span>
                   <span class="stat-label">Would Hire</span>
                 </div>
               </div>
@@ -417,7 +429,7 @@
               <p class="text-secondary">Update your public profile information</p>
             </div>
 
-            <form>
+            <form action="/profile/edit" method="post">
               <div class="form-section">
                 <h2>Basic Information</h2>
 
@@ -468,39 +480,41 @@
                 <p class="text-secondary mb-3">Add skills to help others find you</p>
 
                 <div class="skills-editor">
-                  <div class="current-skills">
+                    <div class="current-skills" data-skill-chip-group>
                     <% normalizedSkills.forEach((skillItem) => { %>
-                      <span class="skill-tag">
-                        <%= skillItem.name %>
-                        <button type="button" class="skill-remove">
-                          <i data-lucide="x" width="12" height="12"></i>
-                        </button>
-                      </span>
-                    <% }) %>
+                        <span class="skill-tag" data-skill-chip>
+                          <%= skillItem.name %>
+                          <button type="button" class="skill-remove" data-skill-remove title="Remove skill">
+                            <i data-lucide="x" width="12" height="12"></i>
+                          </button>
+                        </span>
+                      <% }) %>
 
-                    <button type="button" class="btn btn-sm btn-outline">
-                      <i data-lucide="plus" width="14" height="14"></i>
-                      Add skill
-                    </button>
-                  </div>
-
-                  <div class="skill-picker">
-                    <div class="skill-picker-header">
-                      <span>Select a skill</span>
-                      <button type="button" class="btn btn-link">
-                        <i data-lucide="x" width="16" height="16"></i>
+                      <button type="button" class="btn btn-sm btn-outline" data-skill-picker-toggle>
+                        <i data-lucide="plus" width="14" height="14"></i>
+                        Add skill
                       </button>
                     </div>
-                    <div class="skill-picker-list">
-                      <% (skills || []).forEach((skillOption) => { %>
-                        <button type="button" class="skill-option">
-                          <span><%= skillOption.name %></span>
-                          <span class="text-muted text-sm"><%= skillOption.category || 'General' %></span>
+
+                    <input type="hidden" name="skillsCsv" value="<%= normalizedSkills.map((skillItem) => skillItem.name).join(', ') %>" data-skill-input />
+
+                    <div class="skill-picker hidden" data-skill-picker-panel>
+                      <div class="skill-picker-header">
+                        <span>Select a skill</span>
+                        <button type="button" class="btn btn-link" data-skill-picker-close>
+                          <i data-lucide="x" width="16" height="16"></i>
                         </button>
-                      <% }) %>
+                      </div>
+                      <div class="skill-picker-list">
+                        <% (skills || []).forEach((skillOption) => { %>
+                          <button type="button" class="skill-option" data-skill-option data-skill-value="<%= skillOption.name %>">
+                            <span><%= skillOption.name %></span>
+                            <span class="text-muted text-sm"><%= skillOption.category || 'General' %></span>
+                          </button>
+                        <% }) %>
+                      </div>
                     </div>
                   </div>
-                </div>
               </div>
 
               <div class="form-actions">
@@ -527,23 +541,24 @@
             </a>
           </div>
 
-          <div class="projects-toolbar">
+          <form class="projects-toolbar" action="/projects" method="get">
             <div class="search-box">
               <i data-lucide="search" width="16" height="16" class="search-icon"></i>
-              <input type="text" class="form-input" placeholder="Search projects..." />
+              <input type="text" name="q" class="form-input" value="<%= projectsSearchQuery || '' %>" placeholder="Search projects..." />
             </div>
 
             <div class="filter-tabs">
-              <button class="filter-tab active">All <span class="tab-count"><%= (projects || []).length %></span></button>
-              <button class="filter-tab">Reviewed <span class="tab-count"><%= (projects || []).filter((project) => project.status === 'reviewed').length %></span></button>
-              <button class="filter-tab">Seeking Review <span class="tab-count"><%= (projects || []).filter((project) => project.status === 'seeking-review').length %></span></button>
+              <% ['all', 'reviewed', 'seeking-review'].forEach((filterName) => {
+                const isActive = (projectsStatusFilter || 'all') === filterName;
+                const filterLabel = filterName === 'all' ? 'All' : (filterName === 'reviewed' ? 'Reviewed' : 'Seeking Review');
+                const filterCount = filterName === 'all'
+                  ? (projects || []).length
+                  : (projects || []).filter((project) => (project.status || 'draft') === filterName).length;
+              %>
+                <a href="/projects?status=<%= filterName %>&q=<%= encodeURIComponent(projectsSearchQuery || '') %>" class="filter-tab <%= isActive ? 'active' : '' %>"><%= filterLabel %> <span class="tab-count"><%= filterCount %></span></a>
+              <% }) %>
             </div>
-
-            <button class="btn btn-secondary" type="button">
-              <i data-lucide="filter" width="16" height="16"></i>
-              Filters
-            </button>
-          </div>
+          </form>
 
           <div class="projects-list">
             <% (projects || []).forEach((project) => {
@@ -833,7 +848,7 @@
               <p class="text-secondary"><%= isEditMode ? 'Update your project details' : '' %></p>
             </div>
 
-            <form>
+            <form action="<%= isEditMode ? ('/projects/' + project._id + '/edit') : '/projects' %>" method="post">
               <div class="form-section">
                 <div class="form-group">
                   <label class="form-label">Project Title *</label>
@@ -859,24 +874,36 @@
                 <div class="form-group">
                   <label class="form-label">Tech Stack *</label>
                   <div class="tech-stack-editor">
-                    <div class="selected-tech">
+                    <div class="current-skills" data-skill-chip-group>
                       <% selectedTechStack.forEach((tech) => { %>
-                        <span class="skill-tag">
+                        <span class="skill-tag" data-skill-chip>
                           <%= tech %>
-                          <button type="button" class="skill-remove">
+                          <button type="button" class="skill-remove" data-skill-remove title="Remove tech">
                             <i data-lucide="x" width="12" height="12"></i>
                           </button>
                         </span>
                       <% }) %>
+
+                      <button type="button" class="btn btn-sm btn-outline" data-skill-picker-toggle>
+                        <i data-lucide="plus" width="14" height="14"></i>
+                        Add tech
+                      </button>
                     </div>
 
-                    <div class="tech-input-wrapper">
-                      <input type="text" class="form-input" placeholder="Type to add technologies..." />
-                      <div class="tech-suggestions">
+                    <input type="hidden" name="techStackCsv" value="<%= selectedTechStack.join(', ') %>" data-skill-input />
+
+                    <div class="skill-picker hidden" data-skill-picker-panel>
+                      <div class="skill-picker-header">
+                        <span>Select tech</span>
+                        <button type="button" class="btn btn-link" data-skill-picker-close>
+                          <i data-lucide="x" width="16" height="16"></i>
+                        </button>
+                      </div>
+                      <div class="skill-picker-list">
                         <% (skills || []).forEach((skillOption) => { %>
-                          <button type="button" class="tech-suggestion">
-                            <i data-lucide="plus" width="14" height="14"></i>
-                            <%= skillOption.name %>
+                          <button type="button" class="skill-option" data-skill-option data-skill-value="<%= skillOption.name %>">
+                            <span><%= skillOption.name %></span>
+                            <span class="text-muted text-sm"><%= skillOption.category || 'General' %></span>
                           </button>
                         <% }) %>
                       </div>
@@ -888,8 +915,9 @@
                   <label class="form-label">Status</label>
                   <select name="status" class="form-select">
                     <option value="seeking-review" <%= project && project.status === 'seeking-review' ? 'selected' : '' %>>Seeking Review</option>
+                    <option value="under-review" <%= project && project.status === 'under-review' ? 'selected' : '' %>>Under Review</option>
                     <option value="reviewed" <%= project && project.status === 'reviewed' ? 'selected' : '' %>>Reviewed</option>
-                    <option value="draft" <%= !project || project.status === 'draft' ? 'selected' : '' %>>Draft</option>
+                    <option value="archived" <%= project && project.status === 'archived' ? 'selected' : '' %>>Archived</option>
                   </select>
                 </div>
               </div>
@@ -925,23 +953,47 @@
             </div>
           </div>
 
-          <form>
+          <form action="/projects/<%= project ? project._id : '' %>/review" method="post">
             <div class="form-section">
               <h2>Ratings</h2>
 
-              <% (reviewFormScores || ['Overall Rating', 'Code Quality', 'Creativity', 'Clean Code']).forEach((scoreLabel, idx) => { %>
-                <div class="form-group">
-                  <label class="form-label"><%= scoreLabel %> *</label>
-                  <div class="rating-input">
-                    <div class="rating-stars">
-                      <% [1, 2, 3, 4, 5].forEach((star) => { %>
-                        <i data-lucide="star" width="24" height="24" class="rating-star <%= star <= (idx === 0 ? 5 : 4) ? 'active filled' : '' %>"></i>
-                      <% }) %>
-                    </div>
-                    <span class="rating-value"><%= idx === 0 ? '5/5' : '4/5' %></span>
-                  </div>
+              <div class="form-group">
+                <label class="form-label">Overall Rating (Auto-calculated)</label>
+                <div class="star-rating" data-rating-root data-auto-calculated>
+                  <% [5, 4, 3, 2, 1].forEach((score) => { %>
+                    <input type="radio" id="overall-rating-<%= score %>" name="overallRating" value="<%= score %>" data-auto-rating />
+                    <label for="overall-rating-<%= score %>" title="<%= score %> stars">★</label>
+                  <% }) %>
                 </div>
-              <% }) %>
+                <p class="text-secondary text-sm">Based on Code Quality, Creativity, and Clean Code</p>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Code Quality *</label>
+                <div class="star-rating" data-rating-root>
+                  <% [5, 4, 3, 2, 1].forEach((score) => { %>
+                    <input type="radio" id="quality-rating-<%= score %>" name="codeQualityScore" value="<%= score %>" <%= score === 4 ? 'checked' : '' %> required />
+                    <label for="quality-rating-<%= score %>" title="<%= score %> stars">★</label>
+                  <% }) %>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Creativity *</label>
+                <div class="star-rating" data-rating-root>
+                  <% [5, 4, 3, 2, 1].forEach((score) => { %>
+                    <input type="radio" id="creativity-rating-<%= score %>" name="creativityScore" value="<%= score %>" <%= score === 4 ? 'checked' : '' %> required />
+                    <label for="creativity-rating-<%= score %>" title="<%= score %> stars">★</label>
+                  <% }) %>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Clean Code *</label>
+                <div class="star-rating" data-rating-root>
+                  <% [5, 4, 3, 2, 1].forEach((score) => { %>
+                    <input type="radio" id="clean-rating-<%= score %>" name="cleanCodeScore" value="<%= score %>" <%= score === 4 ? 'checked' : '' %> required />
+                    <label for="clean-rating-<%= score %>" title="<%= score %> stars">★</label>
+                  <% }) %>
+                </div>
+              </div>
             </div>
 
             <div class="form-section">
@@ -949,22 +1001,34 @@
 
               <div class="form-group">
                 <label class="form-label">General Feedback *</label>
-                <textarea class="form-textarea" rows="5" placeholder="Share your overall thoughts on the project."></textarea>
+                <textarea name="generalFeedback" class="form-textarea" rows="5" placeholder="Share your overall thoughts on the project." required></textarea>
               </div>
 
               <div class="form-group">
                 <label class="form-label">Suggestions (optional)</label>
-                <div class="suggestions-list">
-                  <div class="suggestion-item">
-                    <span>Consider adding API rate limiting and request validation middleware.</span>
-                    <button type="button" class="suggestion-remove">
-                      <i data-lucide="x" width="14" height="14"></i>
+                <div class="suggestions-editor">
+                  <div class="current-suggestions" data-suggestion-chip-group>
+                    <% (suggestionsArray || []).forEach((suggestion) => { %>
+                      <span class="skill-tag" data-suggestion-chip>
+                        <%= suggestion %>
+                        <button type="button" class="skill-remove" data-suggestion-remove title="Remove suggestion">
+                          <i data-lucide="x" width="12" height="12"></i>
+                        </button>
+                      </span>
+                    <% }) %>
+
+                    <button type="button" class="btn btn-sm btn-outline" data-suggestion-picker-toggle>
+                      <i data-lucide="plus" width="14" height="14"></i>
+                      Add suggestion
                     </button>
                   </div>
-                  <div class="suggestion-input">
-                    <input type="text" class="form-input" placeholder="Add a specific suggestion..." />
-                    <button type="button" class="btn btn-secondary">
-                      <i data-lucide="plus" width="16" height="16"></i>
+
+                  <input type="hidden" name="suggestionsCsv" value="<%= (suggestionsArray || []).join(', ') %>" data-suggestion-input />
+
+                  <div style="display: flex; gap: var(--spacing-2); margin-top: var(--spacing-2);">
+                    <input type="text" placeholder="Enter a suggestion..." data-suggestion-text-input class="form-input" />
+                    <button type="button" class="btn btn-sm btn-secondary" data-add-suggestion>
+                      <i data-lucide="plus" width="14" height="14"></i>
                       Add
                     </button>
                   </div>
@@ -977,14 +1041,15 @@
               <p class="text-secondary mb-3">Based on this project, would you recommend hiring this developer?</p>
 
               <div class="hire-toggle">
-                <button type="button" class="hire-option yes selected">
+                <button type="button" class="hire-option yes selected" onclick="document.getElementById('wouldHireInput').value='yes'">
                   <span>✓</span>
                   Yes, I would hire
                 </button>
-                <button type="button" class="hire-option no">
+                <button type="button" class="hire-option no" onclick="document.getElementById('wouldHireInput').value='no'">
                   <span>✗</span>
                   No, I would not hire
                 </button>
+                <input id="wouldHireInput" type="hidden" name="wouldHire" value="yes" />
               </div>
             </div>
 
@@ -1097,19 +1162,19 @@
             <p class="text-secondary">Browse skills and find developers</p>
           </div>
 
-          <div class="skills-toolbar">
+          <form class="skills-toolbar" action="/skills" method="get">
             <div class="search-box">
               <i data-lucide="search" width="18" height="18" class="search-icon"></i>
-              <input type="text" placeholder="Search skills..." />
+              <input type="text" name="q" value="<%= skillSearchQuery || '' %>" placeholder="Search skills..." />
             </div>
             <div class="category-pills">
-              <% categoryNames.forEach((categoryName, index) => { %>
-                <button type="button" class="category-pill <%= index === 0 ? 'active' : '' %>"><%= categoryName %></button>
+              <% (allSkillCategories || categoryNames).forEach((categoryName) => { %>
+                <a href="/skills?category=<%= encodeURIComponent(categoryName) %>&q=<%= encodeURIComponent(skillSearchQuery || '') %>" class="category-pill <%= (selectedSkillCategory || 'All') === categoryName ? 'active' : '' %>"><%= categoryName %></a>
               <% }) %>
             </div>
-          </div>
+          </form>
 
-          <% Object.keys(groupedSkills).forEach((categoryName) => { %>
+          <% Object.keys(groupedSkills || {}).forEach((categoryName) => { %>
             <div class="skill-group">
               <h2 class="skill-group-title"><%= categoryName %></h2>
               <div class="skills-grid">
@@ -1256,17 +1321,31 @@
               <h2>Your Status</h2>
             </div>
             <p>
-              <% if (certStatus === 'certified') { %>
+              <% if (certStatus === 'certified' || certStatus === 'approved') { %>
                 Congratulations! You are a certified reviewer and can review projects on DevRank.
+              <% } else if (certStatus === 'pending') { %>
+                Your certification request is pending review. We will notify you once it has been processed.
+              <% } else if (certStatus === 'rejected') { %>
+                Your latest request was rejected. You can improve your profile and apply again.
               <% } else { %>
                 You haven't applied for reviewer certification yet.
               <% } %>
             </p>
 
-            <% if (certStatus === 'certified') { %>
+            <% if (certStatus === 'certified' || certStatus === 'approved') { %>
               <span class="status-badge-large certified">
                 <i data-lucide="check-circle" width="16" height="16"></i>
                 Certified Reviewer
+              </span>
+            <% } else if (certStatus === 'pending') { %>
+              <span class="status-badge-large pending">
+                <i data-lucide="clock" width="16" height="16"></i>
+                Pending Review
+              </span>
+            <% } else if (certStatus === 'rejected') { %>
+              <span class="status-badge-large rejected">
+                <i data-lucide="x-circle" width="16" height="16"></i>
+                Rejected
               </span>
             <% } else { %>
               <span class="status-badge-large not-applied">
@@ -1293,7 +1372,7 @@
             </div>
           </div>
 
-          <% if (certStatus !== 'certified') { %>
+          <% if (certStatus !== 'certified' && certStatus !== 'approved') { %>
             <div class="certification-requirements">
               <h2>Requirements</h2>
               <div class="requirements-list">
@@ -1310,16 +1389,21 @@
               </div>
 
               <div style="margin-top: var(--spacing-4)">
-                <% if (allRequirementsMet) { %>
+                <% if (certStatus === 'pending') { %>
+                  <button class="btn btn-secondary" type="button" disabled>
+                    <i data-lucide="clock" width="16" height="16"></i>
+                    Application Pending Review
+                  </button>
+                <% } else if (allRequirementsMet || certStatus === 'rejected' || certStatus === 'not-applied') { %>
+                  <a href="/certifications/apply" class="btn btn-primary">
+                    <i data-lucide="award" width="16" height="16"></i>
+                    <%= certStatus === 'rejected' ? 'Apply Again' : 'Apply for Certification' %>
+                  </a>
+                <% } else { %>
                   <a href="/certifications/apply" class="btn btn-primary">
                     <i data-lucide="award" width="16" height="16"></i>
                     Apply for Certification
                   </a>
-                <% } else { %>
-                  <button class="btn btn-secondary" type="button" disabled>
-                    <i data-lucide="award" width="16" height="16"></i>
-                    Complete Requirements to Apply
-                  </button>
                 <% } %>
               </div>
             </div>
@@ -1359,7 +1443,6 @@
 
           <div class="page-header">
             <h1>Apply for Certification</h1>
-            <p class="text-secondary">Tell us about your experience and qualifications</p>
           </div>
 
           <div class="apply-info">
@@ -1373,13 +1456,13 @@
             </p>
           </div>
 
-          <form>
+          <form action="/certifications/apply" method="post">
             <div class="form-group">
               <label class="form-label">
                 <i data-lucide="briefcase" width="16" height="16" style="margin-right: 8px"></i>
                 Years of Experience *
               </label>
-              <select class="form-select" required>
+              <select name="experience" class="form-select" required>
                 <option value="">Select your experience level</option>
                 <option value="1-2">1-2 years</option>
                 <option value="3-5">3-5 years</option>
@@ -1393,7 +1476,7 @@
                 <i data-lucide="code" width="16" height="16" style="margin-right: 8px"></i>
                 Areas of Expertise *
               </label>
-              <input type="text" class="form-input" placeholder="e.g., React, Node.js, System Design, Testing" required />
+              <input type="text" name="techExpertiseCsv" class="form-input" placeholder="e.g., React, Node.js, System Design, Testing" required />
               <span class="form-hint">List the technologies and areas you can review confidently</span>
             </div>
 
@@ -1402,12 +1485,12 @@
                 <i data-lucide="file-text" width="16" height="16" style="margin-right: 8px"></i>
                 Why do you want to become a reviewer? *
               </label>
-              <textarea class="form-textarea" rows="5" placeholder="Tell us about your motivation for becoming a certified reviewer..." required></textarea>
+              <textarea name="motivation" class="form-textarea" rows="5" placeholder="Tell us about your motivation for becoming a certified reviewer..." required></textarea>
             </div>
 
             <div class="form-group">
               <label class="form-label">Portfolio URL (optional)</label>
-              <input type="url" class="form-input" placeholder="https://your-portfolio.com" />
+              <input type="url" name="cvUrl" class="form-input" placeholder="https://your-portfolio.com" />
             </div>
 
             <div class="form-group">
@@ -1432,78 +1515,112 @@
             <p class="text-secondary">Discover projects and developers</p>
           </div>
 
-          <div class="explore-search">
+          <form action="/explore" method="get" class="explore-search">
             <i data-lucide="search" width="20" height="20" class="search-icon"></i>
-            <input type="text" placeholder="Search projects, technologies..." />
-          </div>
+            <input type="text" name="q" value="<%= exploreSearchQuery || '' %>" placeholder="Search projects, technologies..." />
+          </form>
 
           <div class="tabs">
-            <button class="tab active" type="button">
+            <a href="/explore?q=<%= encodeURIComponent(exploreSearchQuery || '') %>&status=<%= encodeURIComponent(exploreStatusFilter || 'all') %>&developers=0" class="tab <%= exploreIncludeDevelopers ? '' : 'active' %>">
               <i data-lucide="folder-git-2" width="16" height="16"></i>
               Projects
-              <span class="tab-count"><%= (projects || []).length %></span>
-            </button>
-            <button class="tab" type="button">
+              <span class="tab-count"><%= exploreProjectsTotal || (projects || []).length %></span>
+            </a>
+            <a href="/explore?q=<%= encodeURIComponent(exploreSearchQuery || '') %>&status=<%= encodeURIComponent(exploreStatusFilter || 'all') %>&developers=1" class="tab <%= exploreIncludeDevelopers ? 'active' : '' %>">
               <i data-lucide="users" width="16" height="16"></i>
               Developers
-              <span class="tab-count"><%= (exploreUsers || []).length %></span>
-            </button>
+              <span class="tab-count"><%= exploreUsersTotal || (exploreUsers || []).length %></span>
+            </a>
           </div>
 
-          <div class="explore-filters">
-            <select class="form-select">
-              <option value="all">All Status</option>
-              <option value="published">Published</option>
-              <option value="seeking-review">Seeking Review</option>
+          <form action="/explore" method="get" class="explore-filters">
+            <input type="hidden" name="q" value="<%= exploreSearchQuery || '' %>" />
+            <input type="hidden" name="developers" value="<%= exploreIncludeDevelopers ? '1' : '0' %>" />
+            <select class="form-select" name="status" onchange="this.form.submit()">
+              <option value="all" <%= (exploreStatusFilter || 'all') === 'all' ? 'selected' : '' %>>All Status</option>
+              <option value="reviewed" <%= exploreStatusFilter === 'reviewed' ? 'selected' : '' %>>Reviewed</option>
+              <option value="seeking-review" <%= exploreStatusFilter === 'seeking-review' ? 'selected' : '' %>>Seeking Review</option>
+              <option value="draft" <%= exploreStatusFilter === 'draft' ? 'selected' : '' %>>Draft</option>
             </select>
-          </div>
+          </form>
 
-          <div class="explore-grid">
-            <% (projects || []).forEach((projectItem) => { %>
-              <a href="/projects/<%= projectItem._id %>" class="explore-card">
-                <div class="explore-card-header">
-                  <i data-lucide="folder-git-2" width="20" height="20" class="text-accent"></i>
-                  <h3><%= projectItem.title %></h3>
-                </div>
+          <% if (exploreActiveTab === 'developers') { %>
+            <div class="developers-table-section">
+              <div class="projects-grid">
+                <% (exploreUsers || []).forEach((developer) => { %>
+                  <a href="/user/<%= developer.username || 'developer' %>" class="project-card">
+                    <div class="project-card-header">
+                      <div class="avatar avatar-sm"><%= (developer.name || 'D').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() %></div>
+                      <span class="project-card-title"><%= developer.name %></span>
+                    </div>
+                    <p class="project-card-desc"><%= developer.bio || 'Developer profile' %></p>
+                    <div class="project-card-footer">
+                      <span class="text-muted">@<%= developer.username || 'developer' %></span>
+                      <span class="text-muted"><%= (developer.skills || []).length %> skills</span>
+                    </div>
+                  </a>
+                <% }) %>
+              </div>
+            </div>
+          <% } else { %>
+            <div class="explore-grid">
+              <% (projects || []).forEach((projectItem) => { %>
+                <a href="/projects/<%= projectItem._id %>" class="explore-card">
+                  <div class="explore-card-header">
+                    <i data-lucide="folder-git-2" width="20" height="20" class="text-accent"></i>
+                    <h3><%= projectItem.title %></h3>
+                  </div>
 
-                <p class="explore-card-desc"><%= projectItem.description %></p>
+                  <p class="explore-card-desc"><%= projectItem.description %></p>
 
-                <div class="explore-card-tags">
-                  <% (projectItem.techStack || []).slice(0, 3).forEach((tech) => { %>
-                    <span class="tag"><%= tech %></span>
-                  <% }) %>
-                  <% if ((projectItem.techStack || []).length > 3) { %>
-                    <span class="tag">+<%= (projectItem.techStack || []).length - 3 %></span>
+                  <div class="explore-card-tags">
+                    <% (projectItem.techStack || []).slice(0, 3).forEach((tech) => { %>
+                      <span class="tag"><%= tech %></span>
+                    <% }) %>
+                    <% if ((projectItem.techStack || []).length > 3) { %>
+                      <span class="tag">+<%= (projectItem.techStack || []).length - 3 %></span>
+                    <% } %>
+                  </div>
+
+                  <div class="explore-card-footer">
+                    <span class="explore-card-owner">by @<%= projectItem.owner && projectItem.owner.username ? projectItem.owner.username : 'developer' %></span>
+                    <span class="explore-card-rating">
+                      <i data-lucide="star" class="filled" width="14" height="14"></i>
+                      <%= Number(projectItem.averageRating || 0).toFixed(1) %>
+                    </span>
+                  </div>
+
+                  <% if (projectItem.status === 'seeking-review') { %>
+                    <span class="explore-card-badge">Needs Review</span>
                   <% } %>
-                </div>
-
-                <div class="explore-card-footer">
-                  <span class="explore-card-owner">by @<%= projectItem.owner && projectItem.owner.username ? projectItem.owner.username : 'developer' %></span>
-                  <span class="explore-card-rating">
-                    <i data-lucide="star" class="filled" width="14" height="14"></i>
-                    <%= Number(projectItem.averageRating || 0).toFixed(1) %>
-                  </span>
-                </div>
-
-                <% if (projectItem.status === 'seeking-review') { %>
-                  <span class="explore-card-badge">Needs Review</span>
-                <% } %>
-              </a>
-            <% }) %>
-          </div>
+                </a>
+              <% }) %>
+            </div>
+          <% } %>
         </div>
 
       <% } else if (page === "admin-dashboard") { %>
         <%
+          const activityEntries = activityLogs || [];
+          const usersList = exploreUsers || users || [];
+          const projectsList = projects || [];
+          const reviewsList = reviews || [];
+          const today = new Date();
+          const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          const usersToday = usersList.filter((userItem) => userItem.createdAt && new Date(userItem.createdAt) >= startOfToday).length;
+          const reviewsTodayCount = activityEntries.filter((entry) => {
+            const timestamp = entry.timestamp || entry.createdAt;
+            return String(entry.entity || "").toLowerCase() === "review" && timestamp && new Date(timestamp) >= startOfToday;
+          }).length;
           const adminStats = {
-            totalUsers: 1543,
-            totalProjects: 3421,
-            totalReviews: 8765,
+            totalUsers: usersList.length,
+            totalProjects: projectsList.length,
+            totalReviews: reviewsList.length,
             pendingCerts: (certificationRequests || []).filter((request) => request.status === 'pending').length,
-            newUsersToday: 24,
-            reviewsToday: 45
+            newUsersToday: usersToday,
+            reviewsToday: reviewsTodayCount
           };
-          const recentActivity = (activityLogs || []).slice(0, 5);
+          const recentActivity = activityEntries.slice(0, 5);
           const pendingCerts = (certificationRequests || []).filter((request) => request.status === 'pending');
         %>
         <div class="admin-dashboard">
@@ -1589,7 +1706,7 @@
                       <% } %>
                     </div>
                     <div class="activity-content">
-                      <p><%= activityItem.action %>: <%= activityItem.target %></p>
+                      <p><strong><%= activityItem.actorName || activityItem.actor %></strong> · <%= activityItem.actionLabel || activityItem.action %> · <%= activityItem.targetLabel || activityItem.target %></p>
                       <span class="activity-time">
                         <i data-lucide="clock" width="12" height="12"></i>
                         <%= activityItem.createdAt %>
@@ -1622,12 +1739,16 @@
                       </div>
                       <div class="pending-cert-actions">
                         <span class="pending-cert-date">Applied <%= requestItem.submittedAt %></span>
-                        <button class="btn btn-success btn-sm" type="button">
-                          <i data-lucide="check-circle" width="14" height="14"></i>
-                        </button>
-                        <button class="btn btn-danger btn-sm" type="button">
-                          <i data-lucide="alert-circle" width="14" height="14"></i>
-                        </button>
+                        <form action="/admin/certifications/<%= requestItem._id %>/approve" method="post" style="display:inline">
+                          <button class="btn btn-success btn-sm" type="submit">
+                            <i data-lucide="check-circle" width="14" height="14"></i>
+                          </button>
+                        </form>
+                        <form action="/admin/certifications/<%= requestItem._id %>/reject" method="post" style="display:inline">
+                          <button class="btn btn-danger btn-sm" type="submit">
+                            <i data-lucide="alert-circle" width="14" height="14"></i>
+                          </button>
+                        </form>
                       </div>
                     </div>
                   <% }) %>
@@ -1744,14 +1865,18 @@
 
                 <% if (requestItem.status === 'pending') { %>
                   <div class="cert-request-actions">
-                    <button class="btn btn-success" type="button">
-                      <i data-lucide="check-circle" width="16" height="16"></i>
-                      Approve
-                    </button>
-                    <button class="btn btn-danger" type="button">
-                      <i data-lucide="x-circle" width="16" height="16"></i>
-                      Reject
-                    </button>
+                    <form action="/admin/certifications/<%= requestItem._id %>/approve" method="post" style="display:inline">
+                      <button class="btn btn-success" type="submit">
+                        <i data-lucide="check-circle" width="16" height="16"></i>
+                        Approve
+                      </button>
+                    </form>
+                    <form action="/admin/certifications/<%= requestItem._id %>/reject" method="post" style="display:inline">
+                      <button class="btn btn-danger" type="submit">
+                        <i data-lucide="x-circle" width="16" height="16"></i>
+                        Reject
+                      </button>
+                    </form>
                     <a href="/user/<%= requestItem.username %>" class="btn btn-secondary" style="margin-left: auto">
                       <i data-lucide="user" width="16" height="16"></i>
                       View Profile
@@ -1776,38 +1901,40 @@
             <p class="text-secondary">Monitor all platform activity (stored in SQLite)</p>
           </div>
 
-          <div class="logs-toolbar">
+          <form action="/admin/logs" method="get" class="logs-toolbar">
             <div class="search-box">
               <i data-lucide="search" width="18" height="18" class="search-icon"></i>
-              <input type="text" placeholder="Search logs..." />
+              <input type="text" name="q" value="<%= logsSearchQuery || '' %>" placeholder="Search logs..." />
             </div>
 
-            <select class="form-select" style="width: auto">
-              <option>All Actions</option>
-              <option>Create</option>
-              <option>Update</option>
-              <option>Delete</option>
-              <option>Login</option>
+            <select class="form-select" style="width: auto" name="action">
+              <option value="">All Actions</option>
+              <option value="CREATE_PROJECT" <%= logsActionFilter === 'CREATE_PROJECT' ? 'selected' : '' %>>Create Project</option>
+              <option value="UPDATE_PROJECT" <%= logsActionFilter === 'UPDATE_PROJECT' ? 'selected' : '' %>>Update Project</option>
+              <option value="DELETE_PROJECT" <%= logsActionFilter === 'DELETE_PROJECT' ? 'selected' : '' %>>Delete Project</option>
+              <option value="CREATE_REVIEW" <%= logsActionFilter === 'CREATE_REVIEW' ? 'selected' : '' %>>Create Review</option>
+              <option value="UPDATE_REVIEW" <%= logsActionFilter === 'UPDATE_REVIEW' ? 'selected' : '' %>>Update Review</option>
+              <option value="REGISTER_USER" <%= logsActionFilter === 'REGISTER_USER' ? 'selected' : '' %>>Register User</option>
             </select>
 
-            <select class="form-select" style="width: auto">
-              <option>All Entities</option>
-              <option>User</option>
-              <option>Project</option>
-              <option>Review</option>
-              <option>Certification</option>
+            <select class="form-select" style="width: auto" name="entity">
+              <option value="">All Entities</option>
+              <option value="User" <%= logsEntityFilter === 'User' ? 'selected' : '' %>>User</option>
+              <option value="Project" <%= logsEntityFilter === 'Project' ? 'selected' : '' %>>Project</option>
+              <option value="Review" <%= logsEntityFilter === 'Review' ? 'selected' : '' %>>Review</option>
+              <option value="CertificationRequest" <%= logsEntityFilter === 'CertificationRequest' ? 'selected' : '' %>>Certification</option>
             </select>
 
-            <button class="btn btn-secondary" type="button">
+            <button class="btn btn-secondary" type="submit">
               <i data-lucide="refresh-cw" width="16" height="16"></i>
-              Refresh
+              Apply
             </button>
 
-            <button class="btn btn-secondary" type="button">
+            <a class="btn btn-secondary" href="/admin/logs">
               <i data-lucide="download" width="16" height="16"></i>
-              Export
-            </button>
-          </div>
+              Reset
+            </a>
+          </form>
 
           <table class="logs-table">
             <thead>
@@ -1830,10 +1957,10 @@
               %>
                 <tr>
                   <td style="white-space: nowrap"><%= logItem.createdAt %></td>
-                  <td><span class="log-action-badge <%= actionClass %>"><%= actionClass %></span></td>
-                  <td><%= (logItem.action || '').split(' ')[0] %></td>
-                  <td>@<%= logItem.actor %></td>
-                  <td><%= logItem.action %> <%= logItem.target %></td>
+                  <td><span class="log-action-badge <%= actionClass %>"><%= logItem.actionLabel || actionClass %></span></td>
+                  <td><%= logItem.entity %></td>
+                  <td><%= logItem.actorName || logItem.actor %></td>
+                  <td><%= logItem.targetLabel || logItem.target %> <%= logItem.detailsText ? ('(' + logItem.detailsText + ')') : '' %></td>
                 </tr>
               <% }) %>
             </tbody>

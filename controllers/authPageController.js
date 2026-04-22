@@ -1,0 +1,97 @@
+const bcrypt = require("bcrypt");
+const User = require("../models/mongo/User");
+const userService = require("../services/userService");
+const { content } = require("./viewModel");
+
+exports.loginPage = (req, res) => {
+  return res.render("pages/auth", {
+    pageTitle: "Sign in",
+    bodyClass: "auth-body",
+    mode: "login",
+    ...content,
+  });
+};
+
+exports.registerPage = (req, res) => {
+  return res.render("pages/auth", {
+    pageTitle: "Create account",
+    bodyClass: "auth-body",
+    mode: "register",
+    ...content,
+  });
+};
+
+exports.handleLogin = async (req, res) => {
+  try {
+    const email = (req.body.email || "").trim().toLowerCase();
+    const password = req.body.password || "";
+
+    if (!email || !password) {
+      return res.redirect("/login?error=invalid_credentials");
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.redirect("/login?error=invalid_credentials");
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    if (!isValidPassword) {
+      return res.redirect("/login?error=invalid_credentials");
+    }
+
+    res.cookie("devrank_user", encodeURIComponent(user._id.toString()), {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    return res.redirect("/dashboard");
+  } catch (error) {
+    return res.redirect("/login?error=server_error");
+  }
+};
+
+exports.handleRegister = async (req, res) => {
+  try {
+    const { username, name, email, password, confirmPassword } = req.body;
+
+    if (!name || !email || !password || !confirmPassword) {
+      return res.redirect("/register?error=missing_fields");
+    }
+
+    if (password !== confirmPassword) {
+      return res.redirect("/register?error=password_mismatch");
+    }
+
+    if (password.length < 6) {
+      return res.redirect("/register?error=password_too_short");
+    }
+
+    const user = await userService.registerUser({
+      username,
+      name,
+      email,
+      password,
+      role: "developer",
+    });
+
+    res.cookie("devrank_user", encodeURIComponent(user._id.toString()), {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    return res.redirect("/dashboard");
+  } catch (error) {
+    if (error.statusCode === 409) {
+      return res.redirect("/register?error=email_exists");
+    }
+    return res.redirect("/register?error=server_error");
+  }
+};
+
+exports.logout = (req, res) => {
+  res.clearCookie("devrank_user");
+  return res.redirect("/login");
+};

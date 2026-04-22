@@ -60,7 +60,270 @@
 				input.type = input.type === "password" ? "text" : "password";
 			});
 		});
-	})();
+
+		document.querySelectorAll(".hire-toggle").forEach(function (toggle) {
+			var yesButton = toggle.querySelector(".hire-option.yes");
+			var noButton = toggle.querySelector(".hire-option.no");
+			var hiddenInput = toggle.querySelector("input[name='wouldHire']");
+
+			if (!yesButton || !noButton || !hiddenInput) {
+				return;
+			}
+
+			function syncHireButtons() {
+				var value = hiddenInput.value;
+				yesButton.classList.toggle("selected", value === "yes");
+				noButton.classList.toggle("selected", value === "no");
+			}
+
+			yesButton.addEventListener("click", function () {
+				hiddenInput.value = "yes";
+				syncHireButtons();
+			});
+
+			noButton.addEventListener("click", function () {
+				hiddenInput.value = "no";
+				syncHireButtons();
+			});
+
+			syncHireButtons();
+		});
+
+		document.querySelectorAll(".skills-editor, .tech-stack-editor").forEach(function (editor) {
+			var panel = editor.querySelector("[data-skill-picker-panel]");
+			var toggleButton = editor.querySelector("[data-skill-picker-toggle]");
+			var closeButton = editor.querySelector("[data-skill-picker-close]");
+			var chipGroup = editor.querySelector("[data-skill-chip-group]");
+			var input = editor.querySelector("[data-skill-input], input[name='techStackCsv']");
+
+			if (!panel || !toggleButton || !input) {
+				return;
+			}
+
+			function getValues() {
+				return input.value
+					.split(",")
+					.map(function (value) {
+						return value.trim();
+					})
+					.filter(Boolean);
+			}
+
+			function setValues(values) {
+				input.value = values.join(", ");
+			}
+
+			function addChip(label) {
+				if (!chipGroup) {
+					return;
+				}
+
+				var chip = document.createElement("span");
+				chip.className = "skill-tag";
+				chip.setAttribute("data-skill-chip", "");
+				
+				var removeBtn = document.createElement("button");
+				removeBtn.type = "button";
+				removeBtn.className = "skill-remove";
+				removeBtn.setAttribute("data-skill-remove", "");
+				removeBtn.setAttribute("title", "Remove");
+				removeBtn.innerHTML = '<i data-lucide="x" width="12" height="12"></i>';
+				
+				chip.appendChild(document.createTextNode(label));
+				chip.appendChild(removeBtn);
+				chipGroup.appendChild(chip);
+				
+				window.lucide && window.lucide.createIcons();
+				attachRemoveListeners(editor);
+			}
+
+			function attachRemoveListeners(editorElement) {
+			editorElement.querySelectorAll("[data-skill-chip]").forEach(function (chip) {
+				chip.removeEventListener("click", handleRemoveClick);
+				chip.addEventListener("click", handleRemoveClick);
+			});
+		}
+
+		function handleRemoveClick(event) {
+			event.preventDefault();
+			var chip = this;
+			if (!chip || !chip.hasAttribute("data-skill-chip")) return;
+				var skillName = chip.textContent.trim();
+				var currentValues = getValues();
+				var normalizedToRemove = skillName.toLowerCase();
+				var filteredValues = currentValues.filter(function (value) {
+					return value.toLowerCase() !== normalizedToRemove;
+				});
+
+				setValues(filteredValues);
+				chip.remove();
+			}
+
+			toggleButton.addEventListener("click", function () {
+				panel.classList.toggle("hidden");
+			});
+
+			if (closeButton) {
+				closeButton.addEventListener("click", function () {
+					panel.classList.add("hidden");
+				});
+			}
+
+		// Handle suggestions
+		var suggestionsEditor = document.querySelector(".suggestions-editor");
+		if (suggestionsEditor) {
+			var suggestionChipGroup = suggestionsEditor.querySelector("[data-suggestion-chip-group]");
+			var suggestionInput = suggestionsEditor.querySelector("[data-suggestion-input]");
+			var textInput = suggestionsEditor.querySelector("[data-suggestion-text-input]");
+			var addButton = suggestionsEditor.querySelector("[data-add-suggestion]");
+
+			function getSuggestions() {
+				return suggestionInput.value
+					.split(",")
+					.map(function (value) {
+						return value.trim();
+					})
+					.filter(Boolean);
+			}
+
+			function setSuggestions(values) {
+				suggestionInput.value = values.join(", ");
+			}
+
+			function addSuggestionChip(label) {
+				if (!suggestionChipGroup) return;
+				
+				var chip = document.createElement("span");
+				chip.className = "skill-tag";
+				chip.setAttribute("data-suggestion-chip", "");
+				
+				var removeBtn = document.createElement("button");
+				removeBtn.type = "button";
+				removeBtn.className = "skill-remove";
+				removeBtn.setAttribute("data-suggestion-remove", "");
+				removeBtn.setAttribute("title", "Remove suggestion");
+				removeBtn.innerHTML = '<i data-lucide="x" width="12" height="12"></i>';
+				
+				chip.appendChild(document.createTextNode(label));
+				chip.appendChild(removeBtn);
+				suggestionChipGroup.appendChild(chip);
+				
+				window.lucide && window.lucide.createIcons();
+				attachSuggestionRemoveListeners();
+			}
+
+			function attachSuggestionRemoveListeners() {
+				suggestionsEditor.querySelectorAll("[data-suggestion-chip]").forEach(function (chip) {
+					chip.removeEventListener("click", handleSuggestionRemoveClick);
+					chip.addEventListener("click", handleSuggestionRemoveClick);
+				});
+			}
+
+			function handleSuggestionRemoveClick(event) {
+				event.preventDefault();
+				var chip = this;
+				if (!chip || !chip.hasAttribute("data-suggestion-chip")) return;
+				
+				var suggestionText = chip.textContent.trim();
+				var currentValues = getSuggestions();
+				var normalizedToRemove = suggestionText.toLowerCase();
+				var filteredValues = currentValues.filter(function (value) {
+					return value.toLowerCase() !== normalizedToRemove;
+				});
+				
+				setSuggestions(filteredValues);
+				chip.remove();
+			}
+
+			if (addButton && textInput) {
+				addButton.addEventListener("click", function () {
+					var value = textInput.value.trim();
+					if (!value) return;
+					
+					var currentValues = getSuggestions();
+					currentValues.push(value);
+					setSuggestions(currentValues);
+					addSuggestionChip(value);
+					textInput.value = "";
+				});
+
+				textInput.addEventListener("keypress", function (event) {
+					if (event.key === "Enter") {
+						addButton.click();
+					}
+				});
+			}
+
+			attachSuggestionRemoveListeners();
+		}
+
+		// Auto-calculate overall rating
+		var reviewForm = document.querySelector("form[action*='/review']");
+		if (reviewForm) {
+			var codeQualityInputs = reviewForm.querySelectorAll("input[name='codeQualityScore']");
+			var creativityInputs = reviewForm.querySelectorAll("input[name='creativityScore']");
+			var cleanCodeInputs = reviewForm.querySelectorAll("input[name='cleanCodeScore']");
+			var overallInputs = reviewForm.querySelectorAll("input[name='overallRating'][data-auto-rating]");
+			var autoCalculatedDiv = reviewForm.querySelector("[data-auto-calculated]");
+
+			// Prevent user interaction on overall rating inputs
+			overallInputs.forEach(function (input) {
+				input.addEventListener("click", function (event) {
+					event.preventDefault();
+					return false;
+				});
+				input.addEventListener("change", function (event) {
+					event.preventDefault();
+					return false;
+				});
+			});
+
+			function calculateOverallRating() {
+				var codeQuality = Array.from(codeQualityInputs).find(function (input) { return input.checked; });
+				var creativity = Array.from(creativityInputs).find(function (input) { return input.checked; });
+				var cleanCode = Array.from(cleanCodeInputs).find(function (input) { return input.checked; });
+
+				if (!codeQuality || !creativity || !cleanCode) return;
+
+				var avg = (Number(codeQuality.value) + Number(creativity.value) + Number(cleanCode.value)) / 3;
+				var rounded = Math.round(avg);
+
+				overallInputs.forEach(function (input) {
+					input.checked = false;
+				});
+
+				var selectedInput = reviewForm.querySelector("input[name='overallRating'][value='" + rounded + "'][data-auto-rating]");
+				if (selectedInput) {
+					selectedInput.checked = true;
+				}
+
+				var labels = autoCalculatedDiv ? autoCalculatedDiv.querySelectorAll("label[for^='overall-rating-']") : reviewForm.querySelectorAll("label[for^='overall-rating-']");
+				labels.forEach(function (label) {
+					var inputId = label.getAttribute("for");
+					var input = reviewForm.querySelector("#" + inputId);
+					if (input && input.checked) {
+						label.classList.add("active");
+					} else {
+						label.classList.remove("active");
+					}
+				});
+			}
+
+			codeQualityInputs.forEach(function (input) {
+				input.addEventListener("change", calculateOverallRating);
+			});
+			creativityInputs.forEach(function (input) {
+				input.addEventListener("change", calculateOverallRating);
+			});
+			cleanCodeInputs.forEach(function (input) {
+				input.addEventListener("change", calculateOverallRating);
+			});
+
+			calculateOverallRating();
+		}
+		
+    });
+})();
 </script>
 </body>
 </html>

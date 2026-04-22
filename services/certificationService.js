@@ -31,7 +31,10 @@ exports.apply = async ({ userId, cvUrl, experience, motivation, techExpertise })
 };
 
 exports.getAllRequests = async () => {
-  return await CertificationRequest.find().populate("user", "name email role reviewerStatus isVerifiedReviewer");
+  return await CertificationRequest.find().populate(
+    "user",
+    "username name email role reviewerStatus isVerifiedReviewer profileScore skills githubUrl bio company location"
+  );
 };
 
 exports.approve = async (certificationRequestId, adminNotes) => {

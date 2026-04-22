@@ -9,14 +9,33 @@ const Project = require("../models/mongo/Project");
 const Review = require("../models/mongo/Review");
 const CertificationRequest = require("../models/mongo/CertificationRequest");
 
-exports.registerUser = async ({ name, email, password, role, bio, githubUrl, avatarUrl }) => {
+exports.registerUser = async ({ username, name, email, password, role, bio, githubUrl, avatarUrl, company, location, linkedin, website }) => {
   const existing = await User.findOne({ email });
   if (existing) {
     throw new AppError("A user with this email address already exists.", 409, ERROR_CODES.DUPLICATE);
   }
+  if (username) {
+    const existingUsername = await User.findOne({ username: username.toLowerCase() });
+    if (existingUsername) {
+      throw new AppError("A user with this username already exists.", 409, ERROR_CODES.DUPLICATE);
+    }
+  }
   const passwordHash = await bcrypt.hash(password, 10);
 
-  const user = await User.create({ name, email, passwordHash, role, bio, githubUrl, avatarUrl });
+  const user = await User.create({
+    username: username ? username.toLowerCase() : undefined,
+    name,
+    email,
+    passwordHash,
+    role,
+    bio,
+    githubUrl,
+    avatarUrl,
+    company,
+    location,
+    linkedin,
+    website,
+  });
 
   userLogger.logUserRegistered(user._id.toString(), user.name, user.role);
 
@@ -43,10 +62,10 @@ exports.getUserByName = async (name) => {
   return user;
 };
 
-exports.updateUser = async (id, { name, bio, githubUrl, avatarUrl }) => {
+exports.updateUser = async (id, { name, bio, githubUrl, avatarUrl, company, location, linkedin, website }) => {
   const user = await User.findByIdAndUpdate(
     id,
-    { name, bio, githubUrl, avatarUrl },
+    { name, bio, githubUrl, avatarUrl, company, location, linkedin, website },
     { returnDocument: "after", runValidators: true }
   ).populate("skills");
 

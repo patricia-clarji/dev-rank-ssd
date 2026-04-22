@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
+  username: { type: String, unique: true, sparse: true, trim: true, lowercase: true },
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
@@ -10,7 +11,11 @@ const userSchema = new mongoose.Schema({
     default: "developer",
   },
   bio: { type: String },
+  company: { type: String },
+  location: { type: String },
   githubUrl: { type: String },
+  linkedin: { type: String },
+  website: { type: String },
   avatarUrl: { type: String },
   isVerifiedReviewer: { type: Boolean, default: false },
   reviewerStatus: {
