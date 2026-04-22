@@ -1,0 +1,30 @@
+const express = require("express");
+const router = express.Router();
+const webController = require("../controllers/webController");
+
+router.get("/", webController.landing);
+router.get("/login", webController.loginPage);
+router.post("/login", webController.handleLogin);
+router.get("/register", webController.registerPage);
+router.post("/register", webController.handleRegister);
+router.get("/dashboard", webController.dashboard);
+router.get("/profile", webController.profile);
+router.get("/profile/edit", webController.editProfile);
+router.get("/user/:username", webController.publicProfile);
+router.get("/projects", webController.projects);
+router.get("/projects/new", webController.newProject);
+router.get("/projects/:id", webController.projectDetail);
+router.get("/projects/:id/edit", webController.editProject);
+router.get("/projects/:id/review", webController.reviewProject);
+router.get("/reviews", webController.reviews);
+router.get("/skills", webController.skills);
+router.get("/skills/:id", webController.skillDetail);
+router.get("/certifications", webController.certifications);
+router.get("/certifications/apply", webController.applyCertification);
+router.get("/explore", webController.explore);
+router.get("/admin", webController.adminDashboard);
+router.get("/admin/certifications", webController.adminCertifications);
+router.get("/admin/logs", webController.adminLogs);
+router.use(webController.notFound);
+
+module.exports = router;

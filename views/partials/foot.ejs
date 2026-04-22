@@ -1,0 +1,66 @@
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script>
+	(function () {
+		if (window.lucide && typeof window.lucide.createIcons === "function") {
+			window.lucide.createIcons();
+		}
+
+		var menuRoots = document.querySelectorAll("[data-menu-root]");
+
+		function closeAllMenus(exceptMenu) {
+			var menus = document.querySelectorAll("#create-menu, #user-menu");
+			menus.forEach(function (menu) {
+				if (!exceptMenu || menu !== exceptMenu) {
+					menu.classList.add("hidden");
+				}
+			});
+		}
+
+		menuRoots.forEach(function (root) {
+			var trigger = root.querySelector("[data-menu-trigger]");
+			if (!trigger) {
+				return;
+			}
+
+			var menuId = trigger.getAttribute("data-menu-trigger");
+			var menu = document.getElementById(menuId);
+			if (!menu) {
+				return;
+			}
+
+			trigger.addEventListener("click", function (event) {
+				event.preventDefault();
+				var willShow = menu.classList.contains("hidden");
+				closeAllMenus(menu);
+				if (willShow) {
+					menu.classList.remove("hidden");
+				} else {
+					menu.classList.add("hidden");
+				}
+			});
+		});
+
+		document.addEventListener("click", function (event) {
+			var clickedInsideMenu = event.target.closest("[data-menu-root]");
+			if (!clickedInsideMenu) {
+				closeAllMenus();
+			}
+		});
+
+		document.querySelectorAll(".password-toggle").forEach(function (button) {
+			button.addEventListener("click", function () {
+				var wrapper = button.closest(".password-input");
+				if (!wrapper) {
+					return;
+				}
+				var input = wrapper.querySelector("input");
+				if (!input) {
+					return;
+				}
+				input.type = input.type === "password" ? "text" : "password";
+			});
+		});
+	})();
+</script>
+</body>
+</html>

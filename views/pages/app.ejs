@@ -1,0 +1,1854 @@
+<%- include('../partials/head', { pageTitle, bodyClass }) %>
+<%
+  const currentUser = user || {};
+  const currentUserName = currentUser.name || "User";
+  const firstName = currentUserName.split(" ")[0];
+  const normalizedSkills = (currentUser.skills || []).map((skill, idx) => {
+    if (typeof skill === "string") {
+      return { id: "skill-" + idx, name: skill, category: "General" };
+    }
+    return {
+      id: skill._id || ("skill-" + idx),
+      name: skill.name || "",
+      category: skill.category || "General"
+    };
+  });
+  const publicProfileUrl = "/user/" + (currentUser.username || "developer");
+  const certStatus = isReviewer ? "certified" : "not-applied";
+  const certificationRequirements = [
+    { text: "At least 5 published projects", met: true },
+    { text: "Average rating of 4.0 or higher", met: true },
+    { text: "Minimum 10 skills on profile", met: normalizedSkills.length >= 10 },
+    { text: "GitHub account connected", met: Boolean(currentUser.github) },
+    { text: "Profile complete (bio, avatar, etc.)", met: Boolean(currentUser.bio) }
+  ];
+  const allRequirementsMet = certificationRequirements.every((requirement) => requirement.met);
+%>
+
+<div class="layout">
+  <%- include('../partials/header', { user: currentUser, isAdmin }) %>
+
+  <div class="layout-body">
+    <%- include('../partials/sidebar', { activeNav, isAdmin, isReviewer, page }) %>
+
+    <main class="layout-main">
+      <% if (page === "dashboard") { %>
+        <div class="dashboard">
+          <div class="dashboard-welcome">
+            <div class="welcome-text">
+              <h1>Welcome back, <%= firstName %>!</h1>
+              <p class="text-secondary">Here's what's happening with your portfolio</p>
+            </div>
+            <div class="welcome-actions">
+              <a href="/projects/new" class="btn btn-primary">
+                <i data-lucide="plus" width="16" height="16"></i>
+                New Project
+              </a>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon" style="background-color: var(--color-accent-subtle); color: var(--color-accent-fg)">
+                <i data-lucide="folder-git-2" width="24" height="24"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value"><%= (projects || []).length %></span>
+                <span class="stat-label">Projects</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background-color: var(--color-success-subtle); color: var(--color-success-fg)">
+                <i data-lucide="message-square" width="24" height="24"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value"><%= (reviews || []).length %></span>
+                <span class="stat-label">Reviews Received</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background-color: var(--color-warning-subtle); color: var(--color-warning-fg)">
+                <i data-lucide="star" width="24" height="24"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value"><%= Number(currentUser.profileScore || 0).toFixed(1) %></span>
+                <span class="stat-label">Profile Score</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background-color: color-mix(in srgb, var(--color-scale-purple-5) 20%, transparent);">
+                <i data-lucide="trending-up" width="24" height="24" style="color: var(--color-scale-purple-5)"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value">80%</span>
+                <span class="stat-label">Would Hire Rate</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-grid">
+            <div class="dashboard-section">
+              <div class="section-header">
+                <h2>Your Projects</h2>
+                <a href="/projects" class="btn btn-link">
+                  View all
+                  <i data-lucide="arrow-right" width="14" height="14"></i>
+                </a>
+              </div>
+              <div class="box">
+                <% (projects || []).forEach((project) => {
+                  const projectStatus = project.status || "draft";
+                  const statusClass = projectStatus === "reviewed"
+                    ? "badge badge-success"
+                    : (projectStatus === "seeking-review" ? "badge badge-warning" : "badge badge-secondary");
+                  const statusLabel = projectStatus === "reviewed"
+                    ? "Reviewed"
+                    : (projectStatus === "seeking-review" ? "Seeking Review" : "Draft");
+                %>
+                  <a href="/projects/<%= project._id %>" class="project-row">
+                    <div class="project-info">
+                      <div class="project-title">
+                        <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
+                        <span><%= project.title %></span>
+                        <span class="<%= statusClass %>"><%= statusLabel %></span>
+                      </div>
+                      <p class="project-desc"><%= project.description %></p>
+                      <div class="project-meta">
+                        <div class="project-stack">
+                          <% (project.techStack || []).slice(0, 3).forEach((tech) => { %>
+                            <span class="tag"><%= tech %></span>
+                          <% }) %>
+                          <% if ((project.techStack || []).length > 3) { %>
+                            <span class="text-muted">+<%= (project.techStack || []).length - 3 %></span>
+                          <% } %>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="project-stats">
+                      <% if ((project.reviewCount || 0) > 0) { %>
+                        <div class="project-rating">
+                          <i data-lucide="star" width="14" height="14" class="star filled"></i>
+                          <span><%= Number(project.averageRating || 0).toFixed(1) %></span>
+                        </div>
+                        <span class="text-muted text-sm"><%= project.reviewCount %> reviews</span>
+                      <% } else { %>
+                        <span class="text-muted text-sm">No reviews yet</span>
+                      <% } %>
+                    </div>
+                  </a>
+                <% }) %>
+              </div>
+            </div>
+
+            <div class="dashboard-section">
+              <div class="section-header">
+                <h2>Recent Reviews</h2>
+                <a href="/reviews" class="btn btn-link">
+                  View all
+                  <i data-lucide="arrow-right" width="14" height="14"></i>
+                </a>
+              </div>
+              <div class="box">
+                <% if ((reviews || []).length > 0) { %>
+                  <% (reviews || []).forEach((review) => {
+                    const reviewerName = (review.reviewer && review.reviewer.name) || "Reviewer";
+                    const reviewerInitials = reviewerName
+                      .split(" ")
+                      .map((part) => part[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase();
+                    const projectLabel = review.projectTitle || ((review.project && review.project.title) || "Project");
+                  %>
+                    <div class="review-row">
+                      <div class="review-header">
+                        <div class="avatar avatar-sm"><%= reviewerInitials %></div>
+                        <div class="review-meta">
+                          <span class="review-reviewer"><%= reviewerName %></span>
+                          <span class="text-muted">reviewed</span>
+                          <span class="review-project"><%= projectLabel %></span>
+                        </div>
+                        <div class="review-rating">
+                          <i data-lucide="star" width="14" height="14" class="star filled"></i>
+                          <span><%= Number(review.overallRating || 0).toFixed(1) %></span>
+                        </div>
+                      </div>
+                      <div class="review-footer">
+                        <span class="text-muted text-sm">
+                          <i data-lucide="clock" width="12" height="12"></i>
+                          <%= new Date(review.createdAt).toLocaleDateString() %>
+                        </span>
+                        <% if (review.wouldHire) { %>
+                          <span class="hire-badge positive">
+                            <i data-lucide="check-circle" width="12" height="12"></i>
+                            Would Hire
+                          </span>
+                        <% } else { %>
+                          <span class="hire-badge negative">
+                            <i data-lucide="x-circle" width="12" height="12"></i>
+                            Would Not Hire
+                          </span>
+                        <% } %>
+                      </div>
+                    </div>
+                  <% }) %>
+                <% } else { %>
+                  <div class="empty-state">
+                    <i data-lucide="message-square" class="empty-state-icon"></i>
+                    <h3 class="empty-state-title">No reviews yet</h3>
+                    <p class="empty-state-description">Submit projects to get reviewed by certified peers</p>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <% if (isReviewer) { %>
+            <div class="dashboard-section reviewer-section">
+              <div class="section-header">
+                <h2>Projects Seeking Review</h2>
+                <a href="/explore?status=seeking-review" class="btn btn-link">
+                  Find more
+                  <i data-lucide="arrow-right" width="14" height="14"></i>
+                </a>
+              </div>
+              <div class="box">
+                <div class="reviewer-cta">
+                  <div class="reviewer-cta-content">
+                    <i data-lucide="eye" width="32" height="32" class="text-accent"></i>
+                    <div>
+                      <h3>5 projects awaiting review</h3>
+                      <p class="text-secondary">As a certified reviewer, you can help other developers improve their code</p>
+                    </div>
+                  </div>
+                  <a href="/explore?status=seeking-review" class="btn btn-secondary">Browse Projects</a>
+                </div>
+              </div>
+            </div>
+          <% } %>
+
+          <div class="dashboard-quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions-grid">
+              <a href="/projects/new" class="quick-action-card">
+                <i data-lucide="plus" width="24" height="24"></i>
+                <span>New Project</span>
+              </a>
+              <a href="/profile/edit" class="quick-action-card">
+                <i data-lucide="trending-up" width="24" height="24"></i>
+                <span>Update Profile</span>
+              </a>
+              <a href="/skills" class="quick-action-card">
+                <i data-lucide="star" width="24" height="24"></i>
+                <span>Manage Skills</span>
+              </a>
+              <a href="/explore" class="quick-action-card">
+                <i data-lucide="eye" width="24" height="24"></i>
+                <span>Explore</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      <% } else if (page === "profile") { %>
+        <div class="profile-page">
+          <div class="profile-container">
+            <aside class="profile-sidebar">
+              <div class="profile-avatar-section">
+                <div class="avatar avatar-xl">
+                  <%= currentUserName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() %>
+                </div>
+                <div class="profile-score">
+                  <i data-lucide="star" class="star filled" width="16" height="16"></i>
+                  <span><%= Number(currentUser.profileScore || 0).toFixed(1) %></span>
+                </div>
+              </div>
+
+              <div class="profile-name-section">
+                <h1><%= currentUserName %></h1>
+                <p class="profile-username">@<%= currentUser.username || 'developer' %></p>
+                <% if (isReviewer) { %>
+                  <span class="badge badge-success">
+                    <i data-lucide="check-circle" width="12" height="12"></i>
+                    Certified Reviewer
+                  </span>
+                <% } %>
+              </div>
+
+              <% if (currentUser.bio) { %>
+                <p class="profile-bio"><%= currentUser.bio %></p>
+              <% } %>
+
+              <a href="/profile/edit" class="btn btn-secondary btn-block">
+                <i data-lucide="edit" width="16" height="16"></i>
+                Edit profile
+              </a>
+
+              <div class="profile-details">
+                <% if (currentUser.company) { %>
+                  <div class="profile-detail">
+                    <i data-lucide="building" width="16" height="16"></i>
+                    <span><%= currentUser.company %></span>
+                  </div>
+                <% } %>
+                <% if (currentUser.location) { %>
+                  <div class="profile-detail">
+                    <i data-lucide="map-pin" width="16" height="16"></i>
+                    <span><%= currentUser.location %></span>
+                  </div>
+                <% } %>
+                <% if (currentUser.github) { %>
+                  <div class="profile-detail">
+                    <i data-lucide="github" width="16" height="16"></i>
+                    <a href="<%= currentUser.github %>" target="_blank" rel="noopener noreferrer"><%= currentUser.github.replace('https://github.com/', '') %></a>
+                  </div>
+                <% } %>
+                <% if (currentUser.linkedin) { %>
+                  <div class="profile-detail">
+                    <i data-lucide="linkedin" width="16" height="16"></i>
+                    <a href="<%= currentUser.linkedin %>" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                  </div>
+                <% } %>
+                <% if (currentUser.website) { %>
+                  <div class="profile-detail">
+                    <i data-lucide="link" width="16" height="16"></i>
+                    <a href="<%= currentUser.website %>" target="_blank" rel="noopener noreferrer"><%= currentUser.website.replace('https://', '') %></a>
+                  </div>
+                <% } %>
+                <div class="profile-detail">
+                  <i data-lucide="calendar" width="16" height="16"></i>
+                  <span>
+                    Joined
+                    <%= currentUser.createdAt
+                      ? new Date(currentUser.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                      : 'N/A' %>
+                  </span>
+                </div>
+              </div>
+
+              <% if (normalizedSkills.length > 0) { %>
+                <div class="profile-skills">
+                  <h3>Skills</h3>
+                  <div class="skills-list">
+                    <% normalizedSkills.forEach((skillItem) => { %>
+                      <a href="/skills" class="tag"><%= skillItem.name %></a>
+                    <% }) %>
+                  </div>
+                </div>
+              <% } %>
+            </aside>
+
+            <main class="profile-main">
+              <div class="profile-stats-row">
+                <div class="profile-stat">
+                  <i data-lucide="folder-git-2" width="20" height="20"></i>
+                  <span class="stat-value"><%= (projects || []).length %></span>
+                  <span class="stat-label">Projects</span>
+                </div>
+                <div class="profile-stat">
+                  <i data-lucide="message-square" width="20" height="20"></i>
+                  <span class="stat-value"><%= (reviews || []).length %></span>
+                  <span class="stat-label">Reviews</span>
+                </div>
+                <div class="profile-stat">
+                  <i data-lucide="star" width="20" height="20"></i>
+                  <span class="stat-value"><%= Number(currentUser.profileScore || 0).toFixed(1) %></span>
+                  <span class="stat-label">Avg Rating</span>
+                </div>
+                <div class="profile-stat">
+                  <i data-lucide="check-circle" width="20" height="20"></i>
+                  <span class="stat-value">80%</span>
+                  <span class="stat-label">Would Hire</span>
+                </div>
+              </div>
+
+              <div class="profile-section">
+                <div class="section-header">
+                  <h2>Projects</h2>
+                  <a href="/projects/new" class="btn btn-sm btn-secondary">New project</a>
+                </div>
+
+                <div class="projects-grid">
+                  <% (projects || []).forEach((project) => { %>
+                    <a href="/projects/<%= project._id %>" class="project-card">
+                      <div class="project-card-header">
+                        <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
+                        <span class="project-card-title"><%= project.title %></span>
+                      </div>
+                      <p class="project-card-desc"><%= project.description %></p>
+                      <div class="project-card-stack">
+                        <% (project.techStack || []).slice(0, 3).forEach((tech) => { %>
+                          <span class="tag"><%= tech %></span>
+                        <% }) %>
+                      </div>
+                      <div class="project-card-footer">
+                        <% if ((project.reviewCount || 0) > 0) { %>
+                          <span class="project-card-rating">
+                            <i data-lucide="star" class="star filled" width="14" height="14"></i>
+                            <%= Number(project.averageRating || 0).toFixed(1) %>
+                          </span>
+                          <span class="text-muted">•</span>
+                          <span class="text-muted"><%= project.reviewCount %> reviews</span>
+                        <% } else { %>
+                          <span class="text-muted">No reviews yet</span>
+                        <% } %>
+                      </div>
+                    </a>
+                  <% }) %>
+                </div>
+              </div>
+
+              <div class="profile-share">
+                <h3>Share your profile</h3>
+                <div class="share-url">
+                  <input type="text" readonly value="<%= publicProfileUrl %>" class="form-input" />
+                  <button class="btn btn-secondary" type="button">Copy</button>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+
+      <% } else if (page === "profile-edit") { %>
+        <div class="edit-profile-page">
+          <div class="edit-profile-container">
+            <div class="page-header">
+              <h1>Edit Profile</h1>
+              <p class="text-secondary">Update your public profile information</p>
+            </div>
+
+            <form>
+              <div class="form-section">
+                <h2>Basic Information</h2>
+
+                <div class="form-group">
+                  <label class="form-label">Name</label>
+                  <input type="text" name="name" class="form-input" value="<%= currentUser.name || '' %>" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Bio</label>
+                  <textarea name="bio" class="form-textarea" rows="4"><%= currentUser.bio || '' %></textarea>
+                  <span class="form-hint">Brief description for your profile. Max 200 characters.</span>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Company</label>
+                    <input type="text" name="company" class="form-input" value="<%= currentUser.company || '' %>" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" name="location" class="form-input" value="<%= currentUser.location || '' %>" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h2>Social Links</h2>
+
+                <div class="form-group">
+                  <label class="form-label">GitHub</label>
+                  <input type="url" name="github" class="form-input" value="<%= currentUser.github || '' %>" placeholder="https://github.com/username" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">LinkedIn</label>
+                  <input type="url" name="linkedin" class="form-input" value="<%= currentUser.linkedin || '' %>" placeholder="https://linkedin.com/in/username" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Website</label>
+                  <input type="url" name="website" class="form-input" value="<%= currentUser.website || '' %>" placeholder="https://yourwebsite.com" />
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h2>Skills</h2>
+                <p class="text-secondary mb-3">Add skills to help others find you</p>
+
+                <div class="skills-editor">
+                  <div class="current-skills">
+                    <% normalizedSkills.forEach((skillItem) => { %>
+                      <span class="skill-tag">
+                        <%= skillItem.name %>
+                        <button type="button" class="skill-remove">
+                          <i data-lucide="x" width="12" height="12"></i>
+                        </button>
+                      </span>
+                    <% }) %>
+
+                    <button type="button" class="btn btn-sm btn-outline">
+                      <i data-lucide="plus" width="14" height="14"></i>
+                      Add skill
+                    </button>
+                  </div>
+
+                  <div class="skill-picker">
+                    <div class="skill-picker-header">
+                      <span>Select a skill</span>
+                      <button type="button" class="btn btn-link">
+                        <i data-lucide="x" width="16" height="16"></i>
+                      </button>
+                    </div>
+                    <div class="skill-picker-list">
+                      <% (skills || []).forEach((skillOption) => { %>
+                        <button type="button" class="skill-option">
+                          <span><%= skillOption.name %></span>
+                          <span class="text-muted text-sm"><%= skillOption.category || 'General' %></span>
+                        </button>
+                      <% }) %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <a href="/profile" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                  <i data-lucide="save" width="16" height="16"></i>
+                  Save changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      <% } else if (page === "projects") { %>
+        <div class="projects-page">
+          <div class="page-header">
+            <div>
+              <h1>Your Projects</h1>
+              <p class="text-secondary">Manage and track reviews for your projects</p>
+            </div>
+            <a href="/projects/new" class="btn btn-primary">
+              <i data-lucide="plus" width="16" height="16"></i>
+              New project
+            </a>
+          </div>
+
+          <div class="projects-toolbar">
+            <div class="search-box">
+              <i data-lucide="search" width="16" height="16" class="search-icon"></i>
+              <input type="text" class="form-input" placeholder="Search projects..." />
+            </div>
+
+            <div class="filter-tabs">
+              <button class="filter-tab active">All <span class="tab-count"><%= (projects || []).length %></span></button>
+              <button class="filter-tab">Reviewed <span class="tab-count"><%= (projects || []).filter((project) => project.status === 'reviewed').length %></span></button>
+              <button class="filter-tab">Seeking Review <span class="tab-count"><%= (projects || []).filter((project) => project.status === 'seeking-review').length %></span></button>
+            </div>
+
+            <button class="btn btn-secondary" type="button">
+              <i data-lucide="filter" width="16" height="16"></i>
+              Filters
+            </button>
+          </div>
+
+          <div class="projects-list">
+            <% (projects || []).forEach((project) => {
+              const projectStatus = project.status || "draft";
+              const statusClass = projectStatus === "reviewed"
+                ? "badge badge-success"
+                : (projectStatus === "seeking-review" ? "badge badge-warning" : "badge badge-secondary");
+              const statusLabel = projectStatus === "reviewed"
+                ? "Reviewed"
+                : (projectStatus === "seeking-review" ? "Seeking Review" : "Draft");
+            %>
+              <a href="/projects/<%= project._id %>" class="project-list-item">
+                <div class="project-list-main">
+                  <div class="project-list-header">
+                    <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
+                    <h3 class="project-list-title"><%= project.title %></h3>
+                    <span class="<%= statusClass %>">
+                      <% if (projectStatus === 'reviewed') { %>
+                        <i data-lucide="check-circle" width="12" height="12"></i>
+                      <% } else if (projectStatus === 'seeking-review') { %>
+                        <i data-lucide="eye" width="12" height="12"></i>
+                      <% } %>
+                      <%= statusLabel %>
+                    </span>
+                  </div>
+                  <p class="project-list-desc"><%= project.description %></p>
+                  <div class="project-list-meta">
+                    <div class="project-list-stack">
+                      <% (project.techStack || []).forEach((tech) => { %>
+                        <span class="tag"><%= tech %></span>
+                      <% }) %>
+                    </div>
+                    <span class="project-list-date">
+                      <i data-lucide="clock" width="12" height="12"></i>
+                      <%= new Date(project.createdAt).toLocaleDateString() %>
+                    </span>
+                  </div>
+                </div>
+                <div class="project-list-stats">
+                  <% if ((project.reviewCount || 0) > 0) { %>
+                    <div class="project-rating">
+                      <i data-lucide="star" class="star filled" width="16" height="16"></i>
+                      <span><%= Number(project.averageRating || 0).toFixed(1) %></span>
+                    </div>
+                    <span class="text-muted text-sm"><%= project.reviewCount %> reviews</span>
+                  <% } else { %>
+                    <span class="text-muted text-sm">No reviews</span>
+                  <% } %>
+                </div>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+
+      <% } else if (page === "project-detail") { %>
+        <%
+          const currentProject = project || {};
+          const projectOwner = currentProject.owner || {};
+          const isOwner = Boolean(currentUser._id && projectOwner._id && currentUser._id === projectOwner._id);
+          const projectReviews = reviews || [];
+          const baseRating = Number(currentProject.averageRating || 0);
+          const codeQuality = Number(currentProject.codeQualityAvg || baseRating || 4);
+          const creativity = Number(currentProject.creativityAvg || baseRating || 4);
+          const cleanCode = Number(currentProject.cleanCodeAvg || baseRating || 4);
+          const wouldHireCount = projectReviews.filter((reviewItem) => reviewItem.wouldHire).length;
+        %>
+
+        <div class="project-detail-page">
+          <div class="project-detail-header">
+            <div class="project-detail-title">
+              <i data-lucide="folder-git-2" width="24" height="24" class="text-secondary"></i>
+              <h1><%= currentProject.title %></h1>
+              <% if (currentProject.status === 'reviewed') { %>
+                <span class="badge badge-success">
+                  <i data-lucide="check-circle" width="12" height="12"></i>
+                  Reviewed
+                </span>
+              <% } %>
+              <% if (currentProject.status === 'seeking-review') { %>
+                <span class="badge badge-warning">Seeking Review</span>
+              <% } %>
+            </div>
+
+            <div class="project-detail-meta">
+              <a href="/user/<%= projectOwner.username || 'developer' %>">@<%= projectOwner.username || 'developer' %></a>
+              <span>•</span>
+              <span>Created <%= currentProject.createdAt ? new Date(currentProject.createdAt).toLocaleDateString() : 'N/A' %></span>
+            </div>
+
+            <div class="project-detail-actions">
+              <% if (currentProject.repoUrl) { %>
+                <a href="<%= currentProject.repoUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                  <i data-lucide="github" width="16" height="16"></i>
+                  View Repository
+                </a>
+              <% } %>
+
+              <% if (currentProject.liveUrl) { %>
+                <a href="<%= currentProject.liveUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                  <i data-lucide="external-link" width="16" height="16"></i>
+                  Live Demo
+                </a>
+              <% } %>
+
+              <% if (isReviewer && !isOwner) { %>
+                <a href="/projects/<%= currentProject._id %>/review" class="btn btn-primary">
+                  <i data-lucide="message-square" width="16" height="16"></i>
+                  Write Review
+                </a>
+              <% } %>
+
+              <% if (isOwner) { %>
+                <a href="/projects/<%= currentProject._id %>/edit" class="btn btn-secondary">
+                  <i data-lucide="edit" width="16" height="16"></i>
+                  Edit
+                </a>
+                <button class="btn btn-danger" type="button">
+                  <i data-lucide="trash-2" width="16" height="16"></i>
+                  Delete
+                </button>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="project-detail-content">
+            <div class="project-detail-main">
+              <div class="project-section">
+                <h2>About</h2>
+                <p class="project-description"><%= currentProject.description || 'No description provided.' %></p>
+              </div>
+
+              <div class="project-section">
+                <h2>Tech Stack</h2>
+                <div class="project-tech-stack">
+                  <% (currentProject.techStack || []).forEach((tech) => { %>
+                    <a href="/skills" class="tag"><%= tech %></a>
+                  <% }) %>
+                </div>
+              </div>
+
+              <div class="reviews-section">
+                <div class="reviews-header">
+                  <h2>Reviews (<%= projectReviews.length %>)</h2>
+                </div>
+
+                <% if (projectReviews.length > 0) { %>
+                  <% projectReviews.forEach((reviewItem) => {
+                    const reviewerName = (reviewItem.reviewer && reviewItem.reviewer.name) || "Reviewer";
+                    const reviewerUsername = (reviewItem.reviewer && reviewItem.reviewer.username) || "reviewer";
+                    const reviewerInitials = reviewerName
+                      .split(" ")
+                      .map((part) => part[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase();
+                    const reviewFeedback = reviewItem.feedback || reviewItem.note || "No written feedback provided.";
+                    const reviewSuggestions = Array.isArray(reviewItem.suggestions) && reviewItem.suggestions.length
+                      ? reviewItem.suggestions
+                      : ["Add more integration tests", "Document architecture decisions in the README"];
+                  %>
+                    <div class="review-card">
+                      <div class="review-card-header">
+                        <div class="review-author">
+                          <div class="avatar avatar-sm"><%= reviewerInitials %></div>
+                          <div class="review-author-info">
+                            <span class="review-author-name"><%= reviewerName %></span>
+                            <span class="review-date"><%= new Date(reviewItem.createdAt).toLocaleDateString() %> • @<%= reviewerUsername %></span>
+                          </div>
+                        </div>
+                        <div class="review-rating">
+                          <i data-lucide="star" class="star filled" width="18" height="18"></i>
+                          <%= Number(reviewItem.overallRating || 0).toFixed(1) %>
+                        </div>
+                      </div>
+
+                      <div class="review-scores">
+                        <div class="review-score">
+                          <span class="review-score-label">Code Quality</span>
+                          <span class="review-score-value"><%= Number(reviewItem.codeQuality || 4).toFixed(1) %>/5</span>
+                        </div>
+                        <div class="review-score">
+                          <span class="review-score-label">Creativity</span>
+                          <span class="review-score-value"><%= Number(reviewItem.creativity || 4).toFixed(1) %>/5</span>
+                        </div>
+                        <div class="review-score">
+                          <span class="review-score-label">Clean Code</span>
+                          <span class="review-score-value"><%= Number(reviewItem.cleanCode || 4).toFixed(1) %>/5</span>
+                        </div>
+                      </div>
+
+                      <p class="review-feedback"><%= reviewFeedback %></p>
+
+                      <div class="review-suggestions">
+                        <h4>Suggestions</h4>
+                        <ul>
+                          <% reviewSuggestions.forEach((suggestion) => { %>
+                            <li><%= suggestion %></li>
+                          <% }) %>
+                        </ul>
+                      </div>
+
+                      <div class="review-footer">
+                        <% if (reviewItem.wouldHire) { %>
+                          <span class="hire-badge positive">
+                            <i data-lucide="check-circle" width="14" height="14"></i>
+                            Would Hire
+                          </span>
+                        <% } else { %>
+                          <span class="hire-badge negative">
+                            <i data-lucide="x-circle" width="14" height="14"></i>
+                            Would Not Hire
+                          </span>
+                        <% } %>
+                      </div>
+                    </div>
+                  <% }) %>
+                <% } else { %>
+                  <div class="empty-state">
+                    <i data-lucide="message-square" class="empty-state-icon"></i>
+                    <h3 class="empty-state-title">No reviews yet</h3>
+                    <p class="empty-state-description">Be the first to review this project</p>
+                    <% if (isReviewer && currentProject._id) { %>
+                      <a href="/projects/<%= currentProject._id %>/review" class="btn btn-primary">Write Review</a>
+                    <% } %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+
+            <div class="project-detail-sidebar">
+              <div class="sidebar-section">
+                <div class="score-display">
+                  <div class="score-value">
+                    <i data-lucide="star" class="star filled"></i>
+                    <%= Number(currentProject.averageRating || 0).toFixed(1) %>
+                  </div>
+                  <span class="score-label">Average Rating</span>
+                </div>
+
+                <div class="score-breakdown">
+                  <div class="score-item">
+                    <span class="score-item-label">Code Quality</span>
+                    <span class="score-item-value"><%= codeQuality.toFixed(1) %></span>
+                  </div>
+                  <div class="score-item">
+                    <span class="score-item-label">Creativity</span>
+                    <span class="score-item-value"><%= creativity.toFixed(1) %></span>
+                  </div>
+                  <div class="score-item">
+                    <span class="score-item-label">Clean Code</span>
+                    <span class="score-item-value"><%= cleanCode.toFixed(1) %></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sidebar-section">
+                <h3>Hire Verdict</h3>
+                <div class="hire-stats">
+                  <i data-lucide="check-circle" width="20" height="20"></i>
+                  <span><%= wouldHireCount %>/<%= projectReviews.length %> would hire</span>
+                </div>
+              </div>
+
+              <div class="sidebar-section">
+                <h3>Project Owner</h3>
+                <a href="/user/<%= projectOwner.username || 'developer' %>" class="review-author">
+                  <div class="avatar avatar-sm"><%= (projectOwner.name || 'U').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() %></div>
+                  <div class="review-author-info">
+                    <span class="review-author-name"><%= projectOwner.name || 'Developer' %></span>
+                    <span class="text-muted">@<%= projectOwner.username || 'developer' %></span>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      <% } else if (page === "project-form") { %>
+        <%
+          const isEditMode = formMode === "edit";
+          const selectedTechStack = (project && project.techStack) || [];
+        %>
+        <div class="create-project-page">
+          <div class="container-narrow">
+            <div class="page-header">
+              <h1><%= isEditMode ? 'Edit Project' : 'Create New Project' %></h1>
+              <p class="text-secondary"><%= isEditMode ? 'Update your project details' : '' %></p>
+            </div>
+
+            <form>
+              <div class="form-section">
+                <div class="form-group">
+                  <label class="form-label">Project Title *</label>
+                  <input type="text" name="title" class="form-input" value="<%= project ? project.title : '' %>" required />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Description *</label>
+                  <textarea name="description" class="form-textarea" rows="6" required><%= project ? project.description : '' %></textarea>
+                  <span class="form-hint">Provide a detailed description to help reviewers understand your project</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Repository URL</label>
+                  <input type="url" name="repoUrl" class="form-input" value="<%= project && project.repoUrl ? project.repoUrl : '' %>" placeholder="https://github.com/username/project" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Live Demo URL</label>
+                  <input type="url" name="liveUrl" class="form-input" value="<%= project && project.liveUrl ? project.liveUrl : '' %>" placeholder="https://your-project.com" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Tech Stack *</label>
+                  <div class="tech-stack-editor">
+                    <div class="selected-tech">
+                      <% selectedTechStack.forEach((tech) => { %>
+                        <span class="skill-tag">
+                          <%= tech %>
+                          <button type="button" class="skill-remove">
+                            <i data-lucide="x" width="12" height="12"></i>
+                          </button>
+                        </span>
+                      <% }) %>
+                    </div>
+
+                    <div class="tech-input-wrapper">
+                      <input type="text" class="form-input" placeholder="Type to add technologies..." />
+                      <div class="tech-suggestions">
+                        <% (skills || []).forEach((skillOption) => { %>
+                          <button type="button" class="tech-suggestion">
+                            <i data-lucide="plus" width="14" height="14"></i>
+                            <%= skillOption.name %>
+                          </button>
+                        <% }) %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Status</label>
+                  <select name="status" class="form-select">
+                    <option value="seeking-review" <%= project && project.status === 'seeking-review' ? 'selected' : '' %>>Seeking Review</option>
+                    <option value="reviewed" <%= project && project.status === 'reviewed' ? 'selected' : '' %>>Reviewed</option>
+                    <option value="draft" <%= !project || project.status === 'draft' ? 'selected' : '' %>>Draft</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <a href="/projects" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                  <i data-lucide="save" width="16" height="16"></i>
+                  <%= isEditMode ? 'Save Changes' : 'Create Project' %>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      <% } else if (page === "review-form") { %>
+        <div class="write-review-page">
+          <div class="page-header">
+            <h1>Write Review</h1>
+            <p class="text-secondary">Provide a structured review for this project</p>
+          </div>
+
+          <div class="review-project-info">
+            <div class="review-project-header">
+              <i data-lucide="folder-git-2" width="20" height="20" class="text-secondary"></i>
+              <h2><%= project ? project.title : 'Project' %></h2>
+            </div>
+            <p class="review-project-desc"><%= project ? project.description : '' %></p>
+            <div class="review-project-stack">
+              <% ((project && project.techStack) || []).forEach((tech) => { %>
+                <span class="tag"><%= tech %></span>
+              <% }) %>
+            </div>
+          </div>
+
+          <form>
+            <div class="form-section">
+              <h2>Ratings</h2>
+
+              <% (reviewFormScores || ['Overall Rating', 'Code Quality', 'Creativity', 'Clean Code']).forEach((scoreLabel, idx) => { %>
+                <div class="form-group">
+                  <label class="form-label"><%= scoreLabel %> *</label>
+                  <div class="rating-input">
+                    <div class="rating-stars">
+                      <% [1, 2, 3, 4, 5].forEach((star) => { %>
+                        <i data-lucide="star" width="24" height="24" class="rating-star <%= star <= (idx === 0 ? 5 : 4) ? 'active filled' : '' %>"></i>
+                      <% }) %>
+                    </div>
+                    <span class="rating-value"><%= idx === 0 ? '5/5' : '4/5' %></span>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+
+            <div class="form-section">
+              <h2>Feedback</h2>
+
+              <div class="form-group">
+                <label class="form-label">General Feedback *</label>
+                <textarea class="form-textarea" rows="5" placeholder="Share your overall thoughts on the project."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Suggestions (optional)</label>
+                <div class="suggestions-list">
+                  <div class="suggestion-item">
+                    <span>Consider adding API rate limiting and request validation middleware.</span>
+                    <button type="button" class="suggestion-remove">
+                      <i data-lucide="x" width="14" height="14"></i>
+                    </button>
+                  </div>
+                  <div class="suggestion-input">
+                    <input type="text" class="form-input" placeholder="Add a specific suggestion..." />
+                    <button type="button" class="btn btn-secondary">
+                      <i data-lucide="plus" width="16" height="16"></i>
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h2>Hire Verdict</h2>
+              <p class="text-secondary mb-3">Based on this project, would you recommend hiring this developer?</p>
+
+              <div class="hire-toggle">
+                <button type="button" class="hire-option yes selected">
+                  <span>✓</span>
+                  Yes, I would hire
+                </button>
+                <button type="button" class="hire-option no">
+                  <span>✗</span>
+                  No, I would not hire
+                </button>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <a href="/projects/<%= project ? project._id : '' %>" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <i data-lucide="save" width="16" height="16"></i>
+                Submit Review
+              </button>
+            </div>
+          </form>
+        </div>
+
+      <% } else if (page === "reviews") { %>
+        <%
+          const receivedReviews = reviews || [];
+          const givenReviews = (reviews || []).slice(0, 2);
+        %>
+        <div class="reviews-page">
+          <div class="page-header">
+            <h1>Reviews</h1>
+            <p class="text-secondary"><%= isReviewer ? "View reviews you've received and given" : "View reviews for your projects" %></p>
+          </div>
+
+          <div class="tabs">
+            <button class="tab active" type="button">
+              Received
+              <span class="tab-count"><%= receivedReviews.length %></span>
+            </button>
+            <% if (isReviewer) { %>
+              <button class="tab" type="button">
+                Given
+                <span class="tab-count"><%= givenReviews.length %></span>
+              </button>
+            <% } %>
+          </div>
+
+          <div class="reviews-list">
+            <% if (receivedReviews.length > 0) { %>
+              <% receivedReviews.forEach((reviewItem) => {
+                const projectId = reviewItem.projectId || ((reviewItem.project && reviewItem.project._id) || "");
+                const projectLabel = reviewItem.projectTitle || ((reviewItem.project && reviewItem.project.title) || "Project");
+                const reviewerName = (reviewItem.reviewer && reviewItem.reviewer.name) || "Reviewer";
+                const reviewerUsername = (reviewItem.reviewer && reviewItem.reviewer.username) || "reviewer";
+              %>
+                <div class="review-list-item">
+                  <div class="review-list-header">
+                    <div class="review-project-link">
+                      <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
+                      <a href="/projects/<%= projectId %>"><%= projectLabel %></a>
+                    </div>
+                    <div class="review-list-rating">
+                      <i data-lucide="star" class="star filled" width="16" height="16"></i>
+                      <span><%= Number(reviewItem.overallRating || 0).toFixed(1) %></span>
+                    </div>
+                  </div>
+
+                  <div class="review-list-meta">
+                    <span class="text-secondary">Reviewed by</span>
+                    <a href="/user/<%= reviewerUsername %>"><%= reviewerName %></a>
+                  </div>
+
+                  <p class="review-list-feedback"><%= reviewItem.feedback || reviewItem.note || "No detailed feedback provided." %></p>
+
+                  <div class="review-list-footer">
+                    <span class="review-list-date">
+                      <i data-lucide="clock" width="12" height="12"></i>
+                      <%= new Date(reviewItem.createdAt).toLocaleDateString() %>
+                    </span>
+                    <% if (reviewItem.wouldHire) { %>
+                      <span class="hire-badge positive">
+                        <i data-lucide="check-circle" width="12" height="12"></i>
+                        Would Hire
+                      </span>
+                    <% } else { %>
+                      <span class="hire-badge negative">
+                        <i data-lucide="x-circle" width="12" height="12"></i>
+                        Would Not Hire
+                      </span>
+                    <% } %>
+                  </div>
+                </div>
+              <% }) %>
+            <% } else { %>
+              <div class="empty-state">
+                <i data-lucide="message-square" class="empty-state-icon"></i>
+                <h3 class="empty-state-title">No reviews yet</h3>
+                <p class="empty-state-description">Submit projects to get reviewed by certified peers</p>
+                <a href="/projects/new" class="btn btn-primary">Create Project</a>
+              </div>
+            <% } %>
+          </div>
+        </div>
+
+      <% } else if (page === "skills") { %>
+        <%
+          const groupedSkills = {};
+          (skills || []).forEach((skillItem) => {
+            const categoryName = skillItem.category || "General";
+            if (!groupedSkills[categoryName]) {
+              groupedSkills[categoryName] = [];
+            }
+            groupedSkills[categoryName].push(skillItem);
+          });
+          const categoryNames = ["All"].concat(Object.keys(groupedSkills));
+        %>
+        <div class="skills-page">
+          <div class="page-header">
+            <h1>Skills</h1>
+            <p class="text-secondary">Browse skills and find developers</p>
+          </div>
+
+          <div class="skills-toolbar">
+            <div class="search-box">
+              <i data-lucide="search" width="18" height="18" class="search-icon"></i>
+              <input type="text" placeholder="Search skills..." />
+            </div>
+            <div class="category-pills">
+              <% categoryNames.forEach((categoryName, index) => { %>
+                <button type="button" class="category-pill <%= index === 0 ? 'active' : '' %>"><%= categoryName %></button>
+              <% }) %>
+            </div>
+          </div>
+
+          <% Object.keys(groupedSkills).forEach((categoryName) => { %>
+            <div class="skill-group">
+              <h2 class="skill-group-title"><%= categoryName %></h2>
+              <div class="skills-grid">
+                <% groupedSkills[categoryName].forEach((skillItem) => {
+                  const developers = Array.isArray(skillItem.users) ? skillItem.users.length * 125 : 0;
+                %>
+                  <a href="/skills/<%= skillItem._id %>" class="skill-card">
+                    <div class="skill-card-icon">
+                      <i data-lucide="code" width="24" height="24"></i>
+                    </div>
+                    <div class="skill-card-content">
+                      <h3><%= skillItem.name %></h3>
+                      <span class="skill-card-stat">
+                        <i data-lucide="users" width="14" height="14"></i>
+                        <%= developers.toLocaleString() %> developers
+                      </span>
+                    </div>
+                    <i data-lucide="chevron-right" width="16" height="16" class="skill-card-arrow"></i>
+                  </a>
+                <% }) %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+
+      <% } else if (page === "skill-detail") { %>
+        <%
+          const currentSkill = skill || {};
+          const topDevelopers = (exploreUsers || []).slice(0, 5);
+          const recentProjects = (projects || []).slice(0, 3);
+          const totalDevelopers = Array.isArray(currentSkill.users) ? currentSkill.users.length * 625 : 0;
+          const totalProjects = (projects || []).length * 1140;
+        %>
+
+        <div class="skill-detail-page">
+          <a href="/skills" class="btn btn-secondary btn-sm mb-4">
+            <i data-lucide="arrow-left" width="16" height="16"></i>
+            Back to Skills
+          </a>
+
+          <div class="skill-detail-header">
+            <div class="skill-icon-large">
+              <i data-lucide="code" width="40" height="40"></i>
+            </div>
+            <div class="skill-detail-info">
+              <h1><%= currentSkill.name %></h1>
+              <span class="tag"><%= currentSkill.category || 'General' %></span>
+            </div>
+          </div>
+
+          <div class="skill-stats-row">
+            <div class="stat-card">
+              <div class="stat-value"><%= totalDevelopers.toLocaleString() %></div>
+              <div class="stat-label">Developers</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value"><%= totalProjects.toLocaleString() %></div>
+              <div class="stat-label">Projects</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value"><%= Number(currentUser.profileScore || 4.5).toFixed(1) %></div>
+              <div class="stat-label">Avg Rating</div>
+            </div>
+          </div>
+
+          <div class="developers-table-section">
+            <h2>Top Developers</h2>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Developer</th>
+                  <th>Rating</th>
+                  <th>Projects</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% topDevelopers.forEach((developer) => { %>
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 8px">
+                        <div class="avatar avatar-sm"><%= developer.name.charAt(0) %></div>
+                        <div>
+                          <div><%= developer.name %></div>
+                          <div class="text-muted" style="font-size: 0.75rem">@<%= developer.username %></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 4px">
+                        <i data-lucide="star" width="14" height="14" class="filled" style="color: var(--color-warning-fg)"></i>
+                        <%= Number(developer.rating || 0).toFixed(1) %>
+                      </div>
+                    </td>
+                    <td><%= developer.projects || 0 %> projects</td>
+                    <td>
+                      <a href="/user/<%= developer.username %>" class="btn btn-secondary btn-sm">View Profile</a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="developers-table-section">
+            <h2>Recent Projects</h2>
+            <div class="skills-grid">
+              <% recentProjects.forEach((projectItem) => { %>
+                <a href="/projects/<%= projectItem._id %>" class="skill-card">
+                  <div class="skill-card-icon">
+                    <i data-lucide="folder-git-2" width="24" height="24"></i>
+                  </div>
+                  <div class="skill-card-content">
+                    <h3><%= projectItem.title %></h3>
+                    <span class="skill-card-stat">
+                      <i data-lucide="star" width="14" height="14"></i>
+                      <%= Number(projectItem.averageRating || 0).toFixed(1) %> · by @<%= projectItem.owner && projectItem.owner.username ? projectItem.owner.username : 'developer' %>
+                    </span>
+                  </div>
+                </a>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+
+      <% } else if (page === "certifications") { %>
+        <%
+          const certBenefits = [
+            { icon: "message-square", title: "Review Projects", description: "Provide official reviews that impact developer scores" },
+            { icon: "award", title: "Certified Badge", description: "Display a verified badge on your profile" },
+            { icon: "trending-up", title: "Build Reputation", description: "Establish yourself as a trusted code reviewer" },
+            { icon: "users", title: "Help Community", description: "Guide junior developers with your expertise" }
+          ];
+        %>
+        <div class="certifications-page">
+          <div class="page-header">
+            <h1>Reviewer Certification</h1>
+            <p class="text-secondary">Become a certified code reviewer on DevRank</p>
+          </div>
+
+          <div class="certification-status">
+            <div class="certification-status-header">
+              <i data-lucide="award" width="24" height="24" class="text-accent"></i>
+              <h2>Your Status</h2>
+            </div>
+            <p>
+              <% if (certStatus === 'certified') { %>
+                Congratulations! You are a certified reviewer and can review projects on DevRank.
+              <% } else { %>
+                You haven't applied for reviewer certification yet.
+              <% } %>
+            </p>
+
+            <% if (certStatus === 'certified') { %>
+              <span class="status-badge-large certified">
+                <i data-lucide="check-circle" width="16" height="16"></i>
+                Certified Reviewer
+              </span>
+            <% } else { %>
+              <span class="status-badge-large not-applied">
+                <i data-lucide="shield" width="16" height="16"></i>
+                Not Applied
+              </span>
+            <% } %>
+          </div>
+
+          <div class="certification-benefits">
+            <h2>Benefits of Certification</h2>
+            <div class="benefits-grid">
+              <% certBenefits.forEach((benefit) => { %>
+                <div class="benefit-card">
+                  <div class="benefit-icon">
+                    <i data-lucide="<%= benefit.icon %>" width="20" height="20"></i>
+                  </div>
+                  <div class="benefit-content">
+                    <h3><%= benefit.title %></h3>
+                    <p><%= benefit.description %></p>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+
+          <% if (certStatus !== 'certified') { %>
+            <div class="certification-requirements">
+              <h2>Requirements</h2>
+              <div class="requirements-list">
+                <% certificationRequirements.forEach((requirement) => { %>
+                  <div class="requirement-item">
+                    <% if (requirement.met) { %>
+                      <i data-lucide="check-circle" width="18" height="18" class="requirement-check"></i>
+                    <% } else { %>
+                      <i data-lucide="x-circle" width="18" height="18" class="requirement-x"></i>
+                    <% } %>
+                    <span class="requirement-text"><%= requirement.text %></span>
+                  </div>
+                <% }) %>
+              </div>
+
+              <div style="margin-top: var(--spacing-4)">
+                <% if (allRequirementsMet) { %>
+                  <a href="/certifications/apply" class="btn btn-primary">
+                    <i data-lucide="award" width="16" height="16"></i>
+                    Apply for Certification
+                  </a>
+                <% } else { %>
+                  <button class="btn btn-secondary" type="button" disabled>
+                    <i data-lucide="award" width="16" height="16"></i>
+                    Complete Requirements to Apply
+                  </button>
+                <% } %>
+              </div>
+            </div>
+          <% } %>
+
+          <% if (certStatus === 'certified') { %>
+            <div class="certification-benefits">
+              <h2>Your Review Activity</h2>
+              <div class="skill-stats-row">
+                <div class="stat-card">
+                  <div class="stat-value">24</div>
+                  <div class="stat-label">Reviews Given</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value">4.8</div>
+                  <div class="stat-label">Avg Rating Given</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value">18</div>
+                  <div class="stat-label">Would Hire</div>
+                </div>
+              </div>
+              <a href="/reviews" class="btn btn-secondary mt-3">
+                <i data-lucide="message-square" width="16" height="16"></i>
+                View My Reviews
+              </a>
+            </div>
+          <% } %>
+        </div>
+
+      <% } else if (page === "certification-apply") { %>
+        <div class="apply-certification-page">
+          <a href="/certifications" class="btn btn-secondary btn-sm mb-4">
+            <i data-lucide="arrow-left" width="16" height="16"></i>
+            Back to Certifications
+          </a>
+
+          <div class="page-header">
+            <h1>Apply for Certification</h1>
+            <p class="text-secondary">Tell us about your experience and qualifications</p>
+          </div>
+
+          <div class="apply-info">
+            <h2>
+              <i data-lucide="award" width="20" height="20"></i>
+              Before You Apply
+            </h2>
+            <p>
+              Make sure you meet all the requirements. Your application will be reviewed by our admins
+              within 3-5 business days. You'll receive an email notification once a decision is made.
+            </p>
+          </div>
+
+          <form>
+            <div class="form-group">
+              <label class="form-label">
+                <i data-lucide="briefcase" width="16" height="16" style="margin-right: 8px"></i>
+                Years of Experience *
+              </label>
+              <select class="form-select" required>
+                <option value="">Select your experience level</option>
+                <option value="1-2">1-2 years</option>
+                <option value="3-5">3-5 years</option>
+                <option value="5-10">5-10 years</option>
+                <option value="10+">10+ years</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i data-lucide="code" width="16" height="16" style="margin-right: 8px"></i>
+                Areas of Expertise *
+              </label>
+              <input type="text" class="form-input" placeholder="e.g., React, Node.js, System Design, Testing" required />
+              <span class="form-hint">List the technologies and areas you can review confidently</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i data-lucide="file-text" width="16" height="16" style="margin-right: 8px"></i>
+                Why do you want to become a reviewer? *
+              </label>
+              <textarea class="form-textarea" rows="5" placeholder="Tell us about your motivation for becoming a certified reviewer..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Portfolio URL (optional)</label>
+              <input type="url" class="form-input" placeholder="https://your-portfolio.com" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">LinkedIn Profile (optional)</label>
+              <input type="url" class="form-input" placeholder="https://linkedin.com/in/yourprofile" />
+            </div>
+
+            <div class="form-actions">
+              <a href="/certifications" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <i data-lucide="send" width="16" height="16"></i>
+                Submit Application
+              </button>
+            </div>
+          </form>
+        </div>
+
+      <% } else if (page === "explore") { %>
+        <div class="explore-page">
+          <div class="page-header">
+            <h1>Explore</h1>
+            <p class="text-secondary">Discover projects and developers</p>
+          </div>
+
+          <div class="explore-search">
+            <i data-lucide="search" width="20" height="20" class="search-icon"></i>
+            <input type="text" placeholder="Search projects, technologies..." />
+          </div>
+
+          <div class="tabs">
+            <button class="tab active" type="button">
+              <i data-lucide="folder-git-2" width="16" height="16"></i>
+              Projects
+              <span class="tab-count"><%= (projects || []).length %></span>
+            </button>
+            <button class="tab" type="button">
+              <i data-lucide="users" width="16" height="16"></i>
+              Developers
+              <span class="tab-count"><%= (exploreUsers || []).length %></span>
+            </button>
+          </div>
+
+          <div class="explore-filters">
+            <select class="form-select">
+              <option value="all">All Status</option>
+              <option value="published">Published</option>
+              <option value="seeking-review">Seeking Review</option>
+            </select>
+          </div>
+
+          <div class="explore-grid">
+            <% (projects || []).forEach((projectItem) => { %>
+              <a href="/projects/<%= projectItem._id %>" class="explore-card">
+                <div class="explore-card-header">
+                  <i data-lucide="folder-git-2" width="20" height="20" class="text-accent"></i>
+                  <h3><%= projectItem.title %></h3>
+                </div>
+
+                <p class="explore-card-desc"><%= projectItem.description %></p>
+
+                <div class="explore-card-tags">
+                  <% (projectItem.techStack || []).slice(0, 3).forEach((tech) => { %>
+                    <span class="tag"><%= tech %></span>
+                  <% }) %>
+                  <% if ((projectItem.techStack || []).length > 3) { %>
+                    <span class="tag">+<%= (projectItem.techStack || []).length - 3 %></span>
+                  <% } %>
+                </div>
+
+                <div class="explore-card-footer">
+                  <span class="explore-card-owner">by @<%= projectItem.owner && projectItem.owner.username ? projectItem.owner.username : 'developer' %></span>
+                  <span class="explore-card-rating">
+                    <i data-lucide="star" class="filled" width="14" height="14"></i>
+                    <%= Number(projectItem.averageRating || 0).toFixed(1) %>
+                  </span>
+                </div>
+
+                <% if (projectItem.status === 'seeking-review') { %>
+                  <span class="explore-card-badge">Needs Review</span>
+                <% } %>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+
+      <% } else if (page === "admin-dashboard") { %>
+        <%
+          const adminStats = {
+            totalUsers: 1543,
+            totalProjects: 3421,
+            totalReviews: 8765,
+            pendingCerts: (certificationRequests || []).filter((request) => request.status === 'pending').length,
+            newUsersToday: 24,
+            reviewsToday: 45
+          };
+          const recentActivity = (activityLogs || []).slice(0, 5);
+          const pendingCerts = (certificationRequests || []).filter((request) => request.status === 'pending');
+        %>
+        <div class="admin-dashboard">
+          <div class="page-header">
+            <h1>Admin Dashboard</h1>
+            <p class="text-secondary">Overview of DevRank platform activity</p>
+          </div>
+
+          <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+              <div class="admin-stat-icon users"><i data-lucide="users" width="24" height="24"></i></div>
+              <div class="admin-stat-content">
+                <div class="admin-stat-value"><%= adminStats.totalUsers.toLocaleString() %></div>
+                <div class="admin-stat-label">Total Users</div>
+              </div>
+              <div class="admin-stat-trend positive">
+                <i data-lucide="trending-up" width="14" height="14"></i>
+                +<%= adminStats.newUsersToday %> today
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-icon projects"><i data-lucide="folder-git-2" width="24" height="24"></i></div>
+              <div class="admin-stat-content">
+                <div class="admin-stat-value"><%= adminStats.totalProjects.toLocaleString() %></div>
+                <div class="admin-stat-label">Total Projects</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-icon reviews"><i data-lucide="message-square" width="24" height="24"></i></div>
+              <div class="admin-stat-content">
+                <div class="admin-stat-value"><%= adminStats.totalReviews.toLocaleString() %></div>
+                <div class="admin-stat-label">Total Reviews</div>
+              </div>
+              <div class="admin-stat-trend positive">
+                <i data-lucide="trending-up" width="14" height="14"></i>
+                +<%= adminStats.reviewsToday %> today
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-icon certs"><i data-lucide="award" width="24" height="24"></i></div>
+              <div class="admin-stat-content">
+                <div class="admin-stat-value"><%= adminStats.pendingCerts %></div>
+                <div class="admin-stat-label">Pending Certifications</div>
+              </div>
+              <a href="/admin/certifications" class="admin-stat-link">Review →</a>
+            </div>
+          </div>
+
+          <div class="admin-grid">
+            <div class="admin-card">
+              <div class="admin-card-header">
+                <h2>
+                  <i data-lucide="activity" width="18" height="18"></i>
+                  Recent Activity
+                </h2>
+                <a href="/admin/logs" class="btn btn-secondary btn-sm">View All</a>
+              </div>
+
+              <div class="activity-list">
+                <% recentActivity.forEach((activityItem) => {
+                  const actionText = (activityItem.action || '').toLowerCase();
+                  const activityType = actionText.includes('user')
+                    ? 'user'
+                    : (actionText.includes('project')
+                      ? 'project'
+                      : (actionText.includes('cert')
+                        ? 'cert'
+                        : (actionText.includes('review') ? 'review' : 'project')));
+                %>
+                  <div class="activity-item">
+                    <div class="activity-icon <%= activityType %>">
+                      <% if (activityType === 'user') { %>
+                        <i data-lucide="users" width="14" height="14"></i>
+                      <% } else if (activityType === 'project') { %>
+                        <i data-lucide="folder-git-2" width="14" height="14"></i>
+                      <% } else if (activityType === 'cert') { %>
+                        <i data-lucide="award" width="14" height="14"></i>
+                      <% } else { %>
+                        <i data-lucide="message-square" width="14" height="14"></i>
+                      <% } %>
+                    </div>
+                    <div class="activity-content">
+                      <p><%= activityItem.action %>: <%= activityItem.target %></p>
+                      <span class="activity-time">
+                        <i data-lucide="clock" width="12" height="12"></i>
+                        <%= activityItem.createdAt %>
+                      </span>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+
+            <div class="admin-card">
+              <div class="admin-card-header">
+                <h2>
+                  <i data-lucide="award" width="18" height="18"></i>
+                  Pending Certifications
+                </h2>
+                <a href="/admin/certifications" class="btn btn-secondary btn-sm">View All</a>
+              </div>
+
+              <% if (pendingCerts.length > 0) { %>
+                <div class="pending-certs-list">
+                  <% pendingCerts.forEach((requestItem) => { %>
+                    <div class="pending-cert-item">
+                      <div class="pending-cert-user">
+                        <div class="avatar avatar-sm"><%= (requestItem.name || 'U').charAt(0) %></div>
+                        <div>
+                          <div class="pending-cert-name"><%= requestItem.name %></div>
+                          <div class="text-muted">@<%= requestItem.username %></div>
+                        </div>
+                      </div>
+                      <div class="pending-cert-actions">
+                        <span class="pending-cert-date">Applied <%= requestItem.submittedAt %></span>
+                        <button class="btn btn-success btn-sm" type="button">
+                          <i data-lucide="check-circle" width="14" height="14"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" type="button">
+                          <i data-lucide="alert-circle" width="14" height="14"></i>
+                        </button>
+                      </div>
+                    </div>
+                  <% }) %>
+                </div>
+              <% } else { %>
+                <div class="empty-state-small"><p>No pending certifications</p></div>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header"><h2>Quick Actions</h2></div>
+            <div class="quick-actions">
+              <a href="/admin/certifications" class="quick-action">
+                <i data-lucide="award" width="20" height="20"></i>
+                <span>Manage Certifications</span>
+              </a>
+              <a href="/admin/logs" class="quick-action">
+                <i data-lucide="activity" width="20" height="20"></i>
+                <span>View Activity Logs</span>
+              </a>
+              <a href="/skills" class="quick-action">
+                <i data-lucide="code-2" width="20" height="20"></i>
+                <span>Manage Skills</span>
+              </a>
+              <a href="/explore" class="quick-action">
+                <i data-lucide="users" width="20" height="20"></i>
+                <span>Browse Users</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      <% } else if (page === "admin-certifications") { %>
+        <div class="admin-certifications-page">
+          <div class="page-header">
+            <h1>Certification Requests</h1>
+            <p class="text-secondary">Review and manage reviewer certification applications</p>
+          </div>
+
+          <div class="cert-filters">
+            <button class="btn btn-primary btn-sm" type="button">Pending</button>
+            <button class="btn btn-secondary btn-sm" type="button">Approved</button>
+            <button class="btn btn-secondary btn-sm" type="button">Rejected</button>
+            <button class="btn btn-secondary btn-sm" type="button">All</button>
+          </div>
+
+          <% if ((certificationRequests || []).length > 0) { %>
+            <% (certificationRequests || []).forEach((requestItem) => { %>
+              <div class="cert-request-card">
+                <div class="cert-request-header">
+                  <div class="cert-request-user">
+                    <div class="avatar"><%= (requestItem.name || 'U').charAt(0) %></div>
+                    <div>
+                      <a href="/user/<%= requestItem.username %>"><%= requestItem.name %></a>
+                      <div class="text-muted">@<%= requestItem.username %></div>
+                    </div>
+                  </div>
+                  <div class="cert-request-meta">
+                    <% if (requestItem.status === 'approved') { %>
+                      <span class="badge badge-success">
+                        <i data-lucide="check-circle" width="12" height="12"></i>
+                        Approved
+                      </span>
+                    <% } else if (requestItem.status === 'rejected') { %>
+                      <span class="badge badge-danger">
+                        <i data-lucide="x-circle" width="12" height="12"></i>
+                        Rejected
+                      </span>
+                    <% } else { %>
+                      <span class="badge badge-warning">
+                        <i data-lucide="clock" width="12" height="12"></i>
+                        Pending
+                      </span>
+                    <% } %>
+                    <span>Applied <%= requestItem.submittedAt %></span>
+                  </div>
+                </div>
+
+                <div class="cert-request-body">
+                  <div class="cert-request-stats">
+                    <div class="cert-stat">
+                      <i data-lucide="folder-git-2" width="18" height="18" class="text-accent"></i>
+                      <div class="cert-stat-value"><%= (projects || []).length %></div>
+                      <div class="cert-stat-label">Projects</div>
+                    </div>
+                    <div class="cert-stat">
+                      <i data-lucide="star" width="18" height="18" class="text-warning"></i>
+                      <div class="cert-stat-value"><%= Number(currentUser.profileScore || 4.5).toFixed(1) %></div>
+                      <div class="cert-stat-label">Avg Rating</div>
+                    </div>
+                    <div class="cert-stat">
+                      <i data-lucide="code" width="18" height="18" class="text-success"></i>
+                      <div class="cert-stat-value"><%= normalizedSkills.length %></div>
+                      <div class="cert-stat-label">Skills</div>
+                    </div>
+                    <div class="cert-stat">
+                      <i data-lucide="briefcase" width="18" height="18" class="text-muted"></i>
+                      <div class="cert-stat-value">5-10</div>
+                      <div class="cert-stat-label">Years Exp</div>
+                    </div>
+                  </div>
+
+                  <div class="cert-request-section">
+                    <h4>Expertise</h4>
+                    <p><%= requestItem.certificate %></p>
+                  </div>
+
+                  <div class="cert-request-section">
+                    <h4>Motivation</h4>
+                    <p>I want to help developers improve code quality through consistent and actionable feedback.</p>
+                  </div>
+                </div>
+
+                <% if (requestItem.status === 'pending') { %>
+                  <div class="cert-request-actions">
+                    <button class="btn btn-success" type="button">
+                      <i data-lucide="check-circle" width="16" height="16"></i>
+                      Approve
+                    </button>
+                    <button class="btn btn-danger" type="button">
+                      <i data-lucide="x-circle" width="16" height="16"></i>
+                      Reject
+                    </button>
+                    <a href="/user/<%= requestItem.username %>" class="btn btn-secondary" style="margin-left: auto">
+                      <i data-lucide="user" width="16" height="16"></i>
+                      View Profile
+                    </a>
+                  </div>
+                <% } %>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="empty-state">
+              <i data-lucide="award" class="empty-state-icon"></i>
+              <h3 class="empty-state-title">No requests</h3>
+              <p class="empty-state-description">There are no certification requests right now.</p>
+            </div>
+          <% } %>
+        </div>
+
+      <% } else if (page === "admin-logs") { %>
+        <div class="activity-logs-page">
+          <div class="page-header">
+            <h1>Activity Logs</h1>
+            <p class="text-secondary">Monitor all platform activity (stored in SQLite)</p>
+          </div>
+
+          <div class="logs-toolbar">
+            <div class="search-box">
+              <i data-lucide="search" width="18" height="18" class="search-icon"></i>
+              <input type="text" placeholder="Search logs..." />
+            </div>
+
+            <select class="form-select" style="width: auto">
+              <option>All Actions</option>
+              <option>Create</option>
+              <option>Update</option>
+              <option>Delete</option>
+              <option>Login</option>
+            </select>
+
+            <select class="form-select" style="width: auto">
+              <option>All Entities</option>
+              <option>User</option>
+              <option>Project</option>
+              <option>Review</option>
+              <option>Certification</option>
+            </select>
+
+            <button class="btn btn-secondary" type="button">
+              <i data-lucide="refresh-cw" width="16" height="16"></i>
+              Refresh
+            </button>
+
+            <button class="btn btn-secondary" type="button">
+              <i data-lucide="download" width="16" height="16"></i>
+              Export
+            </button>
+          </div>
+
+          <table class="logs-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Action</th>
+                <th>Entity</th>
+                <th>User</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% (activityLogs || []).forEach((logItem) => {
+                const actionText = (logItem.action || '').toLowerCase();
+                const actionClass = actionText.includes('delete')
+                  ? 'delete'
+                  : (actionText.includes('login')
+                    ? 'login'
+                    : (actionText.includes('update') ? 'update' : 'create'));
+              %>
+                <tr>
+                  <td style="white-space: nowrap"><%= logItem.createdAt %></td>
+                  <td><span class="log-action-badge <%= actionClass %>"><%= actionClass %></span></td>
+                  <td><%= (logItem.action || '').split(' ')[0] %></td>
+                  <td>@<%= logItem.actor %></td>
+                  <td><%= logItem.action %> <%= logItem.target %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+
+          <div class="pagination">
+            <button class="pagination-btn" type="button" disabled>Previous</button>
+            <span class="pagination-info">Page 1 of 1</span>
+            <button class="pagination-btn" type="button" disabled>Next</button>
+          </div>
+        </div>
+
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../partials/foot') %>

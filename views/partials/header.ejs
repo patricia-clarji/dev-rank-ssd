@@ -1,0 +1,97 @@
+<%
+  const currentUser = user || {};
+  const currentUserName = currentUser.name || "Guest User";
+  const currentUserUsername = currentUser.username || "guest";
+  const currentUserInitials = currentUserName
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+%>
+
+<header class="header">
+  <div class="header-left">
+    <a href="/dashboard" class="header-logo">
+      DevRank
+    </a>
+
+    <form action="/explore" method="get" class="header-search" role="search">
+      <i data-lucide="search" width="18" height="18" class="header-search-icon" aria-hidden="true"></i>
+      <input
+        type="text"
+        name="q"
+        class="header-search-input"
+        aria-label="Search projects, skills, users"
+        placeholder="Search projects, skills, users..."
+      />
+    </form>
+
+    <nav class="header-nav">
+      <a href="/explore" class="header-nav-link">
+        <i data-lucide="book-open" width="16" height="16"></i>
+        <span>Explore</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="header-right">
+    <div class="header-icon-btn">
+      <i data-lucide="bell" width="20" height="20"></i>
+    </div>
+
+    <div class="dropdown" data-menu-root>
+      <button class="btn btn-secondary btn-sm" type="button" data-menu-trigger="create-menu">
+        <i data-lucide="plus" width="16" height="16"></i>
+        <i data-lucide="chevron-down" width="14" height="14"></i>
+      </button>
+      <div class="dropdown-menu hidden" id="create-menu">
+        <a href="/projects/new" class="dropdown-item">New project</a>
+        <div class="dropdown-divider"></div>
+        <a href="/certifications/apply" class="dropdown-item">
+          <i data-lucide="shield-check" width="16" height="16"></i>
+          Apply for certification
+        </a>
+      </div>
+    </div>
+
+    <div class="header-user" data-menu-root>
+      <button class="header-user-btn" type="button" data-menu-trigger="user-menu">
+        <div class="avatar avatar-sm"><%= currentUserInitials %></div>
+        <i data-lucide="chevron-down" width="14" height="14" style="color: var(--color-text-muted)"></i>
+      </button>
+
+      <div class="header-user-menu hidden" id="user-menu">
+        <div class="header-user-info">
+          <div class="header-user-name"><%= currentUserName %></div>
+          <div class="header-user-email">@<%= currentUserUsername %></div>
+        </div>
+        <div class="header-menu-items">
+          <a href="/profile" class="header-menu-item">
+            <i data-lucide="user" width="16" height="16"></i>
+            Your profile
+          </a>
+          <a href="/projects" class="header-menu-item">
+            <i data-lucide="book-open" width="16" height="16"></i>
+            Your projects
+          </a>
+          <% if (isAdmin) { %>
+            <a href="/admin" class="header-menu-item">
+              <i data-lucide="shield-check" width="16" height="16"></i>
+              Admin dashboard
+            </a>
+          <% } %>
+          <div class="dropdown-divider"></div>
+          <a href="/profile/edit" class="header-menu-item">
+            <i data-lucide="settings" width="16" height="16"></i>
+            Settings
+          </a>
+          <a href="/login" class="header-menu-item danger">
+            <i data-lucide="log-out" width="16" height="16"></i>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,21 @@
+<%- include('../partials/head', { pageTitle, bodyClass }) %>
+
+<div class="not-found-page">
+  <div class="not-found-content">
+    <h1 class="not-found-code">404</h1>
+    <h2 class="not-found-title">Page not found</h2>
+    <p class="not-found-message">The page you're looking for doesn't exist or has been moved.</p>
+    <div class="not-found-actions">
+      <a href="javascript:history.back()" class="btn btn-secondary">
+        <i data-lucide="arrow-left" width="16" height="16"></i>
+        Go Back
+      </a>
+      <a href="/" class="btn btn-primary">
+        <i data-lucide="home" width="16" height="16"></i>
+        Go Home
+      </a>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/foot') %>

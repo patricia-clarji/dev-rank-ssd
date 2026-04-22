@@ -1,0 +1,2331 @@
+openapi: 3.0.0
+info:
+  title: DevRank API
+  description: A comprehensive platform for developers to showcase projects, earn certifications, manage skills, and build professional networks through code reviews and badges.
+  version: 1.0.0
+  contact:
+    name: DevRank Team
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://api.devrank.com
+    description: Production server
+
+paths:
+  # ======================== USERS ENDPOINTS ========================
+  /users/register:
+    post:
+      tags:
+        - Users
+      summary: Register a new user
+      description: Create a new user account with email, password, name, role and optional profile information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: User with this email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Get all users
+      description: Retrieve a list of all users with their skills and profile information
+      responses:
+        '200':
+          description: List of users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/name/{name}:
+    get:
+      tags:
+        - Users
+      summary: Get user by name
+      description: Retrieve a specific user by their username
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Username to search for
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user by ID
+      description: Retrieve a specific user by their ID with skills populated
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Users
+      summary: Update user
+      description: Update user profile information (name, bio, GitHub URL, avatar URL)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Users
+      summary: Delete user
+      description: Delete a user account and all associated data (projects, reviews, skills, etc.)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{id}/skills:
+    post:
+      tags:
+        - Users
+      summary: Add skills to user
+      description: Add one or more skills to a user's profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - skills
+              properties:
+                skills:
+                  type: array
+                  description: Array of skill IDs or names
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Skill(s) assigned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Users
+      summary: Remove multiple skills from user
+      description: Remove multiple skills from a user's profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - skills
+              properties:
+                skills:
+                  type: array
+                  description: Array of skill IDs or names to remove
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Skill(s) removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{id}/skills/{skill}:
+    delete:
+      tags:
+        - Users
+      summary: Remove a single skill from user
+      description: Remove a single skill by ID or name from a user's profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+        - name: skill
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Skill ID or name
+      responses:
+        '200':
+          description: Skill removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{id}/badges:
+    post:
+      tags:
+        - Users
+      summary: Award a badge to user by ID
+      description: Award a specific badge to a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - badgeId
+              properties:
+                badgeId:
+                  type: string
+                  description: Badge ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Badge awarded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: User already has this badge
+
+  /users/{id}/badges/name:
+    post:
+      tags:
+        - Users
+      summary: Award a badge to user by name
+      description: Award a badge to a user by badge name (case-insensitive)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - badgeName
+              properties:
+                badgeName:
+                  type: string
+                  description: Badge name
+      responses:
+        '200':
+          description: Badge awarded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: User already has this badge
+
+  /users/{id}/badges/{badgeId}:
+    delete:
+      tags:
+        - Users
+      summary: Remove a badge from user by ID
+      description: Remove a badge from a user by badge ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+        - name: badgeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Badge ID
+      responses:
+        '200':
+          description: Badge removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{id}/badges/name/{badgeName}:
+    delete:
+      tags:
+        - Users
+      summary: Remove a badge from user by name
+      description: Remove a badge from a user by badge name (case-insensitive)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+        - name: badgeName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Badge name
+      responses:
+        '200':
+          description: Badge removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/follow/{targetId}:
+    post:
+      tags:
+        - Users
+      summary: Follow a user
+      description: Follow another user to see their activity and updates
+      parameters:
+        - name: targetId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the user to follow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+              properties:
+                userId:
+                  type: string
+                  description: Your user ID
+      responses:
+        '200':
+          description: User followed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Already following this user
+
+  /users/unfollow/{targetId}:
+    post:
+      tags:
+        - Users
+      summary: Unfollow a user
+      description: Stop following another user
+      parameters:
+        - name: targetId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the user to unfollow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+              properties:
+                userId:
+                  type: string
+                  description: Your user ID
+      responses:
+        '200':
+          description: User unfollowed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{userId}/followers:
+    get:
+      tags:
+        - Users
+      summary: Get user's followers
+      description: Retrieve list of users following this user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: Followers list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  followers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{userId}/following:
+    get:
+      tags:
+        - Users
+      summary: Get users this user is following
+      description: Retrieve list of users being followed by this user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: Following list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  following:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ======================== PROJECTS ENDPOINTS ========================
+  /projects:
+    post:
+      tags:
+        - Projects
+      summary: Create a new project
+      description: Create a new project with title, description, technologies, and details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  project:
+                    $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: User not found
+
+    get:
+      tags:
+        - Projects
+      summary: Get all projects
+      description: Retrieve all projects with optional filtering by userId, status, or techStack
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+          description: Filter by user ID
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [seeking-review, reviewed, archived]
+          description: Filter by project status
+        - name: techStack
+          in: query
+          schema:
+            type: string
+          description: Filter by technology
+      responses:
+        '200':
+          description: Projects retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /projects/title/{title}:
+    get:
+      tags:
+        - Projects
+      summary: Get project by title
+      description: Retrieve a specific project by its title
+      parameters:
+        - name: title
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Project title
+      responses:
+        '200':
+          description: Project found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project:
+                    $ref: '#/components/schemas/Project'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /projects/user/{userId}:
+    get:
+      tags:
+        - Projects
+      summary: Get all projects by a user
+      description: Retrieve all projects created by a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: Projects retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /projects/{projectId}:
+    get:
+      tags:
+        - Projects
+      summary: Get project by ID
+      description: Retrieve a specific project by its ID with all details
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Project ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Project found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project:
+                    $ref: '#/components/schemas/Project'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Projects
+      summary: Update project
+      description: Update project details (title, description, technologies, etc.)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Project ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          description: Project updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  project:
+                    $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Projects
+      summary: Delete project
+      description: Delete a project and all associated reviews
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Project ID
+      responses:
+        '200':
+          description: Project deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /projects/{projectId}/reviews:
+    get:
+      tags:
+        - Projects
+      summary: Get reviews for a project
+      description: Retrieve all reviews submitted for a specific project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Project ID
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ======================== REVIEWS ENDPOINTS ========================
+  /reviews:
+    post:
+      tags:
+        - Reviews
+      summary: Create a new review
+      description: Submit a review for a project as a verified reviewer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          description: Review created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  review:
+                    $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: Only verified reviewers can submit reviews
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Already reviewed by this reviewer
+
+    get:
+      tags:
+        - Reviews
+      summary: Get all reviews
+      description: Retrieve all reviews with optional filtering by projectId, reviewerId, or status
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: string
+          description: Filter by project ID
+        - name: reviewerId
+          in: query
+          schema:
+            type: string
+          description: Filter by reviewer ID
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [published, removed]
+          description: Filter by review status
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /reviews/{reviewId}:
+    get:
+      tags:
+        - Reviews
+      summary: Get review by ID
+      description: Retrieve a specific review by its ID
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Review ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Review found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  review:
+                    $ref: '#/components/schemas/Review'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Reviews
+      summary: Update review
+      description: Update review content or status
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Review ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReviewRequest'
+      responses:
+        '200':
+          description: Review updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  review:
+                    $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Reviews
+      summary: Delete review
+      description: Delete a review
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Review ID
+      responses:
+        '200':
+          description: Review deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ======================== SKILLS ENDPOINTS ========================
+  /skills:
+    post:
+      tags:
+        - Skills
+      summary: Create a new skill
+      description: Add a new skill to the platform
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSkillRequest'
+      responses:
+        '201':
+          description: Skill created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  skill:
+                    $ref: '#/components/schemas/Skill'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Skill already exists
+
+    get:
+      tags:
+        - Skills
+      summary: Get all skills
+      description: Retrieve all skills with optional filtering by category or preset
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category
+        - name: preset
+          in: query
+          schema:
+            type: boolean
+          description: Filter by preset status
+      responses:
+        '200':
+          description: Skills retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  skills:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Skill'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /skills/name/{name}:
+    get:
+      tags:
+        - Skills
+      summary: Get skill by name
+      description: Retrieve a specific skill by name (case-insensitive)
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Skill name
+      responses:
+        '200':
+          description: Skill found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  skill:
+                    $ref: '#/components/schemas/Skill'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Skills
+      summary: Update skill by name
+      description: Update skill details by name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Skill name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSkillRequest'
+      responses:
+        '200':
+          description: Skill updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  skill:
+                    $ref: '#/components/schemas/Skill'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Skill name already exists
+
+    delete:
+      tags:
+        - Skills
+      summary: Delete skill by name
+      description: Delete a skill by name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Skill name
+      responses:
+        '200':
+          description: Skill deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /skills/{skillId}:
+    get:
+      tags:
+        - Skills
+      summary: Get skill by ID
+      description: Retrieve a specific skill by ID
+      parameters:
+        - name: skillId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Skill ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Skill found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  skill:
+                    $ref: '#/components/schemas/Skill'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Skills
+      summary: Update skill by ID
+      description: Update skill details by ID
+      parameters:
+        - name: skillId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Skill ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSkillRequest'
+      responses:
+        '200':
+          description: Skill updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  skill:
+                    $ref: '#/components/schemas/Skill'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Skills
+      summary: Delete skill by ID
+      description: Delete a skill by ID
+      parameters:
+        - name: skillId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Skill ID
+      responses:
+        '200':
+          description: Skill deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ======================== BADGES ENDPOINTS ========================
+  /badges:
+    post:
+      tags:
+        - Badges
+      summary: Create a new badge
+      description: Add a new badge to the platform
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBadgeRequest'
+      responses:
+        '201':
+          description: Badge created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  badge:
+                    $ref: '#/components/schemas/Badge'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Badge already exists
+
+    get:
+      tags:
+        - Badges
+      summary: Get all badges
+      description: Retrieve all badges with optional filtering by category or status
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+          description: Filter by active status
+      responses:
+        '200':
+          description: Badges retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  badges:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Badge'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /badges/name/{name}:
+    get:
+      tags:
+        - Badges
+      summary: Get badge by name
+      description: Retrieve a specific badge by name (case-insensitive)
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Badge name
+      responses:
+        '200':
+          description: Badge found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  badge:
+                    $ref: '#/components/schemas/Badge'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Badges
+      summary: Update badge by name
+      description: Update badge details by name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Badge name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBadgeRequest'
+      responses:
+        '200':
+          description: Badge updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  badge:
+                    $ref: '#/components/schemas/Badge'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Badge name already exists
+
+    delete:
+      tags:
+        - Badges
+      summary: Delete badge by name
+      description: Delete a badge by name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Badge name
+      responses:
+        '200':
+          description: Badge deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /badges/{badgeId}:
+    get:
+      tags:
+        - Badges
+      summary: Get badge by ID
+      description: Retrieve a specific badge by ID
+      parameters:
+        - name: badgeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Badge ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Badge found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  badge:
+                    $ref: '#/components/schemas/Badge'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Badges
+      summary: Update badge by ID
+      description: Update badge details by ID
+      parameters:
+        - name: badgeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Badge ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBadgeRequest'
+      responses:
+        '200':
+          description: Badge updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  badge:
+                    $ref: '#/components/schemas/Badge'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Badges
+      summary: Delete badge by ID
+      description: Delete a badge by ID
+      parameters:
+        - name: badgeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Badge ID
+      responses:
+        '200':
+          description: Badge deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ======================== CERTIFICATIONS ENDPOINTS ========================
+  /certifications/apply:
+    post:
+      tags:
+        - Certifications
+      summary: Apply for certification
+      description: Submit an application for a certification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCertificationRequest'
+      responses:
+        '201':
+          description: Certification application submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  certificationRequest:
+                    $ref: '#/components/schemas/CertificationRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /certifications:
+    get:
+      tags:
+        - Certifications
+      summary: Get all certification requests
+      description: Retrieve all certification requests (admin only)
+      responses:
+        '200':
+          description: Certification requests retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  certifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CertificationRequest'
+        '403':
+          description: Unauthorized
+
+    /certifications/{certificationId}:
+      get:
+        tags:
+          - Certifications
+        summary: Get certification by ID
+        description: Retrieve a specific certification by its ID
+        parameters:
+          - name: certificationId
+            in: path
+            required: true
+            schema:
+              type: string
+            description: Certification ID (MongoDB ObjectId)
+        responses:
+          '200':
+            description: Certification found
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    certification:
+                      $ref: '#/components/schemas/CertificationRequest'
+          '404':
+            $ref: '#/components/responses/NotFound'
+
+  /certifications/{certificationRequestId}/approve:
+    patch:
+      tags:
+        - Certifications
+      summary: Approve certification request
+      description: Approve a pending certification request
+      parameters:
+        - name: certificationRequestId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Certification request ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      responses:
+        '200':
+          description: Certification approved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  certificationRequest:
+                    $ref: '#/components/schemas/CertificationRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /certifications/{certificationRequestId}/reject:
+    patch:
+      tags:
+        - Certifications
+      summary: Reject certification request
+      description: Reject a pending certification request
+      parameters:
+        - name: certificationRequestId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Certification request ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      responses:
+        '200':
+          description: Certification rejected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  certificationRequest:
+                    $ref: '#/components/schemas/CertificationRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ======================== ACTIVITY LOGS ENDPOINTS ========================
+  /logs:
+    get:
+      tags:
+        - Activity Logs
+      summary: Get all activity logs
+      description: Retrieve all activity logs with optional filtering by userId, action, entity, entityId, or date range
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+          description: Filter by user ID
+        - name: action
+          in: query
+          schema:
+            type: string
+          description: Filter by action type
+        - name: entity
+          in: query
+          schema:
+            type: string
+          description: Filter by entity type
+        - name: entityId
+          in: query
+          schema:
+            type: string
+          description: Filter by entity ID
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter from start date (ISO 8601)
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter until end date (ISO 8601)
+      responses:
+        '200':
+          description: Activity logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivityLog'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    delete:
+      tags:
+        - Activity Logs
+      summary: Delete all logs
+      description: Delete all activity logs (use with caution)
+      responses:
+        '200':
+          description: All logs deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  deletedCount:
+                    type: number
+
+  /logs/user/{userId}:
+    get:
+      tags:
+        - Activity Logs
+      summary: Get logs by user
+      description: Retrieve all activity logs performed by a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: Logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivityLog'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /logs/entity/{entity}:
+    get:
+      tags:
+        - Activity Logs
+      summary: Get logs by entity type
+      description: Retrieve all activity logs for a specific entity type
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Entity type (User, Project, Review, Skill, Badge, Certification)
+      responses:
+        '200':
+          description: Logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivityLog'
+
+  /logs/entity/{entity}/{entityId}:
+    get:
+      tags:
+        - Activity Logs
+      summary: Get logs for specific entity
+      description: Retrieve all activity logs for a specific entity record
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Entity type
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Entity ID
+      responses:
+        '200':
+          description: Logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivityLog'
+
+  /logs/old:
+    delete:
+      tags:
+        - Activity Logs
+      summary: Delete logs before date
+      description: Delete activity logs before a specified date
+      parameters:
+        - name: beforeDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: Delete logs before this date (ISO 8601 format)
+      responses:
+        '200':
+          description: Old logs deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  deletedCount:
+                    type: number
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+  schemas:
+    # ======================== REQUEST SCHEMAS ========================
+    RegisterUserRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - role
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [developer, reviewer]
+        bio:
+          type: string
+          maxLength: 500
+        githubUrl:
+          type: string
+          format: uri
+        avatarUrl:
+          type: string
+          format: uri
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        bio:
+          type: string
+          maxLength: 500
+        githubUrl:
+          type: string
+          format: uri
+        avatarUrl:
+          type: string
+          format: uri
+
+    CreateProjectRequest:
+      type: object
+      required:
+        - userId
+        - title
+        - description
+      properties:
+        userId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        techStack:
+          type: array
+          items:
+            type: string
+        repositoryUrl:
+          type: string
+          format: uri
+        demoUrl:
+          type: string
+          format: uri
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        techStack:
+          type: array
+          items:
+            type: string
+        repositoryUrl:
+          type: string
+          format: uri
+        demoUrl:
+          type: string
+          format: uri
+
+    CreateReviewRequest:
+      type: object
+      required:
+        - projectId
+        - reviewerId
+        - overallRating
+        - codeQualityScore
+        - creativityScore
+        - cleanCodeScore
+      properties:
+        projectId:
+          type: string
+        reviewerId:
+          type: string
+        overallRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        codeQualityScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        creativityScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        cleanCodeScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        wouldHire:
+          type: boolean
+        generalFeedback:
+          type: string
+          maxLength: 1000
+        suggestions:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [published, removed]
+
+    UpdateReviewRequest:
+      type: object
+      properties:
+        overallRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        codeQualityScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        creativityScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        cleanCodeScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        wouldHire:
+          type: boolean
+        generalFeedback:
+          type: string
+          maxLength: 1000
+        suggestions:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [published, removed]
+
+    CreateSkillRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+        description:
+          type: string
+        category:
+          type: string
+        icon:
+          type: string
+          format: uri
+
+    UpdateSkillRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        description:
+          type: string
+        category:
+          type: string
+        icon:
+          type: string
+          format: uri
+
+    CreateBadgeRequest:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          minLength: 2
+        description:
+          type: string
+          minLength: 10
+        icon:
+          type: string
+        category:
+          type: string
+          enum: [achievement, skill-master, reviewer, contributor, other]
+        criteria:
+          type: string
+          minLength: 5
+        isActive:
+          type: boolean
+
+    UpdateBadgeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        description:
+          type: string
+          minLength: 10
+        icon:
+          type: string
+        category:
+          type: string
+          enum: [achievement, skill-master, reviewer, contributor, other]
+        criteria:
+          type: string
+          minLength: 5
+        isActive:
+          type: boolean
+
+    CreateCertificationRequest:
+      type: object
+      required:
+        - userId
+        - certificationName
+      properties:
+        userId:
+          type: string
+        certificationName:
+          type: string
+        issuer:
+          type: string
+        certificationDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+
+    # ======================== MODEL SCHEMAS ========================
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [developer, reviewer]
+        bio:
+          type: string
+        githubUrl:
+          type: string
+        avatarUrl:
+          type: string
+        isVerifiedReviewer:
+          type: boolean
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skill'
+        badges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Badge'
+        followers:
+          type: array
+          items:
+            type: string
+        following:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Project:
+      type: object
+      properties:
+        _id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        techStack:
+          type: array
+          items:
+            type: string
+        repositoryUrl:
+          type: string
+        demoUrl:
+          type: string
+        status:
+          type: string
+          enum: [seeking-review, reviewed, archived]
+        aggregateRating:
+          type: number
+        aggregateCodeQuality:
+          type: number
+        aggregateCreativity:
+          type: number
+        aggregateCleanCode:
+          type: number
+        totalReviews:
+          type: integer
+        hireVotes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Review:
+      type: object
+      properties:
+        _id:
+          type: string
+        project:
+          $ref: '#/components/schemas/Project'
+        reviewer:
+          $ref: '#/components/schemas/User'
+        overallRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        codeQualityScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        creativityScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        cleanCodeScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        wouldHire:
+          type: boolean
+        generalFeedback:
+          type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [published, removed]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Skill:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        icon:
+          type: string
+        preset:
+          type: boolean
+        users:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Badge:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        category:
+          type: string
+        criteria:
+          type: string
+        isActive:
+          type: boolean
+        users:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CertificationRequest:
+      type: object
+      properties:
+        _id:
+          type: string
+        user:
+          type: string
+        certificationName:
+          type: string
+        issuer:
+          type: string
+        certificationDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        approvalMessage:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ActivityLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        action:
+          type: string
+        entity:
+          type: string
+        entityId:
+          type: string
+        metadata:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        errorCode:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+    BadRequest:
+      description: Bad request - validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,214 @@
+<%- include('../partials/head', { pageTitle, bodyClass }) %>
+
+<div class="landing">
+  <header class="landing-header">
+    <div class="container">
+      <div class="landing-nav">
+        <a href="/" class="landing-logo">
+          <img src="/images/devrank-logo.svg" alt="DevRank" class="landing-logo-mark" />
+          DevRank
+        </a>
+        <div class="landing-nav-links">
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How it Works</a>
+          <a href="#testimonials">Testimonials</a>
+        </div>
+        <div class="landing-nav-actions">
+          <a href="/login" class="btn btn-secondary">Sign in</a>
+          <a href="/register" class="btn btn-primary">Sign up</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="landing-hero">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          Build Your <span class="text-gradient">Verified</span> Developer Profile
+        </h1>
+        <p class="hero-subtitle">
+          Get peer-reviewed feedback on your projects from certified reviewers.
+          Build a portfolio that proves your skills to hiring teams.
+        </p>
+        <div class="hero-actions">
+          <a href="/register" class="btn btn-primary btn-lg">
+            Get Started Free
+            <i data-lucide="arrow-right" width="20" height="20"></i>
+          </a>
+          <a href="/explore" class="btn btn-outline btn-lg">Explore Profiles</a>
+        </div>
+        <div class="hero-stats">
+          <% (landingStats || []).forEach((stat) => { %>
+            <div class="hero-stat">
+              <span class="hero-stat-value"><%= stat.value %></span>
+              <span class="hero-stat-label"><%= stat.label %></span>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-card">
+          <div class="hero-card-header">
+            <div class="avatar avatar-lg">JD</div>
+            <div>
+              <h3>John Developer</h3>
+              <p class="text-secondary">Full Stack Developer</p>
+            </div>
+            <div class="hero-score">
+              <i data-lucide="star" class="star filled" width="16" height="16"></i>
+              4.8
+            </div>
+          </div>
+          <div class="hero-card-skills">
+            <span class="tag">React</span>
+            <span class="tag">Node.js</span>
+            <span class="tag">TypeScript</span>
+            <span class="tag">MongoDB</span>
+          </div>
+          <div class="hero-card-stats">
+            <div><strong>12</strong> Projects</div>
+            <div><strong>48</strong> Reviews</div>
+            <div><strong>92%</strong> Would Hire</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="landing-features">
+    <div class="container">
+      <h2 class="section-title">Why DevRank?</h2>
+      <p class="section-subtitle">Build a portfolio that actually matters to hiring teams</p>
+      <% const featureIcons = ["git-pull-request", "star", "shield", "trending-up", "users", "code-2"]; %>
+      <div class="features-grid">
+        <% (landingFeatures || []).forEach((feature, index) => { %>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i data-lucide="<%= featureIcons[index] || 'code-2' %>"></i>
+            </div>
+            <h3><%= feature.title %></h3>
+            <p><%= feature.text %></p>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works" class="landing-how">
+    <div class="container">
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-subtitle">Get started in three simple steps</p>
+      <div class="how-steps">
+        <% (landingSteps || []).forEach((step) => { %>
+          <div class="how-step">
+            <div class="how-step-number"><%= step.step %></div>
+            <h3><%= step.title %></h3>
+            <p><%= step.text %></p>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <section id="testimonials" class="landing-review-example">
+    <div class="container">
+      <h2 class="section-title">What Reviews Look Like</h2>
+      <div class="review-example-card">
+        <div class="review-example-header">
+          <div class="avatar">SR</div>
+          <div>
+            <strong>Sarah Reviewer</strong>
+            <div class="text-secondary text-sm">Certified Reviewer • 10+ years experience</div>
+          </div>
+        </div>
+        <div class="review-example-scores">
+          <div class="review-score">
+            <span class="review-score-label">Overall</span>
+            <div class="star-rating">
+              <i data-lucide="star" class="star filled" width="16" height="16"></i>
+              <i data-lucide="star" class="star filled" width="16" height="16"></i>
+              <i data-lucide="star" class="star filled" width="16" height="16"></i>
+              <i data-lucide="star" class="star filled" width="16" height="16"></i>
+              <i data-lucide="star" class="star" width="16" height="16"></i>
+            </div>
+          </div>
+          <div class="review-score">
+            <span class="review-score-label">Code Quality</span>
+            <span class="review-score-value">4.5</span>
+          </div>
+          <div class="review-score">
+            <span class="review-score-label">Creativity</span>
+            <span class="review-score-value">5.0</span>
+          </div>
+          <div class="review-score">
+            <span class="review-score-label">Clean Code</span>
+            <span class="review-score-value">4.0</span>
+          </div>
+        </div>
+        <div class="review-example-feedback">
+          <p>"Excellent project structure and clear separation of concerns. The API design follows RESTful conventions nicely. I particularly liked the error handling middleware implementation."</p>
+        </div>
+        <div class="review-example-verdict">
+          <i data-lucide="check-circle" class="text-success" width="20" height="20"></i>
+          <span>Would Hire</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-cta">
+    <div class="container">
+      <h2>Ready to Build Your Verified Portfolio?</h2>
+      <p>Join thousands of developers showcasing their real skills</p>
+      <div class="cta-actions">
+        <a href="/register" class="btn btn-primary btn-lg">Create Free Account</a>
+      </div>
+      <div class="cta-note">
+        <span class="text-secondary">Demo credentials: </span>
+        <code>developer / password123</code>
+        <span class="text-secondary"> or </span>
+        <code>admin / admin123</code>
+      </div>
+    </div>
+  </section>
+
+  <footer class="landing-footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <a href="/" class="landing-logo">
+            <img src="/images/devrank-logo.svg" alt="DevRank" class="landing-logo-mark" />
+            DevRank
+          </a>
+          <p class="text-secondary">The developer portfolio platform with peer-reviewed projects.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-column">
+            <h4>Platform</h4>
+            <a href="/explore">Explore</a>
+            <a href="/skills">Skills</a>
+            <a href="#">For Companies</a>
+          </div>
+          <div class="footer-column">
+            <h4>Resources</h4>
+            <a href="#">Documentation</a>
+            <a href="#">API</a>
+            <a href="#">Help Center</a>
+          </div>
+          <div class="footer-column">
+            <h4>Company</h4>
+            <a href="#">About</a>
+            <a href="#">Blog</a>
+            <a href="#">Careers</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 DevRank. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<%- include('../partials/foot') %>
