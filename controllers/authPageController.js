@@ -76,12 +76,17 @@ exports.handleRegister = async (req, res) => {
       role: "developer",
     });
 
-    res.cookie("devrank_user", encodeURIComponent(user._id.toString()), {
+    const userId = user._id.toString();
+    console.log("[Register] User created with ID:", userId);
+    
+    res.cookie("devrank_user", encodeURIComponent(userId), {
       httpOnly: true,
       sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7,
+      path: "/",
     });
 
+    console.log("[Register] Cookie set, redirecting to /dashboard");
     return res.redirect("/dashboard");
   } catch (error) {
     if (error.statusCode === 409) {

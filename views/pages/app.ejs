@@ -3,6 +3,7 @@
   const currentUser = user || {};
   const currentUserName = currentUser.name || "User";
   const firstName = currentUserName.split(" ")[0];
+  const userCertificationStatus = typeof certificationStatus !== 'undefined' ? certificationStatus : null;
   const normalizedSkills = (currentUser.skills || []).map((skill, idx) => {
     if (typeof skill === "string") {
       return { id: "skill-" + idx, name: skill, category: "General" };
@@ -20,7 +21,7 @@
   });
   const certStatus = isReviewer
     ? "certified"
-    : (certificationStatus || (ownCertification ? ownCertification.status : "not-applied"));
+    : (userCertificationStatus || (ownCertification ? ownCertification.status : "not-applied"));
   const reviewsList = reviews || [];
   const hireVotes = reviewsList.filter((reviewItem) => reviewItem.wouldHire).length;
   const hireRate = reviewsList.length > 0 ? Math.round((hireVotes / reviewsList.length) * 100) : 0;
@@ -1495,7 +1496,7 @@
 
             <div class="form-group">
               <label class="form-label">LinkedIn Profile (optional)</label>
-              <input type="url" class="form-input" placeholder="https://linkedin.com/in/yourprofile" />
+              <input type="url" name="linkedinProfile" class="form-input" placeholder="https://linkedin.com/in/yourprofile" />
             </div>
 
             <div class="form-actions">
@@ -1536,12 +1537,21 @@
           <form action="/explore" method="get" class="explore-filters">
             <input type="hidden" name="q" value="<%= exploreSearchQuery || '' %>" />
             <input type="hidden" name="developers" value="<%= exploreIncludeDevelopers ? '1' : '0' %>" />
-            <select class="form-select" name="status" onchange="this.form.submit()">
-              <option value="all" <%= (exploreStatusFilter || 'all') === 'all' ? 'selected' : '' %>>All Status</option>
-              <option value="reviewed" <%= exploreStatusFilter === 'reviewed' ? 'selected' : '' %>>Reviewed</option>
-              <option value="seeking-review" <%= exploreStatusFilter === 'seeking-review' ? 'selected' : '' %>>Seeking Review</option>
-              <option value="draft" <%= exploreStatusFilter === 'draft' ? 'selected' : '' %>>Draft</option>
-            </select>
+            <% if (exploreIncludeDevelopers) { %>
+              <select class="form-select" name="role" onchange="this.form.submit()">
+                <option value="all" <%= (exploreRoleFilter || 'all') === 'all' ? 'selected' : '' %>>All Users</option>
+                <option value="developer" <%= exploreRoleFilter === 'developer' ? 'selected' : '' %>>Developers</option>
+                <option value="reviewer" <%= exploreRoleFilter === 'reviewer' ? 'selected' : '' %>>Reviewers</option>
+                <option value="both" <%= exploreRoleFilter === 'both' ? 'selected' : '' %>>Developers & Reviewers</option>
+              </select>
+            <% } else { %>
+              <select class="form-select" name="status" onchange="this.form.submit()">
+                <option value="all" <%= (exploreStatusFilter || 'all') === 'all' ? 'selected' : '' %>>All Status</option>
+                <option value="reviewed" <%= exploreStatusFilter === 'reviewed' ? 'selected' : '' %>>Reviewed</option>
+                <option value="seeking-review" <%= exploreStatusFilter === 'seeking-review' ? 'selected' : '' %>>Seeking Review</option>
+                <option value="draft" <%= exploreStatusFilter === 'draft' ? 'selected' : '' %>>Draft</option>
+              </select>
+            <% } %>
           </form>
 
           <% if (exploreActiveTab === 'developers') { %>

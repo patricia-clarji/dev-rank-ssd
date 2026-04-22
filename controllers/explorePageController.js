@@ -7,6 +7,7 @@ exports.explore = async (req, res) => {
     const sessionUser = req.currentUser;
     const query = String(req.query.q || "").trim().toLowerCase();
     const status = String(req.query.status || "all").trim();
+    const role = String(req.query.role || "all").trim();
     const includeDevelopers = req.query.developers === "1" || req.query.developers === "on";
     const activeTab = includeDevelopers ? "developers" : "projects";
 
@@ -32,20 +33,36 @@ exports.explore = async (req, res) => {
         })
       : projects;
 
-    const filteredUsers = includeDevelopers && query
+    const filteredUsers = includeDevelopers
       ? exploreUsers.filter((user) => {
-          const haystack = [
-            user.name,
-            user.username,
-            user.bio,
-            ...(user.skills || []).map((skill) => (typeof skill === "string" ? skill : skill.name)),
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-          return haystack.includes(query);
+          // Filter by role (developer, reviewer, or both)
+          let roleMatch = true;
+          if (role === "developer") {
+            roleMatch = user.role === "developer";
+          } else if (role === "reviewer") {
+            roleMatch = user.role === "reviewer";
+          } else if (role === "both") {
+            roleMatch = user.role === "developer" || user.role === "reviewer";
+          }
+
+          // Filter by search query
+          let queryMatch = !query;
+          if (query) {
+            const haystack = [
+              user.name,
+              user.username,
+              user.bio,
+              ...(user.skills || []).map((skill) => (typeof skill === "string" ? skill : skill.name)),
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            queryMatch = haystack.includes(query);
+          }
+
+          return roleMatch && queryMatch;
         })
-      : (includeDevelopers ? exploreUsers : []);
+      : [];
 
     const userFlags = getUserFlags(sessionUser);
 
@@ -59,6 +76,7 @@ exports.explore = async (req, res) => {
       exploreProjectsTotal: projects.length,
       exploreSearchQuery: query,
       exploreStatusFilter: status,
+      exploreRoleFilter: role,
       exploreIncludeDevelopers: includeDevelopers,
       exploreActiveTab: activeTab,
       isReviewer: userFlags.isReviewer,

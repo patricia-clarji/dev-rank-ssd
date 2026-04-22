@@ -37,6 +37,11 @@ exports.applyCertification = async (req, res) => {
   const sessionUser = req.currentUser;
   const userFlags = getUserFlags(sessionUser);
 
+  // Prevent reviewers and admins from applying for certification
+  if (userFlags.isReviewer) {
+    return res.redirect("/certifications");
+  }
+
   return renderApp(res, "certification-apply", {
     pageTitle: "Apply for certification",
     activeNav: "certifications",
@@ -49,6 +54,12 @@ exports.applyCertification = async (req, res) => {
 exports.submitCertification = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
+    const userFlags = getUserFlags(sessionUser);
+
+    // Prevent reviewers and admins from submitting certification
+    if (userFlags.isReviewer) {
+      return res.redirect("/certifications");
+    }
 
     await certificationService.apply({
       userId: sessionUser._id,

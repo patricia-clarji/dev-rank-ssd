@@ -20,10 +20,16 @@ async function attachCurrentUser(req, res, next) {
       return next();
     }
 
-    const user = await User.findById(userId).populate("skills");
-    req.currentUser = user || null;
+    try {
+      const user = await User.findById(userId).populate("skills");
+      req.currentUser = user || null;
+    } catch (dbError) {
+      console.error("[Auth] Error finding user:", dbError.message);
+      req.currentUser = null;
+    }
     return next();
   } catch (error) {
+    console.error("[Auth] Error in attachCurrentUser:", error.message);
     req.currentUser = null;
     return next();
   }
