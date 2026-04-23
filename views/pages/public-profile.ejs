@@ -9,170 +9,326 @@
     .toUpperCase();
 %>
 
-<div class="public-profile-page">
-  <header class="public-header">
-    <div class="container">
-      <a href="/" class="landing-logo">
-        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="32" height="32" rx="6" fill="#0d1117"></rect>
-          <text x="16" y="22" font-family="Arial Black, sans-serif" font-size="14" font-weight="bold" fill="#58a6ff" text-anchor="middle">DR</text>
-        </svg>
-        DevRank
-      </a>
-      <div class="public-header-actions">
-        <a href="/login" class="btn btn-secondary">Sign in</a>
-        <a href="/register" class="btn btn-primary">Sign up</a>
-      </div>
-    </div>
-  </header>
-
-  <div class="profile-page">
-    <div class="container">
-      <div class="profile-container">
-        <aside class="profile-sidebar">
-          <div class="profile-avatar-section">
-            <div class="avatar avatar-xl"><%= initials %></div>
-            <div class="profile-score">
-              <i data-lucide="star" class="star filled" width="16" height="16"></i>
-              <span><%= Number(user.profileScore || 0).toFixed(1) %></span>
-            </div>
-          </div>
-
-          <div class="profile-name-section">
-            <h1><%= user.name %></h1>
-            <p class="profile-username">@<%= user.username %></p>
-            <% if (user.role === 'reviewer' || user.role === 'admin') { %>
-              <span class="badge badge-success">
-                <i data-lucide="check-circle" width="12" height="12"></i>
-                Certified Reviewer
-              </span>
-            <% } %>
-          </div>
-
-          <% if (user.bio) { %>
-            <p class="profile-bio"><%= user.bio %></p>
-          <% } %>
-
-          <div class="profile-details">
-            <% if (user.company) { %>
-              <div class="profile-detail">
-                <i data-lucide="building" width="16" height="16"></i>
-                <span><%= user.company %></span>
-              </div>
-            <% } %>
-            <% if (user.location) { %>
-              <div class="profile-detail">
-                <i data-lucide="map-pin" width="16" height="16"></i>
-                <span><%= user.location %></span>
-              </div>
-            <% } %>
-            <% if (user.github) { %>
-              <div class="profile-detail">
-                <i data-lucide="github" width="16" height="16"></i>
-                <a href="<%= user.github %>" target="_blank" rel="noopener noreferrer"><%= user.github.replace('https://github.com/', '') %></a>
-              </div>
-            <% } %>
-            <% if (user.linkedin) { %>
-              <div class="profile-detail">
-                <i data-lucide="linkedin" width="16" height="16"></i>
-                <a href="<%= user.linkedin %>" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-              </div>
-            <% } %>
-            <% if (user.website) { %>
-              <div class="profile-detail">
-                <i data-lucide="link" width="16" height="16"></i>
-                <a href="<%= user.website %>" target="_blank" rel="noopener noreferrer"><%= user.website.replace('https://', '') %></a>
-              </div>
-            <% } %>
-            <div class="profile-detail">
-              <i data-lucide="calendar" width="16" height="16"></i>
-              <span>Joined <%= new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) %></span>
-            </div>
-          </div>
-
-          <% if (user.skills && user.skills.length) { %>
-            <div class="profile-skills">
-              <h3>Skills</h3>
-              <div class="skills-list">
-                <% user.skills.forEach((skill, idx) => {
-                  const skillName = typeof skill === 'string' ? skill : skill.name;
-                  const skillId = typeof skill === 'string' ? ('skill-' + idx) : skill._id;
-                %>
-                  <span class="tag" data-skill-id="<%= skillId %>"><%= skillName %></span>
-                <% }) %>
-              </div>
-            </div>
-          <% } %>
-        </aside>
-
-        <main class="profile-main">
-          <div class="profile-stats-row">
-            <div class="profile-stat">
-              <i data-lucide="folder-git-2" width="20" height="20"></i>
-              <span class="stat-value"><%= user.projects || projects.length %></span>
-              <span class="stat-label">Projects</span>
-            </div>
-            <div class="profile-stat">
-              <i data-lucide="message-square" width="20" height="20"></i>
-              <span class="stat-value"><%= user.reviews || reviews.length %></span>
-              <span class="stat-label">Reviews</span>
-            </div>
-            <div class="profile-stat">
-              <i data-lucide="star" width="20" height="20"></i>
-              <span class="stat-value"><%= Number(user.profileScore || 0).toFixed(1) %></span>
-              <span class="stat-label">Avg Rating</span>
-            </div>
-            <div class="profile-stat">
-              <i data-lucide="check-circle" width="20" height="20"></i>
-              <span class="stat-value"><%= user.wouldHireRate || 80 %>%</span>
-              <span class="stat-label">Would Hire</span>
-            </div>
-          </div>
-
-          <div class="profile-section">
-            <div class="section-header">
-              <h2>Projects</h2>
-            </div>
-
-            <div class="projects-grid">
-              <% projects.forEach((project) => { %>
-                <div class="project-card">
-                  <div class="project-card-header">
-                    <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
-                    <span class="project-card-title"><%= project.title %></span>
-                  </div>
-                  <p class="project-card-desc"><%= project.description %></p>
-                  <div class="project-card-stack">
-                    <% project.techStack.slice(0, 3).forEach((tech) => { %>
-                      <span class="tag"><%= tech %></span>
-                    <% }) %>
-                  </div>
-                  <div class="project-card-footer">
-                    <% if ((project.reviewCount || 0) > 0) { %>
-                      <span class="project-card-rating">
-                        <i data-lucide="star" class="star filled" width="14" height="14"></i>
-                        <%= Number(project.averageRating || 0).toFixed(1) %>
-                      </span>
-                      <span class="text-muted">•</span>
-                      <span class="text-muted"><%= project.reviewCount %> reviews</span>
-                    <% } else { %>
-                      <span class="text-muted">No reviews yet</span>
-                    <% } %>
+<% if (isLoggedIn) { %>
+  <!-- Logged in: Show as part of the website -->
+  <div class="layout">
+    <%- include('../partials/header', { user: currentUser, isAdmin: false }) %>
+    <div class="layout-body">
+      <%- include('../partials/sidebar', { activeNav: 'explore', isAdmin: false, isReviewer: false, page: 'public-profile' }) %>
+      <main class="layout-main">
+        <div class="profile-page">
+          <div class="container">
+            <div class="profile-container">
+              <aside class="profile-sidebar">
+                <div class="profile-avatar-section">
+                  <div class="avatar avatar-xl"><%= initials %></div>
+                  <div class="profile-score">
+                    <i data-lucide="star" class="star filled" width="16" height="16"></i>
+                    <span><%= Number(user.profileScore || 0).toFixed(1) %></span>
                   </div>
                 </div>
-              <% }) %>
+
+                <div class="profile-name-section">
+                  <h1><%= user.name %></h1>
+                  <p class="profile-username">@<%= user.username %></p>
+                  <% if (user.role === 'reviewer' || user.role === 'admin') { %>
+                    <span class="badge badge-success">
+                      <i data-lucide="check-circle" width="12" height="12"></i>
+                      Certified Reviewer
+                    </span>
+                  <% } %>
+                </div>
+
+                <% if (user.bio) { %>
+                  <p class="profile-bio"><%= user.bio %></p>
+                <% } %>
+
+                <div class="profile-details">
+                  <% if (user.company) { %>
+                    <div class="profile-detail">
+                      <i data-lucide="building" width="16" height="16"></i>
+                      <span><%= user.company %></span>
+                    </div>
+                  <% } %>
+                  <% if (user.location) { %>
+                    <div class="profile-detail">
+                      <i data-lucide="map-pin" width="16" height="16"></i>
+                      <span><%= user.location %></span>
+                    </div>
+                  <% } %>
+                  <% if (user.github) { %>
+                    <div class="profile-detail">
+                      <i data-lucide="github" width="16" height="16"></i>
+                      <a href="<%= user.github %>" target="_blank" rel="noopener noreferrer"><%= user.github.replace('https://github.com/', '') %></a>
+                    </div>
+                  <% } %>
+                  <% if (user.linkedin) { %>
+                    <div class="profile-detail">
+                      <i data-lucide="linkedin" width="16" height="16"></i>
+                      <a href="<%= user.linkedin %>" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                    </div>
+                  <% } %>
+                  <% if (user.website) { %>
+                    <div class="profile-detail">
+                      <i data-lucide="link" width="16" height="16"></i>
+                      <a href="<%= user.website %>" target="_blank" rel="noopener noreferrer"><%= user.website.replace('https://', '') %></a>
+                    </div>
+                  <% } %>
+                  <div class="profile-detail">
+                    <i data-lucide="calendar" width="16" height="16"></i>
+                    <span>Joined <%= new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) %></span>
+                  </div>
+                </div>
+
+                <% if (user.skills && user.skills.length) { %>
+                  <div class="profile-skills">
+                    <h3>Skills</h3>
+                    <div class="skills-list">
+                      <% user.skills.forEach((skill, idx) => {
+                        const skillName = typeof skill === 'string' ? skill : skill.name;
+                        const skillId = typeof skill === 'string' ? ('skill-' + idx) : skill._id;
+                      %>
+                        <span class="tag" data-skill-id="<%= skillId %>"><%= skillName %></span>
+                      <% }) %>
+                    </div>
+                  </div>
+                <% } %>
+              </aside>
+
+              <main class="profile-main">
+                <div class="profile-stats-row">
+                  <div class="profile-stat">
+                    <i data-lucide="folder-git-2" width="20" height="20"></i>
+                    <span class="stat-value"><%= user.projects || projects.length %></span>
+                    <span class="stat-label">Projects</span>
+                  </div>
+                  <div class="profile-stat">
+                    <i data-lucide="message-square" width="20" height="20"></i>
+                    <span class="stat-value"><%= user.reviews || reviews.length %></span>
+                    <span class="stat-label">Reviews</span>
+                  </div>
+                  <div class="profile-stat">
+                    <i data-lucide="star" width="20" height="20"></i>
+                    <span class="stat-value"><%= Number(user.profileScore || 0).toFixed(1) %></span>
+                    <span class="stat-label">Avg Rating</span>
+                  </div>
+                  <div class="profile-stat">
+                    <i data-lucide="check-circle" width="20" height="20"></i>
+                    <span class="stat-value"><%= user.wouldHireRate || 80 %>%</span>
+                    <span class="stat-label">Would Hire</span>
+                  </div>
+                </div>
+
+                <div class="profile-section">
+                  <div class="section-header">
+                    <h2>Projects</h2>
+                  </div>
+
+                  <div class="projects-grid">
+                    <% (projects || []).forEach((project) => { %>
+                      <div class="project-card">
+                        <div class="project-card-header">
+                          <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
+                          <span class="project-card-title"><%= project.title %></span>
+                        </div>
+                        <p class="project-card-desc"><%= project.description %></p>
+                        <div class="project-card-stack">
+                          <% (project.techStack || []).slice(0, 3).forEach((tech) => { %>
+                            <span class="tag"><%= tech %></span>
+                          <% }) %>
+                        </div>
+                        <div class="project-card-footer">
+                          <% if ((project.reviewCount || 0) > 0) { %>
+                            <span class="project-card-rating">
+                              <i data-lucide="star" class="star filled" width="14" height="14"></i>
+                              <%= Number(project.averageRating || 0).toFixed(1) %>
+                            </span>
+                            <span class="text-muted">•</span>
+                            <span class="text-muted"><%= project.reviewCount %> reviews</span>
+                          <% } else { %>
+                            <span class="text-muted">No reviews yet</span>
+                          <% } %>
+                        </div>
+                      </div>
+                    <% }) %>
+                  </div>
+                </div>
+              </main>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   </div>
 
-  <footer class="public-footer">
-    <div class="container">
-      <p class="text-muted">&copy; 2024 DevRank. All rights reserved.</p>
+<% } else { %>
+  <!-- Not logged in: Show as standalone public profile -->
+  <div class="public-profile-page">
+    <header class="public-header">
+      <div class="container">
+        <a href="/" class="landing-logo">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#0d1117"></rect>
+            <text x="16" y="22" font-family="Arial Black, sans-serif" font-size="14" font-weight="bold" fill="#58a6ff" text-anchor="middle">DR</text>
+          </svg>
+          DevRank
+        </a>
+        <div class="public-header-actions">
+          <a href="/login" class="btn btn-secondary">Sign in</a>
+          <a href="/register" class="btn btn-primary">Sign up</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="profile-page">
+      <div class="container">
+        <div class="profile-container">
+          <aside class="profile-sidebar">
+            <div class="profile-avatar-section">
+              <div class="avatar avatar-xl"><%= initials %></div>
+              <div class="profile-score">
+                <i data-lucide="star" class="star filled" width="16" height="16"></i>
+                <span><%= Number(user.profileScore || 0).toFixed(1) %></span>
+              </div>
+            </div>
+
+            <div class="profile-name-section">
+              <h1><%= user.name %></h1>
+              <p class="profile-username">@<%= user.username %></p>
+              <% if (user.role === 'reviewer' || user.role === 'admin') { %>
+                <span class="badge badge-success">
+                  <i data-lucide="check-circle" width="12" height="12"></i>
+                  Certified Reviewer
+                </span>
+              <% } %>
+            </div>
+
+            <% if (user.bio) { %>
+              <p class="profile-bio"><%= user.bio %></p>
+            <% } %>
+
+            <div class="profile-details">
+              <% if (user.company) { %>
+                <div class="profile-detail">
+                  <i data-lucide="building" width="16" height="16"></i>
+                  <span><%= user.company %></span>
+                </div>
+              <% } %>
+              <% if (user.location) { %>
+                <div class="profile-detail">
+                  <i data-lucide="map-pin" width="16" height="16"></i>
+                  <span><%= user.location %></span>
+                </div>
+              <% } %>
+              <% if (user.github) { %>
+                <div class="profile-detail">
+                  <i data-lucide="github" width="16" height="16"></i>
+                  <a href="<%= user.github %>" target="_blank" rel="noopener noreferrer"><%= user.github.replace('https://github.com/', '') %></a>
+                </div>
+              <% } %>
+              <% if (user.linkedin) { %>
+                <div class="profile-detail">
+                  <i data-lucide="linkedin" width="16" height="16"></i>
+                  <a href="<%= user.linkedin %>" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                </div>
+              <% } %>
+              <% if (user.website) { %>
+                <div class="profile-detail">
+                  <i data-lucide="link" width="16" height="16"></i>
+                  <a href="<%= user.website %>" target="_blank" rel="noopener noreferrer"><%= user.website.replace('https://', '') %></a>
+                </div>
+              <% } %>
+              <div class="profile-detail">
+                <i data-lucide="calendar" width="16" height="16"></i>
+                <span>Joined <%= new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) %></span>
+              </div>
+            </div>
+
+            <% if (user.skills && user.skills.length) { %>
+              <div class="profile-skills">
+                <h3>Skills</h3>
+                <div class="skills-list">
+                  <% user.skills.forEach((skill, idx) => {
+                    const skillName = typeof skill === 'string' ? skill : skill.name;
+                    const skillId = typeof skill === 'string' ? ('skill-' + idx) : skill._id;
+                  %>
+                    <span class="tag" data-skill-id="<%= skillId %>"><%= skillName %></span>
+                  <% }) %>
+                </div>
+              </div>
+            <% } %>
+          </aside>
+
+          <main class="profile-main">
+            <div class="profile-stats-row">
+              <div class="profile-stat">
+                <i data-lucide="folder-git-2" width="20" height="20"></i>
+                <span class="stat-value"><%= user.projects || projects.length %></span>
+                <span class="stat-label">Projects</span>
+              </div>
+              <div class="profile-stat">
+                <i data-lucide="message-square" width="20" height="20"></i>
+                <span class="stat-value"><%= user.reviews || reviews.length %></span>
+                <span class="stat-label">Reviews</span>
+              </div>
+              <div class="profile-stat">
+                <i data-lucide="star" width="20" height="20"></i>
+                <span class="stat-value"><%= Number(user.profileScore || 0).toFixed(1) %></span>
+                <span class="stat-label">Avg Rating</span>
+              </div>
+              <div class="profile-stat">
+                <i data-lucide="check-circle" width="20" height="20"></i>
+                <span class="stat-value"><%= user.wouldHireRate || 80 %>%</span>
+                <span class="stat-label">Would Hire</span>
+              </div>
+            </div>
+
+            <div class="profile-section">
+              <div class="section-header">
+                <h2>Projects</h2>
+              </div>
+
+              <div class="projects-grid">
+                <% (projects || []).forEach((project) => { %>
+                  <div class="project-card">
+                    <div class="project-card-header">
+                      <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
+                      <span class="project-card-title"><%= project.title %></span>
+                    </div>
+                    <p class="project-card-desc"><%= project.description %></p>
+                    <div class="project-card-stack">
+                      <% (project.techStack || []).slice(0, 3).forEach((tech) => { %>
+                        <span class="tag"><%= tech %></span>
+                      <% }) %>
+                    </div>
+                    <div class="project-card-footer">
+                      <% if ((project.reviewCount || 0) > 0) { %>
+                        <span class="project-card-rating">
+                          <i data-lucide="star" class="star filled" width="14" height="14"></i>
+                          <%= Number(project.averageRating || 0).toFixed(1) %>
+                        </span>
+                        <span class="text-muted">•</span>
+                        <span class="text-muted"><%= project.reviewCount %> reviews</span>
+                      <% } else { %>
+                        <span class="text-muted">No reviews yet</span>
+                      <% } %>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
     </div>
-  </footer>
-</div>
+
+    <footer class="public-footer">
+      <div class="container">
+        <p class="text-muted">&copy; 2024 DevRank. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+<% } %>
 
 <%- include('../partials/foot') %>

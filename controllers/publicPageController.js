@@ -38,6 +38,8 @@ exports.publicProfile = async (req, res) => {
       pageTitle: `${user.name} | DevRank`,
       bodyClass: "public-body",
       user: mapUser(user),
+      currentUser: req.currentUser || null,
+      isLoggedIn: Boolean(req.currentUser),
       ...content,
     });
   } catch (error) {

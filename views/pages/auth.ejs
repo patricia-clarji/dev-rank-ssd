@@ -1,5 +1,7 @@
 <%- include('../partials/head', { pageTitle, bodyClass }) %>
 
+<%- include('../partials/toast', { errorMessage, successMessage, warningMessage }) %>
+
 <div class="auth-page <%= mode === 'register' ? 'auth-page-register' : '' %>">
   <div class="auth-container">
     <a href="/" class="auth-logo">

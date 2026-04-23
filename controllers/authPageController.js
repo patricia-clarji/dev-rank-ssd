@@ -3,20 +3,43 @@ const User = require("../models/mongo/User");
 const userService = require("../services/userService");
 const { content } = require("./viewModel");
 
+// Error message mapping
+const errorMessages = {
+  invalid_credentials: "Invalid email or password",
+  password_too_short: "Password must be at least 6 characters",
+  password_mismatch: "Passwords do not match",
+  missing_fields: "Please fill in all required fields",
+  email_exists: "This email is already registered",
+  server_error: "An error occurred. Please try again",
+  user_exists: "Username already taken",
+};
+
 exports.loginPage = (req, res) => {
+  const errorCode = req.query.error;
+  const errorMessage = errorCode ? errorMessages[errorCode] : null;
+
   return res.render("pages/auth", {
     pageTitle: "Sign in",
     bodyClass: "auth-body",
     mode: "login",
+    errorMessage,
+    successMessage: null,
+    warningMessage: null,
     ...content,
   });
 };
 
 exports.registerPage = (req, res) => {
+  const errorCode = req.query.error;
+  const errorMessage = errorCode ? errorMessages[errorCode] : null;
+
   return res.render("pages/auth", {
     pageTitle: "Create account",
     bodyClass: "auth-body",
     mode: "register",
+    errorMessage,
+    successMessage: null,
+    warningMessage: null,
     ...content,
   });
 };

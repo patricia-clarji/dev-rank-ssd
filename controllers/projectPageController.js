@@ -38,6 +38,7 @@ exports.projects = async (req, res) => {
       activeNav: "projects",
       user: sessionUser,
       projects: filteredProjects,
+      allProjects: projects,
       projectsSearchQuery: query,
       projectsStatusFilter: status,
       isReviewer: userFlags.isReviewer,

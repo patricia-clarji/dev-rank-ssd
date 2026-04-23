@@ -42,7 +42,14 @@
   <%- include('../partials/header', { user: currentUser, isAdmin }) %>
 
   <div class="layout-body">
-    <%- include('../partials/sidebar', { activeNav, isAdmin, isReviewer, page }) %>
+    <%- include('../partials/sidebar', { 
+      activeNav, 
+      isAdmin, 
+      isReviewer, 
+      page,
+      reviewsCount: (reviews || []).length,
+      pendingCertificationsCount: (certificationRequests || []).filter(req => req.status === 'pending').length
+    }) %>
 
     <main class="layout-main">
       <% if (page === "dashboard") { %>
@@ -490,7 +497,6 @@
                           </button>
                         </span>
                       <% }) %>
-
                       <button type="button" class="btn btn-sm btn-outline" data-skill-picker-toggle>
                         <i data-lucide="plus" width="14" height="14"></i>
                         Add skill
@@ -542,24 +548,22 @@
             </a>
           </div>
 
-          <form class="projects-toolbar" action="/projects" method="get">
-            <div class="search-box">
-              <i data-lucide="search" width="16" height="16" class="search-icon"></i>
-              <input type="text" name="q" class="form-input" value="<%= projectsSearchQuery || '' %>" placeholder="Search projects..." />
-            </div>
-
-            <div class="filter-tabs">
-              <% ['all', 'reviewed', 'seeking-review'].forEach((filterName) => {
-                const isActive = (projectsStatusFilter || 'all') === filterName;
-                const filterLabel = filterName === 'all' ? 'All' : (filterName === 'reviewed' ? 'Reviewed' : 'Seeking Review');
-                const filterCount = filterName === 'all'
-                  ? (projects || []).length
-                  : (projects || []).filter((project) => (project.status || 'draft') === filterName).length;
-              %>
-                <a href="/projects?status=<%= filterName %>&q=<%= encodeURIComponent(projectsSearchQuery || '') %>" class="filter-tab <%= isActive ? 'active' : '' %>"><%= filterLabel %> <span class="tab-count"><%= filterCount %></span></a>
-              <% }) %>
-            </div>
+          <form action="/projects" method="get" class="projects-search">
+            <i data-lucide="search" width="20" height="20" class="search-icon"></i>
+            <input type="text" name="q" value="<%= projectsSearchQuery || '' %>" placeholder="Search projects..." />
           </form>
+
+          <div class="projects-filters">
+            <% ['all', 'reviewed', 'seeking-review'].forEach((filterName) => {
+              const isActive = (projectsStatusFilter || 'all') === filterName;
+              const filterLabel = filterName === 'all' ? 'All' : (filterName === 'reviewed' ? 'Reviewed' : 'Seeking Review');
+              const filterCount = filterName === 'all'
+                ? (allProjects || projects || []).length
+                : (allProjects || projects || []).filter((project) => (project.status || 'draft') === filterName).length;
+            %>
+              <a href="/projects?status=<%= filterName %>&q=<%= encodeURIComponent(projectsSearchQuery || '') %>" class="filter-tab <%= isActive ? 'active' : '' %>"><%= filterLabel %> <span class="tab-count"><%= filterCount %></span></a>
+            <% }) %>
+          </div>
 
           <div class="projects-list">
             <% (projects || []).forEach((project) => {
@@ -1542,7 +1546,6 @@
                 <option value="all" <%= (exploreRoleFilter || 'all') === 'all' ? 'selected' : '' %>>All Users</option>
                 <option value="developer" <%= exploreRoleFilter === 'developer' ? 'selected' : '' %>>Developers</option>
                 <option value="reviewer" <%= exploreRoleFilter === 'reviewer' ? 'selected' : '' %>>Reviewers</option>
-                <option value="both" <%= exploreRoleFilter === 'both' ? 'selected' : '' %>>Developers & Reviewers</option>
               </select>
             <% } else { %>
               <select class="form-select" name="status" onchange="this.form.submit()">

@@ -22,8 +22,8 @@
       <a class="sidebar-link <%= activeNav === 'reviews' ? 'active' : '' %>" href="/reviews">
         <i data-lucide="message-square" width="16" height="16"></i>
         Reviews
-        <% if (isReviewer) { %>
-          <span class="sidebar-badge">3</span>
+        <% if (reviewsCount && reviewsCount > 0) { %>
+          <span class="sidebar-badge"><%= reviewsCount %></span>
         <% } %>
       </a>
       <a class="sidebar-link <%= activeNav === 'explore' ? 'active' : '' %>" href="/explore">
@@ -58,7 +58,9 @@
         <a class="sidebar-link <%= page === 'admin-certifications' ? 'active' : '' %>" href="/admin/certifications">
           <i data-lucide="users" width="16" height="16"></i>
           Certification Requests
-          <span class="sidebar-badge">5</span>
+          <% if (pendingCertificationsCount && pendingCertificationsCount > 0) { %>
+            <span class="sidebar-badge"><%= pendingCertificationsCount %></span>
+          <% } %>
         </a>
         <a class="sidebar-link <%= page === 'admin-logs' ? 'active' : '' %>" href="/admin/logs">
           <i data-lucide="file-text" width="16" height="16"></i>

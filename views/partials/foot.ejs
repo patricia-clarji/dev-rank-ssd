@@ -131,23 +131,25 @@
 				
 				chip.appendChild(document.createTextNode(label));
 				chip.appendChild(removeBtn);
-				chipGroup.appendChild(chip);
+				
+				// Insert before the toggle button
+				toggleButton.parentNode.insertBefore(chip, toggleButton);
 				
 				window.lucide && window.lucide.createIcons();
 				attachRemoveListeners(editor);
 			}
 
 			function attachRemoveListeners(editorElement) {
-			editorElement.querySelectorAll("[data-skill-chip]").forEach(function (chip) {
-				chip.removeEventListener("click", handleRemoveClick);
-				chip.addEventListener("click", handleRemoveClick);
-			});
-		}
+				editorElement.querySelectorAll("[data-skill-chip]").forEach(function (chip) {
+					chip.removeEventListener("click", handleRemoveClick);
+					chip.addEventListener("click", handleRemoveClick);
+				});
+			}
 
-		function handleRemoveClick(event) {
-			event.preventDefault();
-			var chip = this;
-			if (!chip || !chip.hasAttribute("data-skill-chip")) return;
+			function handleRemoveClick(event) {
+				event.preventDefault();
+				var chip = this;
+				if (!chip || !chip.hasAttribute("data-skill-chip")) return;
 				var skillName = chip.textContent.trim();
 				var currentValues = getValues();
 				var normalizedToRemove = skillName.toLowerCase();
@@ -168,6 +170,29 @@
 					panel.classList.add("hidden");
 				});
 			}
+
+			// Handle skill option selection
+			panel.querySelectorAll("[data-skill-option]").forEach(function (option) {
+				option.addEventListener("click", function (event) {
+					event.preventDefault();
+					var skillValue = option.getAttribute("data-skill-value");
+					if (!skillValue) return;
+
+					var currentValues = getValues();
+					var normalizedSkill = skillValue.toLowerCase();
+					
+					// Check if skill already exists
+					var exists = currentValues.some(function (value) {
+						return value.toLowerCase() === normalizedSkill;
+					});
+
+					if (!exists) {
+						currentValues.push(skillValue);
+						setValues(currentValues);
+						addChip(skillValue);
+					}
+				});
+			});
 
 		// Handle suggestions
 		var suggestionsEditor = document.querySelector(".suggestions-editor");
