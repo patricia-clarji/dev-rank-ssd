@@ -1936,6 +1936,11 @@ tbody tr:hover {
   height: calc(100vh - 64px);
   position: sticky;
   top: 64px;
+  scrollbar-width: none;
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar-section {
