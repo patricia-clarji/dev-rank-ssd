@@ -4,16 +4,29 @@ const userService = require("../services/userService");
 const { getUserFlags, renderApp } = require("./viewModel");
 
 function normalizeCategory(value) {
-  return String(value || "General").trim();
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item || "").trim())
+      .filter(Boolean);
+  }
+
+  if (!value && value !== 0) {
+    return ["General"];
+  }
+
+  return [String(value).trim()];
 }
 
 function canonicalizeCategory(value) {
-  return normalizeCategory(value)
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+  return normalizeCategory(value).map((category) =>
+    String(category || "General")
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ")
+  );
 }
 
 exports.skills = async (req, res) => {
@@ -22,37 +35,35 @@ exports.skills = async (req, res) => {
     const query = String(req.query.q || "").trim().toLowerCase();
     const selectedCategory = String(req.query.category || "").trim();
     const selectedCategoryKey = selectedCategory && selectedCategory !== "All"
-      ? normalizeCategory(selectedCategory).toLowerCase()
+      ? String(selectedCategory).trim().toLowerCase()
       : "all";
 
     const allSkills = await skillService.getAllSkills({});
+    let filteredSkills = allSkills;
+    if (query) {
+      const regex = new RegExp(query, 'i');
+      filteredSkills = allSkills.filter(skill => regex.test(skill.name));
+    }
     const allSkillCategories = Array.from(
       new Map(
-        allSkills.map((skill) => {
-          const canonicalCategory = canonicalizeCategory(skill.category);
-          return [canonicalCategory.toLowerCase(), canonicalCategory];
+        allSkills.flatMap((skill) => {
+          return canonicalizeCategory(skill.category).map((singleCategory) => [singleCategory.toLowerCase(), singleCategory]);
         })
       ).values()
     );
 
     const skillsByCategory = selectedCategoryKey !== "all"
-      ? allSkills.filter((skill) => normalizeCategory(skill.category).toLowerCase() === selectedCategoryKey)
-      : allSkills;
-
-    const filteredSkills = query
-      ? skillsByCategory.filter((skill) => {
-          const name = String(skill.name || "").toLowerCase();
-          const category = String(skill.category || "").toLowerCase();
-          return name.includes(query) || category.includes(query);
-        })
-      : skillsByCategory;
+      ? filteredSkills.filter(skill => canonicalizeCategory(skill.category).some(cat => cat.toLowerCase() === selectedCategoryKey))
+      : filteredSkills;
 
     const groupedSkills = filteredSkills.reduce((accumulator, skill) => {
-      const categoryName = canonicalizeCategory(skill.category);
-      if (!accumulator[categoryName]) {
-        accumulator[categoryName] = [];
-      }
-      accumulator[categoryName].push(skill);
+      const categoryNames = canonicalizeCategory(skill.category);
+      categoryNames.forEach((categoryName) => {
+        if (!accumulator[categoryName]) {
+          accumulator[categoryName] = [];
+        }
+        accumulator[categoryName].push(skill);
+      });
       return accumulator;
     }, {});
 
@@ -62,10 +73,10 @@ exports.skills = async (req, res) => {
       pageTitle: "Skills",
       activeNav: "skills",
       user: sessionUser,
-      skills: filteredSkills,
+      skills: skillsByCategory,
       groupedSkills,
       allSkillCategories,
-      selectedSkillCategory: selectedCategory ? canonicalizeCategory(selectedCategory) : "All",
+      selectedSkillCategory: selectedCategory ? canonicalizeCategory(selectedCategory)[0] : "All",
       skillSearchQuery: query,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
@@ -80,7 +91,8 @@ exports.skillDetail = async (req, res) => {
     const sessionUser = req.currentUser;
     const skill = await skillService.getSkill(req.params.id);
     const projects = await projectService.getAllProjects({ techStack: skill.name });
-    const exploreUsers = await userService.getAllUsers();
+    const skillUsers = Array.isArray(skill.users) ? skill.users : [];
+    const topDevelopers = skillUsers.slice(0, 5);
     const userFlags = getUserFlags(sessionUser);
 
     return renderApp(res, "skill-detail", {
@@ -89,7 +101,10 @@ exports.skillDetail = async (req, res) => {
       user: sessionUser,
       skill,
       projects,
-      exploreUsers,
+      skillUsers,
+      topDevelopers,
+      totalDevelopers: skillUsers.length,
+      totalProjects: projects.length,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
     });

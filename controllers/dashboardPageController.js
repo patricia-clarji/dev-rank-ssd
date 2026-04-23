@@ -8,7 +8,7 @@ exports.dashboard = async (req, res) => {
 
     const projects = await projectService.getProjectsByUser(sessionUser._id);
     const projectIds = projects.map((project) => project._id);
-
+    const numOfProjectsSeekingReview = await projectService.getProjectsSeekingReviewCount();
     let reviews = [];
     if (projectIds.length > 0) {
       reviews = await Review.find({ project: { $in: projectIds }, status: "published" })
@@ -25,6 +25,7 @@ exports.dashboard = async (req, res) => {
       user: sessionUser,
       projects,
       reviews,
+      numOfProjectsSeekingReview,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
     });

@@ -42,7 +42,7 @@ exports.editProfile = async (req, res) => {
 
     return renderApp(res, "profile-edit", {
       pageTitle: "Edit profile",
-      activeNav: "profile",
+      activeNav: "settings",
       user: sessionUser,
       skills,
       isReviewer: userFlags.isReviewer,

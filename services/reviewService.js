@@ -169,3 +169,11 @@ exports.deleteReview = async (reviewId) => {
 
     return { message: "Review deleted successfully." };
 };
+
+exports.getReceivedReviews = async (userId) => {
+    return await Review.find()
+        .populate({ path: "project", match: { user: userId }, select: "title status user" })
+        .populate("reviewer", "name email role githubUrl username")
+        .sort({ createdAt: -1 })
+        .then(reviews => reviews.filter(r => r.project && r.project.user));
+};

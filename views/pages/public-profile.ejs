@@ -10,11 +10,13 @@
 %>
 
 <% if (isLoggedIn) { %>
+  <% const currentUserIsAdmin = currentUser && currentUser.role === 'admin'; %>
+  <% const currentUserIsReviewer = currentUser && (currentUser.role === 'reviewer' || currentUser.role === 'admin'); %>
   <!-- Logged in: Show as part of the website -->
   <div class="layout">
-    <%- include('../partials/header', { user: currentUser, isAdmin: false }) %>
+    <%- include('../partials/header', { user: currentUser, isAdmin: currentUserIsAdmin }) %>
     <div class="layout-body">
-      <%- include('../partials/sidebar', { activeNav: 'explore', isAdmin: false, isReviewer: false, page: 'public-profile' }) %>
+      <%- include('../partials/sidebar', { activeNav: 'explore', isAdmin: currentUserIsAdmin, isReviewer: currentUserIsReviewer, page: 'public-profile' }) %>
       <main class="layout-main">
         <div class="profile-page">
           <div class="container">
@@ -114,7 +116,7 @@
                   </div>
                   <div class="profile-stat">
                     <i data-lucide="check-circle" width="20" height="20"></i>
-                    <span class="stat-value"><%= user.wouldHireRate || 80 %>%</span>
+                    <span class="stat-value"><%= Number(user.wouldHireRate || 0) %>%</span>
                     <span class="stat-label">Would Hire</span>
                   </div>
                 </div>
@@ -278,7 +280,7 @@
               </div>
               <div class="profile-stat">
                 <i data-lucide="check-circle" width="20" height="20"></i>
-                <span class="stat-value"><%= user.wouldHireRate || 80 %>%</span>
+                <span class="stat-value"><%= Number(user.wouldHireRate || 0) %>%</span>
                 <span class="stat-label">Would Hire</span>
               </div>
             </div>
@@ -288,34 +290,42 @@
                 <h2>Projects</h2>
               </div>
 
-              <div class="projects-grid">
-                <% (projects || []).forEach((project) => { %>
-                  <div class="project-card">
-                    <div class="project-card-header">
-                      <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
-                      <span class="project-card-title"><%= project.title %></span>
+              <% if ((projects || []).length) { %>
+                <div class="projects-grid">
+                  <% (projects || []).forEach((project) => { %>
+                    <div class="project-card">
+                      <div class="project-card-header">
+                        <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
+                        <span class="project-card-title"><%= project.title %></span>
+                      </div>
+                      <p class="project-card-desc"><%= project.description %></p>
+                      <div class="project-card-stack">
+                        <% (project.techStack || []).slice(0, 3).forEach((tech) => { %>
+                          <span class="tag"><%= tech %></span>
+                        <% }) %>
+                      </div>
+                      <div class="project-card-footer">
+                        <% if ((project.reviewCount || 0) > 0) { %>
+                          <span class="project-card-rating">
+                            <i data-lucide="star" class="star filled" width="14" height="14"></i>
+                            <%= Number(project.averageRating || 0).toFixed(1) %>
+                          </span>
+                          <span class="text-muted">•</span>
+                          <span class="text-muted"><%= project.reviewCount %> reviews</span>
+                        <% } else { %>
+                          <span class="text-muted">No reviews yet</span>
+                        <% } %>
+                      </div>
                     </div>
-                    <p class="project-card-desc"><%= project.description %></p>
-                    <div class="project-card-stack">
-                      <% (project.techStack || []).slice(0, 3).forEach((tech) => { %>
-                        <span class="tag"><%= tech %></span>
-                      <% }) %>
-                    </div>
-                    <div class="project-card-footer">
-                      <% if ((project.reviewCount || 0) > 0) { %>
-                        <span class="project-card-rating">
-                          <i data-lucide="star" class="star filled" width="14" height="14"></i>
-                          <%= Number(project.averageRating || 0).toFixed(1) %>
-                        </span>
-                        <span class="text-muted">•</span>
-                        <span class="text-muted"><%= project.reviewCount %> reviews</span>
-                      <% } else { %>
-                        <span class="text-muted">No reviews yet</span>
-                      <% } %>
-                    </div>
-                  </div>
-                <% }) %>
-              </div>
+                  <% }) %>
+                </div>
+              <% } else { %>
+                <div class="empty-state">
+                  <i data-lucide="folder-git-2" class="empty-state-icon"></i>
+                  <p class="empty-state-title">No projects yet</p>
+                  <p class="empty-state-description">This developer hasn’t added any public projects yet.</p>
+                </div>
+              <% } %>
             </div>
           </main>
         </div>

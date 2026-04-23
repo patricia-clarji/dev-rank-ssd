@@ -2459,15 +2459,10 @@ tbody tr:hover {
 @media (max-width: 1024px) {
   .landing-hero .container {
     grid-template-columns: 1fr;
-    /* justify-items: center;
-    align-items: center; */
   }
   
   .hero-content {
     text-align: center;
-    /* display: flex;
-    flex-direction: column;
-    align-items: center; */
   }
   
   .hero-actions {
@@ -4118,7 +4113,7 @@ tbody tr:hover {
 
 /* Source: frontend/src/pages/reviews/Reviews.css */
 .reviews-page {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
@@ -4126,6 +4121,11 @@ tbody tr:hover {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+  min-height: 300px;
+}
+
+.reviews-list.hidden {
+  display: none;
 }
 
 .review-list-item {
@@ -4133,6 +4133,12 @@ tbody tr:hover {
   background-color: var(--color-canvas-subtle);
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-medium);
+  transition: all var(--transition-fast);
+}
+
+.review-list-item:hover {
+  border-color: var(--color-border-muted);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .review-list-header {
@@ -4140,17 +4146,29 @@ tbody tr:hover {
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--spacing-2);
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
 }
 
 .review-project-link {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
+  flex: 1;
+  min-width: 0;
 }
 
 .review-project-link a {
   font-weight: 600;
   color: var(--color-accent-fg);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-project-link a:hover {
+  text-decoration: underline;
 }
 
 .review-list-rating {
@@ -4159,6 +4177,7 @@ tbody tr:hover {
   gap: var(--spacing-1);
   font-weight: 600;
   font-size: 1rem;
+  color: var(--color-accent-fg);
 }
 
 .review-list-meta {
@@ -4167,6 +4186,16 @@ tbody tr:hover {
   gap: var(--spacing-1);
   font-size: 0.875rem;
   margin-bottom: var(--spacing-2);
+}
+
+.review-list-meta a {
+  color: var(--color-accent-fg);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.review-list-meta a:hover {
+  text-decoration: underline;
 }
 
 .review-list-feedback {
@@ -4185,6 +4214,8 @@ tbody tr:hover {
   justify-content: space-between;
   padding-top: var(--spacing-2);
   border-top: 1px solid var(--color-border-default);
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
 }
 
 .review-list-date {
@@ -4193,6 +4224,26 @@ tbody tr:hover {
   gap: var(--spacing-1);
   color: var(--color-text-muted);
   font-size: 0.75rem;
+}
+
+.hire-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 4px 8px;
+  border-radius: var(--radius-medium);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.hire-badge.positive {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.hire-badge.negative {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 /* Write Review Page */
@@ -5551,6 +5602,12 @@ textarea {
 .tab:hover {
   color: var(--color-text-primary);
   background-color: var(--color-canvas-subtle);
+}
+
+.tab.active {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent-fg);
+  border-color: var(--color-accent-muted);
 }
 
 .tab-count {

@@ -1,214 +1,197 @@
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script>
-	(function () {
-		if (window.lucide && typeof window.lucide.createIcons === "function") {
-			window.lucide.createIcons();
+(function () {
+	if (window.lucide && typeof window.lucide.createIcons === "function") {
+		window.lucide.createIcons();
+	}
+
+	var menuRoots = document.querySelectorAll("[data-menu-root]");
+
+	function closeAllMenus(exceptMenu) {
+		var menus = document.querySelectorAll("#create-menu, #user-menu");
+		menus.forEach(function (menu) {
+			if (!exceptMenu || menu !== exceptMenu) {
+				menu.classList.add("hidden");
+			}
+		});
+	}
+
+	menuRoots.forEach(function (root) {
+		var trigger = root.querySelector("[data-menu-trigger]");
+		if (!trigger) return;
+
+		var menuId = trigger.getAttribute("data-menu-trigger");
+		var menu = document.getElementById(menuId);
+		if (!menu) return;
+
+		trigger.addEventListener("click", function (event) {
+			event.preventDefault();
+			var willShow = menu.classList.contains("hidden");
+			closeAllMenus(menu);
+			if (willShow) menu.classList.remove("hidden");
+			else menu.classList.add("hidden");
+		});
+	});
+
+	document.addEventListener("click", function (event) {
+		var clickedInsideMenu = event.target.closest("[data-menu-root]");
+		if (!clickedInsideMenu) closeAllMenus();
+	});
+
+	document.querySelectorAll(".password-toggle").forEach(function (button) {
+		button.addEventListener("click", function () {
+			var wrapper = button.closest(".password-input");
+			if (!wrapper) return;
+
+			var input = wrapper.querySelector("input");
+			if (!input) return;
+
+			input.type = input.type === "password" ? "text" : "password";
+		});
+	});
+
+	document.querySelectorAll(".hire-toggle").forEach(function (toggle) {
+		var yesButton = toggle.querySelector(".hire-option.yes");
+		var noButton = toggle.querySelector(".hire-option.no");
+		var hiddenInput = toggle.querySelector("input[name='wouldHire']");
+
+		if (!yesButton || !noButton || !hiddenInput) return;
+
+		function syncHireButtons() {
+			var value = hiddenInput.value;
+			yesButton.classList.toggle("selected", value === "yes");
+			noButton.classList.toggle("selected", value === "no");
 		}
 
-		var menuRoots = document.querySelectorAll("[data-menu-root]");
-
-		function closeAllMenus(exceptMenu) {
-			var menus = document.querySelectorAll("#create-menu, #user-menu");
-			menus.forEach(function (menu) {
-				if (!exceptMenu || menu !== exceptMenu) {
-					menu.classList.add("hidden");
-				}
-			});
-		}
-
-		menuRoots.forEach(function (root) {
-			var trigger = root.querySelector("[data-menu-trigger]");
-			if (!trigger) {
-				return;
-			}
-
-			var menuId = trigger.getAttribute("data-menu-trigger");
-			var menu = document.getElementById(menuId);
-			if (!menu) {
-				return;
-			}
-
-			trigger.addEventListener("click", function (event) {
-				event.preventDefault();
-				var willShow = menu.classList.contains("hidden");
-				closeAllMenus(menu);
-				if (willShow) {
-					menu.classList.remove("hidden");
-				} else {
-					menu.classList.add("hidden");
-				}
-			});
-		});
-
-		document.addEventListener("click", function (event) {
-			var clickedInsideMenu = event.target.closest("[data-menu-root]");
-			if (!clickedInsideMenu) {
-				closeAllMenus();
-			}
-		});
-
-		document.querySelectorAll(".password-toggle").forEach(function (button) {
-			button.addEventListener("click", function () {
-				var wrapper = button.closest(".password-input");
-				if (!wrapper) {
-					return;
-				}
-				var input = wrapper.querySelector("input");
-				if (!input) {
-					return;
-				}
-				input.type = input.type === "password" ? "text" : "password";
-			});
-		});
-
-		document.querySelectorAll(".hire-toggle").forEach(function (toggle) {
-			var yesButton = toggle.querySelector(".hire-option.yes");
-			var noButton = toggle.querySelector(".hire-option.no");
-			var hiddenInput = toggle.querySelector("input[name='wouldHire']");
-
-			if (!yesButton || !noButton || !hiddenInput) {
-				return;
-			}
-
-			function syncHireButtons() {
-				var value = hiddenInput.value;
-				yesButton.classList.toggle("selected", value === "yes");
-				noButton.classList.toggle("selected", value === "no");
-			}
-
-			yesButton.addEventListener("click", function () {
-				hiddenInput.value = "yes";
-				syncHireButtons();
-			});
-
-			noButton.addEventListener("click", function () {
-				hiddenInput.value = "no";
-				syncHireButtons();
-			});
-
+		yesButton.addEventListener("click", function () {
+			hiddenInput.value = "yes";
 			syncHireButtons();
 		});
 
-		document.querySelectorAll(".skills-editor, .tech-stack-editor").forEach(function (editor) {
-			var panel = editor.querySelector("[data-skill-picker-panel]");
-			var toggleButton = editor.querySelector("[data-skill-picker-toggle]");
-			var closeButton = editor.querySelector("[data-skill-picker-close]");
-			var chipGroup = editor.querySelector("[data-skill-chip-group]");
-			var input = editor.querySelector("[data-skill-input], input[name='techStackCsv']");
+		noButton.addEventListener("click", function () {
+			hiddenInput.value = "no";
+			syncHireButtons();
+		});
 
-			if (!panel || !toggleButton || !input) {
-				return;
-			}
+		syncHireButtons();
+	});
 
-			function getValues() {
-				return input.value
-					.split(",")
-					.map(function (value) {
-						return value.trim();
-					})
-					.filter(Boolean);
-			}
+	document.querySelectorAll(".skills-editor, .tech-stack-editor").forEach(function (editor) {
+		var panel = editor.querySelector("[data-skill-picker-panel]");
+		var toggleButton = editor.querySelector("[data-skill-picker-toggle]");
+		var closeButton = editor.querySelector("[data-skill-picker-close]");
+		var chipGroup = editor.querySelector("[data-skill-chip-group]");
+		var input = editor.querySelector("[data-skill-input], input[name='techStackCsv']");
 
-			function setValues(values) {
-				input.value = values.join(", ");
-			}
+		if (!panel || !toggleButton || !input) return;
 
-			function addChip(label) {
-				if (!chipGroup) {
-					return;
-				}
+		function getValues() {
+			return input.value.split(",").map(v => v.trim()).filter(Boolean);
+		}
 
-				var chip = document.createElement("span");
-				chip.className = "skill-tag";
-				chip.setAttribute("data-skill-chip", "");
-				
-				var removeBtn = document.createElement("button");
-				removeBtn.type = "button";
-				removeBtn.className = "skill-remove";
-				removeBtn.setAttribute("data-skill-remove", "");
-				removeBtn.setAttribute("title", "Remove");
-				removeBtn.innerHTML = '<i data-lucide="x" width="12" height="12"></i>';
-				
-				chip.appendChild(document.createTextNode(label));
-				chip.appendChild(removeBtn);
-				
-				// Insert before the toggle button
-				toggleButton.parentNode.insertBefore(chip, toggleButton);
-				
-				window.lucide && window.lucide.createIcons();
-				attachRemoveListeners(editor);
-			}
+		function setValues(values) {
+			input.value = values.join(", ");
+		}
 
-			function attachRemoveListeners(editorElement) {
-				editorElement.querySelectorAll("[data-skill-chip]").forEach(function (chip) {
-					chip.removeEventListener("click", handleRemoveClick);
-					chip.addEventListener("click", handleRemoveClick);
-				});
-			}
+		function addChip(label) {
+			if (!chipGroup) return;
 
-			function handleRemoveClick(event) {
+			var chip = document.createElement("span");
+			chip.className = "skill-tag";
+			chip.setAttribute("data-skill-chip", "");
+
+			var removeBtn = document.createElement("button");
+			removeBtn.type = "button";
+			removeBtn.className = "skill-remove";
+			removeBtn.setAttribute("data-skill-remove", "");
+			removeBtn.setAttribute("title", "Remove");
+			removeBtn.innerHTML = '<i data-lucide="x" width="12" height="12"></i>';
+
+			chip.appendChild(document.createTextNode(label));
+			chip.appendChild(removeBtn);
+
+			toggleButton.parentNode.insertBefore(chip, toggleButton);
+
+			window.lucide && window.lucide.createIcons();
+			attachRemoveListeners(editor);
+		}
+
+		function attachRemoveListeners(editorElement) {
+			editorElement.querySelectorAll("[data-skill-chip]").forEach(function (chip) {
+				chip.removeEventListener("click", handleRemoveClick);
+				chip.addEventListener("click", handleRemoveClick);
+			});
+		}
+
+		function handleRemoveClick(event) {
+			event.preventDefault();
+			var chip = this;
+			if (!chip || !chip.hasAttribute("data-skill-chip")) return;
+
+			var skillName = chip.textContent.trim();
+			var currentValues = getValues();
+			var normalizedToRemove = skillName.toLowerCase();
+
+			var filteredValues = currentValues.filter(function (value) {
+				return value.toLowerCase() !== normalizedToRemove;
+			});
+
+			setValues(filteredValues);
+			chip.remove();
+		}
+
+		toggleButton.addEventListener("click", function () {
+			panel.classList.toggle("hidden");
+		});
+
+		if (closeButton) {
+			closeButton.addEventListener("click", function () {
+				panel.classList.add("hidden");
+			});
+		}
+
+		panel.querySelectorAll("[data-skill-option]").forEach(function (option) {
+			option.addEventListener("click", function (event) {
 				event.preventDefault();
-				var chip = this;
-				if (!chip || !chip.hasAttribute("data-skill-chip")) return;
-				var skillName = chip.textContent.trim();
+
+				var skillValue = option.getAttribute("data-skill-value");
+				if (!skillValue) return;
+
 				var currentValues = getValues();
-				var normalizedToRemove = skillName.toLowerCase();
-				var filteredValues = currentValues.filter(function (value) {
-					return value.toLowerCase() !== normalizedToRemove;
-				});
+				var normalizedSkill = skillValue.toLowerCase();
 
-				setValues(filteredValues);
-				chip.remove();
-			}
+				var exists = currentValues.some(v => v.toLowerCase() === normalizedSkill);
 
-			toggleButton.addEventListener("click", function () {
-				panel.classList.toggle("hidden");
+				if (!exists) {
+					currentValues.push(skillValue);
+					setValues(currentValues);
+					addChip(skillValue);
+				}
 			});
+		});
 
-			if (closeButton) {
-				closeButton.addEventListener("click", function () {
-					panel.classList.add("hidden");
-				});
-			}
+		attachRemoveListeners(editor);
+	});
 
-			// Handle skill option selection
-			panel.querySelectorAll("[data-skill-option]").forEach(function (option) {
-				option.addEventListener("click", function (event) {
-					event.preventDefault();
-					var skillValue = option.getAttribute("data-skill-value");
-					if (!skillValue) return;
+	// Handle suggestions
+	var suggestionsEditor = document.querySelector(".suggestions-editor");
+	if (suggestionsEditor) {
+		var suggestionChipGroup = suggestionsEditor.querySelector("[data-suggestion-chip-group]");
+		var suggestionInput = suggestionsEditor.querySelector("[data-suggestion-input]");
+		var textInput = suggestionsEditor.querySelector("[data-suggestion-text-input]");
+		var addButton = suggestionsEditor.querySelector("[data-add-suggestion]");
 
-					var currentValues = getValues();
-					var normalizedSkill = skillValue.toLowerCase();
-					
-					// Check if skill already exists
-					var exists = currentValues.some(function (value) {
-						return value.toLowerCase() === normalizedSkill;
-					});
+		if (!suggestionInput || !textInput || !addButton) {
+			suggestionInput = suggestionInput || suggestionsEditor.querySelector("input[name='suggestionsCsv']");
+			textInput = textInput || suggestionsEditor.querySelector("input[type='text']");
+			addButton = addButton || suggestionsEditor.querySelector("button[type='button']:last-of-type");
+		}
 
-					if (!exists) {
-						currentValues.push(skillValue);
-						setValues(currentValues);
-						addChip(skillValue);
-					}
-				});
-			});
-
-		// Handle suggestions
-		var suggestionsEditor = document.querySelector(".suggestions-editor");
-		if (suggestionsEditor) {
-			var suggestionChipGroup = suggestionsEditor.querySelector("[data-suggestion-chip-group]");
-			var suggestionInput = suggestionsEditor.querySelector("[data-suggestion-input]");
-			var textInput = suggestionsEditor.querySelector("[data-suggestion-text-input]");
-			var addButton = suggestionsEditor.querySelector("[data-add-suggestion]");
+		if (suggestionInput && textInput && addButton) {
 
 			function getSuggestions() {
-				return suggestionInput.value
-					.split(",")
-					.map(function (value) {
-						return value.trim();
-					})
-					.filter(Boolean);
+				var val = suggestionInput.value || "";
+				return val.split(",").map(v => v.trim()).filter(Boolean);
 			}
 
 			function setSuggestions(values) {
@@ -217,137 +200,100 @@
 
 			function addSuggestionChip(label) {
 				if (!suggestionChipGroup) return;
-				
+
 				var chip = document.createElement("span");
 				chip.className = "skill-tag";
 				chip.setAttribute("data-suggestion-chip", "");
-				
+				chip.setAttribute("data-suggestion-remove", "");
+				chip.textContent = label;
+
 				var removeBtn = document.createElement("button");
 				removeBtn.type = "button";
 				removeBtn.className = "skill-remove";
-				removeBtn.setAttribute("data-suggestion-remove", "");
-				removeBtn.setAttribute("title", "Remove suggestion");
 				removeBtn.innerHTML = '<i data-lucide="x" width="12" height="12"></i>';
-				
-				chip.appendChild(document.createTextNode(label));
+
 				chip.appendChild(removeBtn);
-				suggestionChipGroup.appendChild(chip);
-				
+
+				chip.addEventListener("click", handleRemove);
+
+				var toggleBtn = suggestionChipGroup.querySelector("[data-suggestion-picker-toggle]");
+				if (toggleBtn) suggestionChipGroup.insertBefore(chip, toggleBtn);
+				else suggestionChipGroup.appendChild(chip);
+
 				window.lucide && window.lucide.createIcons();
-				attachSuggestionRemoveListeners();
 			}
 
-			function attachSuggestionRemoveListeners() {
-				suggestionsEditor.querySelectorAll("[data-suggestion-chip]").forEach(function (chip) {
-					chip.removeEventListener("click", handleSuggestionRemoveClick);
-					chip.addEventListener("click", handleSuggestionRemoveClick);
-				});
-			}
-
-			function handleSuggestionRemoveClick(event) {
+			function handleRemove(event) {
 				event.preventDefault();
-				var chip = this;
-				if (!chip || !chip.hasAttribute("data-suggestion-chip")) return;
-				
-				var suggestionText = chip.textContent.trim();
-				var currentValues = getSuggestions();
-				var normalizedToRemove = suggestionText.toLowerCase();
-				var filteredValues = currentValues.filter(function (value) {
-					return value.toLowerCase() !== normalizedToRemove;
-				});
-				
-				setSuggestions(filteredValues);
+				event.stopPropagation();
+
+				var chip = event.target.closest("[data-suggestion-chip]");
+				if (!chip) return;
+
+				var text = chip.textContent.replace("×", "").trim();
+				var current = getSuggestions();
+
+				var filtered = current.filter(s => s.toLowerCase() !== text.toLowerCase());
+
+				setSuggestions(filtered);
 				chip.remove();
 			}
 
-			if (addButton && textInput) {
-				addButton.addEventListener("click", function () {
-					var value = textInput.value.trim();
-					if (!value) return;
-					
-					var currentValues = getSuggestions();
-					currentValues.push(value);
-					setSuggestions(currentValues);
+			addButton.addEventListener("click", function (event) {
+				event.preventDefault();
+				event.stopPropagation();
+
+				var value = textInput.value.trim();
+				if (!value) return;
+
+				var current = getSuggestions();
+				var exists = current.some(s => s.toLowerCase() === value.toLowerCase());
+
+				if (!exists) {
+					current.push(value);
+					setSuggestions(current);
 					addSuggestionChip(value);
-					textInput.value = "";
-				});
-
-				textInput.addEventListener("keypress", function (event) {
-					if (event.key === "Enter") {
-						addButton.click();
-					}
-				});
-			}
-
-			attachSuggestionRemoveListeners();
-		}
-
-		// Auto-calculate overall rating
-		var reviewForm = document.querySelector("form[action*='/review']");
-		if (reviewForm) {
-			var codeQualityInputs = reviewForm.querySelectorAll("input[name='codeQualityScore']");
-			var creativityInputs = reviewForm.querySelectorAll("input[name='creativityScore']");
-			var cleanCodeInputs = reviewForm.querySelectorAll("input[name='cleanCodeScore']");
-			var overallInputs = reviewForm.querySelectorAll("input[name='overallRating'][data-auto-rating]");
-			var autoCalculatedDiv = reviewForm.querySelector("[data-auto-calculated]");
-
-			// Prevent user interaction on overall rating inputs
-			overallInputs.forEach(function (input) {
-				input.addEventListener("click", function (event) {
-					event.preventDefault();
-					return false;
-				});
-				input.addEventListener("change", function (event) {
-					event.preventDefault();
-					return false;
-				});
-			});
-
-			function calculateOverallRating() {
-				var codeQuality = Array.from(codeQualityInputs).find(function (input) { return input.checked; });
-				var creativity = Array.from(creativityInputs).find(function (input) { return input.checked; });
-				var cleanCode = Array.from(cleanCodeInputs).find(function (input) { return input.checked; });
-
-				if (!codeQuality || !creativity || !cleanCode) return;
-
-				var avg = (Number(codeQuality.value) + Number(creativity.value) + Number(cleanCode.value)) / 3;
-				var rounded = Math.round(avg);
-
-				overallInputs.forEach(function (input) {
-					input.checked = false;
-				});
-
-				var selectedInput = reviewForm.querySelector("input[name='overallRating'][value='" + rounded + "'][data-auto-rating]");
-				if (selectedInput) {
-					selectedInput.checked = true;
 				}
 
-				var labels = autoCalculatedDiv ? autoCalculatedDiv.querySelectorAll("label[for^='overall-rating-']") : reviewForm.querySelectorAll("label[for^='overall-rating-']");
-				labels.forEach(function (label) {
-					var inputId = label.getAttribute("for");
-					var input = reviewForm.querySelector("#" + inputId);
-					if (input && input.checked) {
-						label.classList.add("active");
-					} else {
-						label.classList.remove("active");
-					}
-				});
-			}
-
-			codeQualityInputs.forEach(function (input) {
-				input.addEventListener("change", calculateOverallRating);
-			});
-			creativityInputs.forEach(function (input) {
-				input.addEventListener("change", calculateOverallRating);
-			});
-			cleanCodeInputs.forEach(function (input) {
-				input.addEventListener("change", calculateOverallRating);
+				textInput.value = "";
+				textInput.focus();
 			});
 
-			calculateOverallRating();
+			textInput.addEventListener("keypress", function (event) {
+				if (event.key === "Enter") {
+					event.preventDefault();
+					addButton.click();
+				}
+			});
+
+			// Attach listeners to existing chips
+			suggestionsEditor.querySelectorAll("[data-suggestion-chip]").forEach(chip => {
+				chip.addEventListener("click", handleRemove);
+			});
 		}
-		
-    });
+	}
+
+	// Review tabs
+	document.addEventListener("click", function (event) {
+		var tab = event.target.closest("button[data-reviews-tab]");
+		if (!tab) return;
+
+		event.preventDefault();
+
+		var tabName = tab.getAttribute("data-tab-trigger");
+
+		document.querySelectorAll("button[data-reviews-tab]").forEach(function (t) {
+			var isActive = t === tab;
+			t.classList.toggle("active", isActive);
+			t.setAttribute("aria-selected", isActive ? "true" : "false");
+		});
+
+		document.querySelectorAll("[data-reviews-content]").forEach(function (content) {
+			var name = content.getAttribute("data-tab-content");
+			content.classList.toggle("hidden", name !== tabName);
+		});
+	});
+
 })();
 </script>
 </body>

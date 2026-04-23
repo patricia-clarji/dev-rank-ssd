@@ -1,6 +1,6 @@
 const projectService = require("../services/projectService");
 const reviewService = require("../services/reviewService");
-const { getUserFlags, renderApp, mapProject } = require("./viewModel");
+const { getUserFlags, renderApp, mapProject, mapReview } = require("./viewModel");
 
 function parseCsv(csvValue) {
   return String(csvValue || "")
@@ -42,13 +42,19 @@ exports.submitReview = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
 
+    const codeQualityScore = Number(req.body.codeQualityScore || 4);
+    const creativityScore = Number(req.body.creativityScore || 4);
+    const cleanCodeScore = Number(req.body.cleanCodeScore || 4);
+
+    const overallRating = (codeQualityScore + creativityScore + cleanCodeScore) / 3;
+
     await reviewService.createReview({
       projectId: req.params.id,
       reviewerId: sessionUser._id,
-      overallRating: Number(req.body.overallRating || 5),
-      codeQualityScore: Number(req.body.codeQualityScore || 4),
-      creativityScore: Number(req.body.creativityScore || 4),
-      cleanCodeScore: Number(req.body.cleanCodeScore || 4),
+      overallRating: Number(overallRating.toFixed(2)),
+      codeQualityScore,
+      creativityScore,
+      cleanCodeScore,
       wouldHire: req.body.wouldHire === "yes",
       generalFeedback: req.body.generalFeedback,
       suggestions: parseCsv(req.body.suggestionsCsv),
@@ -57,6 +63,7 @@ exports.submitReview = async (req, res) => {
 
     return res.redirect(`/projects/${req.params.id}`);
   } catch (error) {
+    console.error(error);
     return res.redirect(`/projects/${req.params.id}/review`);
   }
 };
@@ -64,14 +71,19 @@ exports.submitReview = async (req, res) => {
 exports.reviews = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
-    const reviews = await reviewService.getAllReviews({ reviewerId: sessionUser._id });
+    
     const userFlags = getUserFlags(sessionUser);
+    const givenReviews = await reviewService.getAllReviews({ reviewerId: sessionUser._id });
+    const receivedReviews = await reviewService.getReceivedReviews(sessionUser._id);
 
+    
+    
     return renderApp(res, "reviews", {
       pageTitle: "Reviews",
       activeNav: "reviews",
       user: sessionUser,
-      reviews,
+      receivedReviews: receivedReviews.map(mapReview).filter(Boolean),
+      givenReviews: givenReviews.map(mapReview).filter(Boolean),
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
     });

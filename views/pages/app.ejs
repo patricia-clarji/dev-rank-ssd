@@ -157,6 +157,14 @@
                     </div>
                   </a>
                 <% }) %>
+
+                <% if (!(projects || []).length) { %>
+                  <div class="empty-state">
+                    <i data-lucide="folder-git-2" class="empty-state-icon"></i>
+                    <h3 class="empty-state-title">No projects yet</h3>
+                    <p class="empty-state-description">Create your first project to showcase your work and collect reviews.</p>
+                  </div>
+                <% } %>
               </div>
             </div>
 
@@ -237,7 +245,7 @@
                   <div class="reviewer-cta-content">
                     <i data-lucide="eye" width="32" height="32" class="text-accent"></i>
                     <div>
-                      <h3>5 projects awaiting review</h3>
+                      <h3><%= numOfProjectsSeekingReview %> projects awaiting review</h3>
                       <p class="text-secondary">As a certified reviewer, you can help other developers improve their code</p>
                     </div>
                   </div>
@@ -416,19 +424,49 @@
                     </a>
                   <% }) %>
                 </div>
+
+                <% if (!(projects || []).length) { %>
+                  <div class="empty-state">
+                    <i data-lucide="folder-git-2" class="empty-state-icon"></i>
+                    <p class="empty-state-title">No projects yet</p>
+                    <p class="empty-state-description">Create your first project to showcase your work and collect reviews.</p>
+                    <a href="/projects/new" class="btn btn-secondary">Create a project</a>
+                  </div>
+                <% } %>
               </div>
 
               <div class="profile-share">
                 <h3>Share your profile</h3>
                 <div class="share-url">
-                  <input type="text" readonly value="<%= publicProfileUrl %>" class="form-input" />
-                  <button class="btn btn-secondary" type="button">Copy</button>
+                  <input type="text" readonly value="<%= publicProfileUrl %>" id="profileUrl" class="form-input" />
+                  <button class="btn btn-secondary" type="button" id="copyBtn">Copy</button>
                 </div>
               </div>
             </main>
           </div>
         </div>
+    <script>
+      const copyBtn = document.getElementById("copyBtn");
+      const profileUrl = document.getElementById("profileUrl");
 
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(profileUrl.value);
+
+          copyBtn.innerText = "Copied!";
+          setTimeout(() => {
+            copyBtn.innerText = "Copy";
+          }, 1500);
+
+        } catch (err) {
+          console.error("Copy failed:", err);
+
+          // fallback for older browsers
+          profileUrl.select();
+          document.execCommand("copy");
+        }
+      });
+    </script>
       <% } else if (page === "profile-edit") { %>
         <div class="edit-profile-page">
           <div class="edit-profile-container">
@@ -615,6 +653,15 @@
                 </div>
               </a>
             <% }) %>
+
+            <% if (!(projects || []).length) { %>
+              <div class="empty-state">
+                <i data-lucide="folder-git-2" class="empty-state-icon"></i>
+                <p class="empty-state-title">No projects yet</p>
+                <p class="empty-state-description">Create your first project to start collecting reviews and showcasing your work.</p>
+                <a href="/projects/new" class="btn btn-secondary">Add a project</a>
+              </div>
+            <% } %>
           </div>
         </div>
 
@@ -939,6 +986,9 @@
         </div>
 
       <% } else if (page === "review-form") { %>
+        <%
+          const suggestionsArray = [];
+        %>
         <div class="write-review-page">
           <div class="page-header">
             <h1>Write Review</h1>
@@ -961,16 +1011,7 @@
           <form action="/projects/<%= project ? project._id : '' %>/review" method="post">
             <div class="form-section">
               <h2>Ratings</h2>
-
               <div class="form-group">
-                <label class="form-label">Overall Rating (Auto-calculated)</label>
-                <div class="star-rating" data-rating-root data-auto-calculated>
-                  <% [5, 4, 3, 2, 1].forEach((score) => { %>
-                    <input type="radio" id="overall-rating-<%= score %>" name="overallRating" value="<%= score %>" data-auto-rating />
-                    <label for="overall-rating-<%= score %>" title="<%= score %> stars">★</label>
-                  <% }) %>
-                </div>
-                <p class="text-secondary text-sm">Based on Code Quality, Creativity, and Clean Code</p>
               </div>
               <div class="form-group">
                 <label class="form-label">Code Quality *</label>
@@ -1021,16 +1062,11 @@
                         </button>
                       </span>
                     <% }) %>
-
-                    <button type="button" class="btn btn-sm btn-outline" data-suggestion-picker-toggle>
-                      <i data-lucide="plus" width="14" height="14"></i>
-                      Add suggestion
-                    </button>
                   </div>
 
                   <input type="hidden" name="suggestionsCsv" value="<%= (suggestionsArray || []).join(', ') %>" data-suggestion-input />
 
-                  <div style="display: flex; gap: var(--spacing-2); margin-top: var(--spacing-2);">
+                  <div class="suggestion-input">
                     <input type="text" placeholder="Enter a suggestion..." data-suggestion-text-input class="form-input" />
                     <button type="button" class="btn btn-sm btn-secondary" data-add-suggestion>
                       <i data-lucide="plus" width="14" height="14"></i>
@@ -1069,34 +1105,44 @@
         </div>
 
       <% } else if (page === "reviews") { %>
-        <%
-          const receivedReviews = reviews || [];
-          const givenReviews = (reviews || []).slice(0, 2);
-        %>
         <div class="reviews-page">
           <div class="page-header">
-            <h1>Reviews</h1>
-            <p class="text-secondary"><%= isReviewer ? "View reviews you've received and given" : "View reviews for your projects" %></p>
+            <div>
+              <h1>Reviews</h1>
+              <p class="text-secondary"><%= isReviewer ? "View reviews you've received and given" : "View reviews for your projects" %></p>
+            </div>
           </div>
 
-          <div class="tabs">
-            <button class="tab active" type="button">
+          <div class="tabs" role="tablist">
+            <button 
+              class="tab active" 
+              type="button" 
+              role="tab" 
+              aria-selected="true"
+              data-tab-trigger="received"
+              data-reviews-tab>
               Received
               <span class="tab-count"><%= receivedReviews.length %></span>
             </button>
             <% if (isReviewer) { %>
-              <button class="tab" type="button">
+              <button 
+                class="tab" 
+                type="button" 
+                role="tab"
+                aria-selected="false"
+                data-tab-trigger="given"
+                data-reviews-tab>
                 Given
                 <span class="tab-count"><%= givenReviews.length %></span>
               </button>
             <% } %>
           </div>
 
-          <div class="reviews-list">
+          <div class="reviews-list" data-tab-content="received" data-reviews-content>
             <% if (receivedReviews.length > 0) { %>
               <% receivedReviews.forEach((reviewItem) => {
                 const projectId = reviewItem.projectId || ((reviewItem.project && reviewItem.project._id) || "");
-                const projectLabel = reviewItem.projectTitle || ((reviewItem.project && reviewItem.project.title) || "Project");
+                const projectTitle = reviewItem.projectTitle || ((reviewItem.project && reviewItem.project.title) || "Project");
                 const reviewerName = (reviewItem.reviewer && reviewItem.reviewer.name) || "Reviewer";
                 const reviewerUsername = (reviewItem.reviewer && reviewItem.reviewer.username) || "reviewer";
               %>
@@ -1104,7 +1150,7 @@
                   <div class="review-list-header">
                     <div class="review-project-link">
                       <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
-                      <a href="/projects/<%= projectId %>"><%= projectLabel %></a>
+                      <a href="/projects/<%= projectId %>"><%= projectTitle %></a>
                     </div>
                     <div class="review-list-rating">
                       <i data-lucide="star" class="star filled" width="16" height="16"></i>
@@ -1147,13 +1193,71 @@
               </div>
             <% } %>
           </div>
+
+          <% if (isReviewer) { %>
+            <div class="reviews-list hidden" data-tab-content="given" data-reviews-content>
+              <% if (givenReviews.length > 0) { %>
+                <% givenReviews.forEach((reviewItem) => {
+                  const projectId = reviewItem.projectId || ((reviewItem.project && reviewItem.project._id) || "");
+                  const projectTitle = reviewItem.projectTitle || ((reviewItem.project && reviewItem.project.title) || "Project");
+                  const projectOwner = (reviewItem.project && reviewItem.project.owner) || {};
+                  const ownerUsername = projectOwner.username || "developer";
+                %>
+                  <div class="review-list-item">
+                    <div class="review-list-header">
+                      <div class="review-project-link">
+                        <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
+                        <a href="/projects/<%= projectId %>"><%= projectTitle %></a>
+                      </div>
+                      <div class="review-list-rating">
+                        <i data-lucide="star" class="star filled" width="16" height="16"></i>
+                        <span><%= Number(reviewItem.overallRating || 0).toFixed(1) %></span>
+                      </div>
+                    </div>
+
+                    <div class="review-list-meta">
+                      <span class="text-secondary">Project by</span>
+                      <a href="/user/<%= ownerUsername %>"><%= projectOwner.name || "Developer" %></a>
+                    </div>
+
+                    <p class="review-list-feedback"><%= reviewItem.feedback || reviewItem.note || "No detailed feedback provided." %></p>
+
+                    <div class="review-list-footer">
+                      <span class="review-list-date">
+                        <i data-lucide="clock" width="12" height="12"></i>
+                        <%= new Date(reviewItem.createdAt).toLocaleDateString() %>
+                      </span>
+                      <% if (reviewItem.wouldHire) { %>
+                        <span class="hire-badge positive">
+                          <i data-lucide="check-circle" width="12" height="12"></i>
+                          Would Hire
+                        </span>
+                      <% } else { %>
+                        <span class="hire-badge negative">
+                          <i data-lucide="x-circle" width="12" height="12"></i>
+                          Would Not Hire
+                        </span>
+                      <% } %>
+                    </div>
+                  </div>
+                <% }) %>
+              <% } else { %>
+                <div class="empty-state">
+                  <i data-lucide="message-square" class="empty-state-icon"></i>
+                  <h3 class="empty-state-title">No reviews given</h3>
+                  <p class="empty-state-description">Reviews you write will appear here</p>
+                </div>
+              <% } %>
+            </div>
+          <% } %>
         </div>
 
       <% } else if (page === "skills") { %>
         <%
           const groupedSkills = {};
           (skills || []).forEach((skillItem) => {
-            const categoryName = skillItem.category || "General";
+            const categories = Array.isArray(skillItem.category) ? skillItem.category : [skillItem.category || "General"];
+            const categoryName = categories[0];
             if (!groupedSkills[categoryName]) {
               groupedSkills[categoryName] = [];
             }
@@ -1174,17 +1278,55 @@
             </div>
             <div class="category-pills">
               <% (allSkillCategories || categoryNames).forEach((categoryName) => { %>
-                <a href="/skills?category=<%= encodeURIComponent(categoryName) %>&q=<%= encodeURIComponent(skillSearchQuery || '') %>" class="category-pill <%= (selectedSkillCategory || 'All') === categoryName ? 'active' : '' %>"><%= categoryName %></a>
+                <%
+                  const isActive = (selectedSkillCategory || 'All') === categoryName;
+                  const href = isActive 
+                    ? `/skills?q=${encodeURIComponent(skillSearchQuery || '')}` 
+                    : `/skills?category=${encodeURIComponent(categoryName)}&q=${encodeURIComponent(skillSearchQuery || '')}`;
+                %>
+                <a href="<%= href %>" class="category-pill <%= isActive ? 'active' : '' %>"><%= categoryName %></a>
               <% }) %>
             </div>
           </form>
 
-          <% Object.keys(groupedSkills || {}).forEach((categoryName) => { %>
-            <div class="skill-group">
-              <h2 class="skill-group-title"><%= categoryName %></h2>
+          <% if (selectedSkillCategory === "All") { %>
+            <% if (Object.keys(groupedSkills || {}).length > 0) { %>
+              <% Object.keys(groupedSkills).forEach((categoryName) => { %>
+                <div class="skill-group">
+                  <h2 class="skill-group-title"><%= categoryName %></h2>
+                  <div class="skills-grid">
+                    <% groupedSkills[categoryName].forEach((skillItem) => {
+                      const developers = Array.isArray(skillItem.users) ? skillItem.users.length : 0;
+                    %>
+                      <a href="/skills/<%= skillItem._id %>" class="skill-card">
+                        <div class="skill-card-icon">
+                          <i data-lucide="code" width="24" height="24"></i>
+                        </div>
+                        <div class="skill-card-content">
+                          <h3><%= skillItem.name %></h3>
+                          <span class="skill-card-stat">
+                            <i data-lucide="users" width="14" height="14"></i>
+                            <%= developers.toLocaleString() %> developers
+                          </span>
+                        </div>
+                        <i data-lucide="chevron-right" width="16" height="16" class="skill-card-arrow"></i>
+                      </a>
+                    <% }) %>
+                  </div>
+                </div>
+              <% }) %>
+            <% } else { %>
+              <div class="empty-state">
+                <i data-lucide="search" class="empty-state-icon"></i>
+                <p class="empty-state-title">No skills match your search</p>
+                <p class="empty-state-description">Try a different keyword or category to find relevant skills and developers.</p>
+              </div>
+            <% } %>
+          <% } else { %>
+            <% if ((skills || []).length > 0) { %>
               <div class="skills-grid">
-                <% groupedSkills[categoryName].forEach((skillItem) => {
-                  const developers = Array.isArray(skillItem.users) ? skillItem.users.length * 125 : 0;
+                <% skills.forEach((skillItem) => {
+                  const developers = Array.isArray(skillItem.users) ? skillItem.users.length : 0;
                 %>
                   <a href="/skills/<%= skillItem._id %>" class="skill-card">
                     <div class="skill-card-icon">
@@ -1201,17 +1343,20 @@
                   </a>
                 <% }) %>
               </div>
-            </div>
-          <% }) %>
+            <% } else { %>
+              <div class="empty-state">
+                <i data-lucide="search" class="empty-state-icon"></i>
+                <p class="empty-state-title">No skills found in this category</p>
+                <p class="empty-state-description">Try selecting a different category or search for specific skills.</p>
+              </div>
+            <% } %>
+          <% } %>
         </div>
 
       <% } else if (page === "skill-detail") { %>
         <%
           const currentSkill = skill || {};
-          const topDevelopers = (exploreUsers || []).slice(0, 5);
           const recentProjects = (projects || []).slice(0, 3);
-          const totalDevelopers = Array.isArray(currentSkill.users) ? currentSkill.users.length * 625 : 0;
-          const totalProjects = (projects || []).length * 1140;
         %>
 
         <div class="skill-detail-page">
@@ -1226,7 +1371,11 @@
             </div>
             <div class="skill-detail-info">
               <h1><%= currentSkill.name %></h1>
-              <span class="tag"><%= currentSkill.category || 'General' %></span>
+              <div class="tag-list">
+                <% (Array.isArray(currentSkill.category) ? currentSkill.category : [currentSkill.category || 'General']).forEach((category) => { %>
+                  <span class="tag"><%= category %></span>
+                <% }) %>
+              </div>
             </div>
           </div>
 
@@ -1247,61 +1396,77 @@
 
           <div class="developers-table-section">
             <h2>Top Developers</h2>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Developer</th>
-                  <th>Rating</th>
-                  <th>Projects</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <% topDevelopers.forEach((developer) => { %>
+            <% if ((topDevelopers || []).length > 0) { %>
+              <table class="table">
+                <thead>
                   <tr>
-                    <td>
-                      <div style="display: flex; align-items: center; gap: 8px">
-                        <div class="avatar avatar-sm"><%= developer.name.charAt(0) %></div>
-                        <div>
-                          <div><%= developer.name %></div>
-                          <div class="text-muted" style="font-size: 0.75rem">@<%= developer.username %></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div style="display: flex; align-items: center; gap: 4px">
-                        <i data-lucide="star" width="14" height="14" class="filled" style="color: var(--color-warning-fg)"></i>
-                        <%= Number(developer.rating || 0).toFixed(1) %>
-                      </div>
-                    </td>
-                    <td><%= developer.projects || 0 %> projects</td>
-                    <td>
-                      <a href="/user/<%= developer.username %>" class="btn btn-secondary btn-sm">View Profile</a>
-                    </td>
+                    <th>Developer</th>
+                    <th>Rating</th>
+                    <th>Projects</th>
+                    <th></th>
                   </tr>
-                <% }) %>
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  <% topDevelopers.forEach((developer) => { %>
+                    <tr>
+                      <td>
+                        <div style="display: flex; align-items: center; gap: 8px">
+                          <div class="avatar avatar-sm"><%= developer.name.charAt(0) %></div>
+                          <div>
+                            <div><%= developer.name %></div>
+                            <div class="text-muted" style="font-size: 0.75rem">@<%= developer.username %></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div style="display: flex; align-items: center; gap: 4px">
+                          <i data-lucide="star" width="14" height="14" class="filled" style="color: var(--color-warning-fg)"></i>
+                          <%= Number(developer.profileScore || 0).toFixed(1) %>
+                        </div>
+                      </td>
+                      <td><%= developer.projects != null ? developer.projects : '0' %> projects</td>
+                      <td>
+                        <a href="/user/<%= developer.username %>" class="btn btn-secondary btn-sm">View Profile</a>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            <% } else { %>
+              <div class="empty-state">
+                <i data-lucide="users" class="empty-state-icon"></i>
+                <p class="empty-state-title">No developers found for this skill</p>
+                <p class="empty-state-description">Try another skill or explore the full developer directory.</p>
+              </div>
+            <% } %>
           </div>
 
           <div class="developers-table-section">
             <h2>Recent Projects</h2>
-            <div class="skills-grid">
-              <% recentProjects.forEach((projectItem) => { %>
-                <a href="/projects/<%= projectItem._id %>" class="skill-card">
-                  <div class="skill-card-icon">
-                    <i data-lucide="folder-git-2" width="24" height="24"></i>
-                  </div>
-                  <div class="skill-card-content">
-                    <h3><%= projectItem.title %></h3>
-                    <span class="skill-card-stat">
-                      <i data-lucide="star" width="14" height="14"></i>
-                      <%= Number(projectItem.averageRating || 0).toFixed(1) %> · by @<%= projectItem.owner && projectItem.owner.username ? projectItem.owner.username : 'developer' %>
-                    </span>
-                  </div>
-                </a>
-              <% }) %>
-            </div>
+            <% if ((recentProjects || []).length > 0) { %>
+              <div class="skills-grid">
+                <% recentProjects.forEach((projectItem) => { %>
+                  <a href="/projects/<%= projectItem._id %>" class="skill-card">
+                    <div class="skill-card-icon">
+                      <i data-lucide="folder-git-2" width="24" height="24"></i>
+                    </div>
+                    <div class="skill-card-content">
+                      <h3><%= projectItem.title %></h3>
+                      <span class="skill-card-stat">
+                        <i data-lucide="star" width="14" height="14"></i>
+                        <%= Number(projectItem.averageRating || 0).toFixed(1) %> · by @<%= projectItem.owner && projectItem.owner.username ? projectItem.owner.username : 'developer' %>
+                      </span>
+                    </div>
+                  </a>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <div class="empty-state">
+                <i data-lucide="folder-git-2" class="empty-state-icon"></i>
+                <p class="empty-state-title">No recent projects</p>
+                <p class="empty-state-description">Projects using this skill will appear here.</p>
+              </div>
+            <% } %>
           </div>
         </div>
 
@@ -1419,15 +1584,15 @@
               <h2>Your Review Activity</h2>
               <div class="skill-stats-row">
                 <div class="stat-card">
-                  <div class="stat-value">24</div>
+                  <div class="stat-value"><%= reviewsGiven %></div>
                   <div class="stat-label">Reviews Given</div>
                 </div>
                 <div class="stat-card">
-                  <div class="stat-value">4.8</div>
+                  <div class="stat-value"><%= avgRatingGiven %></div>
                   <div class="stat-label">Avg Rating Given</div>
                 </div>
                 <div class="stat-card">
-                  <div class="stat-value">18</div>
+                  <div class="stat-value"><%= wouldHireCount %></div>
                   <div class="stat-label">Would Hire</div>
                 </div>
               </div>
@@ -1559,21 +1724,29 @@
 
           <% if (exploreActiveTab === 'developers') { %>
             <div class="developers-table-section">
-              <div class="projects-grid">
-                <% (exploreUsers || []).forEach((developer) => { %>
-                  <a href="/user/<%= developer.username || 'developer' %>" class="project-card">
-                    <div class="project-card-header">
-                      <div class="avatar avatar-sm"><%= (developer.name || 'D').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() %></div>
-                      <span class="project-card-title"><%= developer.name %></span>
-                    </div>
-                    <p class="project-card-desc"><%= developer.bio || 'Developer profile' %></p>
-                    <div class="project-card-footer">
-                      <span class="text-muted">@<%= developer.username || 'developer' %></span>
-                      <span class="text-muted"><%= (developer.skills || []).length %> skills</span>
-                    </div>
-                  </a>
-                <% }) %>
-              </div>
+              <% if ((exploreUsers || []).length > 0) { %>
+                <div class="projects-grid">
+                  <% (exploreUsers || []).forEach((developer) => { %>
+                    <a href="/user/<%= developer.username || 'developer' %>" class="project-card">
+                      <div class="project-card-header">
+                        <div class="avatar avatar-sm"><%= (developer.name || 'D').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() %></div>
+                        <span class="project-card-title"><%= developer.name %></span>
+                      </div>
+                      <p class="project-card-desc"><%= developer.bio || 'Developer profile' %></p>
+                      <div class="project-card-footer">
+                        <span class="text-muted">@<%= developer.username || 'developer' %></span>
+                        <span class="text-muted"><%= (developer.skills || []).length %> skills</span>
+                      </div>
+                    </a>
+                  <% }) %>
+                </div>
+              <% } else { %>
+                <div class="empty-state">
+                  <i data-lucide="search" class="empty-state-icon"></i>
+                  <p class="empty-state-title">No developers found</p>
+                  <p class="empty-state-description">Try a different skill, role, or keyword to discover developers matching your search.</p>
+                </div>
+              <% } %>
             </div>
           <% } else { %>
             <div class="explore-grid">
@@ -1727,6 +1900,12 @@
                     </div>
                   </div>
                 <% }) %>
+
+                <% if (!recentActivity || recentActivity.length === 0) { %>
+                  <div class="empty-state-small">
+                    <p>No recent activity</p>
+                  </div>
+                <% } %>
               </div>
             </div>
 
@@ -1802,11 +1981,25 @@
             <p class="text-secondary">Review and manage reviewer certification applications</p>
           </div>
 
-          <div class="cert-filters">
-            <button class="btn btn-primary btn-sm" type="button">Pending</button>
-            <button class="btn btn-secondary btn-sm" type="button">Approved</button>
-            <button class="btn btn-secondary btn-sm" type="button">Rejected</button>
-            <button class="btn btn-secondary btn-sm" type="button">All</button>
+          <div class="filter-tabs cert-filters">
+            <% const certFilters = [
+              { value: 'pending', label: 'Pending' },
+              { value: 'approved', label: 'Approved' },
+              { value: 'rejected', label: 'Rejected' },
+              { value: 'all', label: 'All' },
+            ]; %>
+
+            <% certFilters.forEach(function (filterOption) {
+              const isActive = (statusFilter || 'pending') === filterOption.value;
+              const count = (certificationCounts && typeof certificationCounts[filterOption.value] === 'number')
+                ? certificationCounts[filterOption.value]
+                : 0;
+            %>
+              <a href="/admin/certifications?status=<%= filterOption.value %>" class="filter-tab <%= isActive ? 'active' : '' %>">
+                <%= filterOption.label %>
+                <span class="tab-count"><%= count %></span>
+              </a>
+            <% }) %>
           </div>
 
           <% if ((certificationRequests || []).length > 0) { %>
@@ -1850,7 +2043,7 @@
                     </div>
                     <div class="cert-stat">
                       <i data-lucide="star" width="18" height="18" class="text-warning"></i>
-                      <div class="cert-stat-value"><%= Number(currentUser.profileScore || 4.5).toFixed(1) %></div>
+                      <div class="cert-stat-value"><%= Number(currentUser.profileScore).toFixed(1) %></div>
                       <div class="cert-stat-label">Avg Rating</div>
                     </div>
                     <div class="cert-stat">
@@ -1860,7 +2053,7 @@
                     </div>
                     <div class="cert-stat">
                       <i data-lucide="briefcase" width="18" height="18" class="text-muted"></i>
-                      <div class="cert-stat-value">5-10</div>
+                      <div class="cert-stat-value"><%= requestItem.experience || 'N/A' %></div>
                       <div class="cert-stat-label">Years Exp</div>
                     </div>
                   </div>
@@ -1872,7 +2065,7 @@
 
                   <div class="cert-request-section">
                     <h4>Motivation</h4>
-                    <p>I want to help developers improve code quality through consistent and actionable feedback.</p>
+                    <p><%= requestItem.motivation %></p>
                   </div>
                 </div>
 

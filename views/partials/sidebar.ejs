@@ -19,13 +19,15 @@
         <i data-lucide="folder-git-2" width="16" height="16"></i>
         My Projects
       </a>
+
       <a class="sidebar-link <%= activeNav === 'reviews' ? 'active' : '' %>" href="/reviews">
         <i data-lucide="message-square" width="16" height="16"></i>
         Reviews
-        <% if (reviewsCount && reviewsCount > 0) { %>
+        <% if ((reviewsCount || 0) > 0) { %>
           <span class="sidebar-badge"><%= reviewsCount %></span>
         <% } %>
       </a>
+
       <a class="sidebar-link <%= activeNav === 'explore' ? 'active' : '' %>" href="/explore">
         <i data-lucide="compass" width="16" height="16"></i>
         Explore
@@ -40,6 +42,7 @@
         <i data-lucide="code-2" width="16" height="16"></i>
         Skills
       </a>
+
       <a class="sidebar-link <%= activeNav === 'certifications' ? 'active' : '' %>" href="/certifications">
         <i data-lucide="award" width="16" height="16"></i>
         Certifications
@@ -51,17 +54,19 @@
     <div class="sidebar-section">
       <div class="sidebar-section-title">Administration</div>
       <nav class="sidebar-nav">
-        <a class="sidebar-link <%= activeNav === 'admin' ? 'active' : '' %>" href="/admin">
+        <a class="sidebar-link <%= activeNav === 'admin-dashboard' ? 'active' : '' %>" href="/admin">
           <i data-lucide="shield-check" width="16" height="16"></i>
           Admin Dashboard
         </a>
+
         <a class="sidebar-link <%= page === 'admin-certifications' ? 'active' : '' %>" href="/admin/certifications">
           <i data-lucide="users" width="16" height="16"></i>
           Certification Requests
-          <% if (pendingCertificationsCount && pendingCertificationsCount > 0) { %>
+          <% if ((pendingCertificationsCount || 0) > 0) { %>
             <span class="sidebar-badge"><%= pendingCertificationsCount %></span>
           <% } %>
         </a>
+
         <a class="sidebar-link <%= page === 'admin-logs' ? 'active' : '' %>" href="/admin/logs">
           <i data-lucide="file-text" width="16" height="16"></i>
           Activity Logs
@@ -78,6 +83,7 @@
         <i data-lucide="settings" width="16" height="16"></i>
         Settings
       </a>
+
       <a class="sidebar-link" href="#">
         <i data-lucide="help-circle" width="16" height="16"></i>
         Help &amp; Support

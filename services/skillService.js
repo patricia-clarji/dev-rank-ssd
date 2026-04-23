@@ -19,7 +19,7 @@ exports.getAllSkills = async ({ category, preset }) => {
 };
 
 exports.getSkill = async (skillId) => {
-  const skill = await Skill.findById(skillId).populate("users", "name email avatarUrl");
+  const skill = await Skill.findById(skillId).populate("users", "name username avatarUrl profileScore");
   if (!skill) {
     throw new AppError("Skill not found.", 404, ERROR_CODES.NOT_FOUND);
   }
@@ -29,7 +29,7 @@ exports.getSkill = async (skillId) => {
 exports.getSkillByName = async (name) => {
   const skill = await Skill.findOne({
     name: { $regex: `^${name}$`, $options: "i" }
-  }).populate("users", "name email avatarUrl");
+  }).populate("users", "name username avatarUrl profileScore");
 
   if (!skill) {
     throw new AppError("Skill not found.", 404, ERROR_CODES.NOT_FOUND);

@@ -129,26 +129,6 @@
         <a href="<%= mode === 'login' ? '/register' : '/login' %>"><%= mode === 'login' ? 'Create an account' : 'Sign in' %></a>
       </p>
     </div>
-
-    <% if (mode === 'login') { %>
-      <div class="auth-demo-info">
-        <h4>Demo Credentials</h4>
-        <div class="demo-accounts">
-          <div class="demo-account">
-            <span class="badge badge-primary">Developer</span>
-            <code>developer@devrank.com / password123</code>
-          </div>
-          <div class="demo-account">
-            <span class="badge badge-success">Reviewer</span>
-            <code>reviewer@devrank.com / password123</code>
-          </div>
-          <div class="demo-account">
-            <span class="badge badge-warning">Admin</span>
-            <code>admin@devrank.com / admin123</code>
-          </div>
-        </div>
-      </div>
-    <% } %>
   </div>
 </div>
 

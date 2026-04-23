@@ -171,3 +171,9 @@ exports.getProjectsByUser = async (userId) => {
         .populate("user", "name email role githubUrl")
         .sort({ createdAt: -1 });
 };
+
+exports.getProjectsSeekingReviewCount = async () => {
+    return await Project.countDocuments({
+        status: "seeking-review"
+    });
+};

@@ -121,7 +121,7 @@ exports.adminDashboard = async (req, res) => {
 
     return renderApp(res, "admin-dashboard", {
       pageTitle: "Admin dashboard",
-      activeNav: "admin",
+      activeNav: "admin-dashboard",
       user: req.currentUser,
       users,
       projects,
@@ -139,16 +139,34 @@ exports.adminDashboard = async (req, res) => {
 
 exports.adminCertifications = async (req, res) => {
   try {
+    const statusValues = ["pending", "approved", "rejected", "all"];
+    const statusFilter = statusValues.includes(req.query.status) ? req.query.status : "pending";
+
     const [certifications, projects] = await Promise.all([
       certificationService.getAllRequests(),
       projectService.getAllProjects({}),
     ]);
 
+    const certificationRequests = certifications.filter((request) => {
+      if (statusFilter === "all") return true;
+      return String(request.status || "").toLowerCase() === statusFilter;
+    });
+
+    const certificationCounts = {
+      pending: certifications.filter((request) => String(request.status || "").toLowerCase() === "pending").length,
+      approved: certifications.filter((request) => String(request.status || "").toLowerCase() === "approved").length,
+      rejected: certifications.filter((request) => String(request.status || "").toLowerCase() === "rejected").length,
+      all: certifications.length,
+    };
+
     return renderApp(res, "admin-certifications", {
       pageTitle: "Certification requests",
       activeNav: "admin",
       user: req.currentUser,
+      certificationRequests,
       certifications,
+      certificationCounts,
+      statusFilter,
       projects,
       isAdmin: true,
       isReviewer: true,
