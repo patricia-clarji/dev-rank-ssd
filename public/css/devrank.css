@@ -144,25 +144,27 @@ body {
   overflow-x: hidden;
 }
 
-/* Enhanced scrollbar */
+html, body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body *::-webkit-scrollbar,
+body::-webkit-scrollbar,
+html::-webkit-scrollbar,
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 0;
+  height: 0;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--color-canvas-subtle);
-  border-radius: var(--radius-sm);
-}
-
+::-webkit-scrollbar-track,
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-default);
-  border-radius: var(--radius-sm);
-  transition: background var(--transition-normal);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  background: transparent;
 }
 
 /* Selection styling */
@@ -2859,6 +2861,18 @@ tbody tr:hover {
   flex-wrap: wrap;
 }
 
+.project-stack > .text-muted {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 8px;
+  font-size: 12px;
+  background-color: var(--color-canvas-subtle);
+  border-radius: var(--radius-full);
+}
+
 .project-stats {
   display: flex;
   flex-direction: column;
@@ -2958,6 +2972,24 @@ tbody tr:hover {
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-4);
+  gap: var(--spacing-3);
+}
+
+@media (max-width: 640px) {
+  .reviewer-cta {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .reviewer-cta-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .reviewer-cta .btn {
+    width: 100%;
+  }
 }
 
 .reviewer-cta-content {
@@ -3031,10 +3063,6 @@ tbody tr:hover {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-3);
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
   }
   
   .quick-actions-grid {
@@ -3536,6 +3564,29 @@ tbody tr:hover {
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--spacing-4);
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+  }
+
+  .page-header h1 {
+    width: 100%;
+  }
+
+  .page-header > a,
+  .page-header > button {
+    width: 100%;
+  }
+
+  .page-header > div {
+    width: 100%;
+  }
 }
 
 .page-header h1 {
@@ -3717,7 +3768,7 @@ tbody tr:hover {
 
 .project-list-item {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: space-between;
   padding: var(--spacing-3);
   background-color: var(--color-canvas-subtle);
@@ -3781,11 +3832,15 @@ tbody tr:hover {
   gap: var(--spacing-1);
   color: var(--color-text-muted);
   font-size: 0.75rem;
+  align-self: flex-end;
+  margin-top: auto;
+  white-space: nowrap;
 }
 
 .project-list-stats {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   align-items: flex-end;
   min-width: 80px;
 }
@@ -3843,6 +3898,43 @@ tbody tr:hover {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+}
+
+@media (max-width: 820px) {
+  .project-detail-meta,
+  .project-detail-actions {
+    flex-wrap: wrap;
+    gap: var(--spacing-2);
+  }
+
+  .project-detail-actions {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .project-detail-actions > * {
+    flex: 1 1 160px;
+    min-width: 140px;
+  }
+
+  .project-detail-content {
+    grid-template-columns: 1fr;
+  }
+
+  .project-list-item {
+    flex-direction: column;
+    gap: var(--spacing-3);
+  }
+
+  .project-list-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .project-list-stats {
+    align-items: flex-start;
+    width: 100%;
+  }
 }
 
 .project-section {
@@ -4431,6 +4523,8 @@ input[data-auto-rating] + label {
 
 .hire-option {
   flex: 1;
+  min-width: 0;
+  white-space: normal;
   color: var(--color-text-muted);
   display: flex;
   align-items: center;
@@ -4484,6 +4578,17 @@ input[data-auto-rating] + label {
 @media (max-width: 600px) {
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .hire-toggle {
+    flex-wrap: wrap;
+  }
+
+  .hire-option {
+    flex: 1 1 calc(50% - var(--spacing-2));
+    min-width: 130px;
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: 0.95rem;
   }
 }
 
@@ -5467,8 +5572,20 @@ input[data-auto-rating] + label {
   min-width: 200px;
 }
 
+.logs-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.logs-table-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
 .logs-table {
   width: 100%;
+  min-width: 700px;
   border-collapse: collapse;
   background-color: var(--color-canvas-subtle);
   border: 1px solid var(--color-border-default);
@@ -5507,6 +5624,80 @@ input[data-auto-rating] + label {
 .log-action-badge.create {
   background-color: rgba(63, 185, 80, 0.15);
   color: var(--color-success-fg);
+}
+
+@media (max-width: 760px) {
+  .activity-logs-page {
+    padding: 0 var(--spacing-2);
+  }
+
+  .logs-toolbar {
+    gap: var(--spacing-2);
+  }
+
+  .logs-toolbar .search-box,
+  .logs-toolbar select,
+  .logs-toolbar .btn {
+    width: 100%;
+  }
+
+  .logs-table-wrapper {
+    min-width: 0;
+  }
+
+  .logs-table {
+    border-radius: var(--radius-small);
+    min-width: 650px;
+  }
+
+  .logs-table th,
+  .logs-table td {
+    padding: var(--spacing-2) var(--spacing-2);
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+
+  .logs-table th {
+    font-size: 0.7rem;
+  }
+
+  .logs-table td:first-child {
+    min-width: 170px;
+    max-width: 220px;
+  }
+
+  .logs-table td:nth-child(2),
+  .logs-table td:nth-child(3),
+  .logs-table td:nth-child(4) {
+    min-width: 100px;
+  }
+
+  .logs-table td:nth-child(5) {
+    min-width: 160px;
+  }
+
+  .logs-table td {
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .logs-table th,
+  .logs-table td {
+    text-align: left;
+  }
+
+  .logs-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .logs-table-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .logs-table td span.log-action-badge {
+    display: inline-flex;
+    margin-top: 0;
+  }
 }
 
 .log-action-badge.update {

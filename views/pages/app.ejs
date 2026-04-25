@@ -634,10 +634,7 @@
                         <span class="tag"><%= tech %></span>
                       <% }) %>
                     </div>
-                    <span class="project-list-date">
-                      <i data-lucide="clock" width="12" height="12"></i>
-                      <%= new Date(project.createdAt).toLocaleDateString() %>
-                    </span>
+                   
                   </div>
                 </div>
                 <div class="project-list-stats">
@@ -650,6 +647,10 @@
                   <% } else { %>
                     <span class="text-muted text-sm">No reviews</span>
                   <% } %>
+                   <span class="project-list-date">
+                      <i data-lucide="clock" width="12" height="12"></i>
+                      <%= new Date(project.createdAt).toLocaleDateString() %>
+                    </span>
                 </div>
               </a>
             <% }) %>
@@ -669,12 +670,13 @@
         <%
           const currentProject = project || {};
           const projectOwner = currentProject.owner || {};
-          const isOwner = Boolean(currentUser._id && projectOwner._id && currentUser._id === projectOwner._id);
+          const isOwner = Boolean(currentUser._id && projectOwner._id && String(currentUser._id) === String(projectOwner._id));
+          const canModify = isOwner || isAdmin;
           const projectReviews = reviews || [];
           const baseRating = Number(currentProject.averageRating || 0);
-          const codeQuality = Number(currentProject.codeQualityAvg || baseRating || 4);
-          const creativity = Number(currentProject.creativityAvg || baseRating || 4);
-          const cleanCode = Number(currentProject.cleanCodeAvg || baseRating || 4);
+          const codeQuality = Number(currentProject.codeQualityAvg || baseRating || 0);
+          const creativity = Number(currentProject.creativityAvg || baseRating || 0);
+          const cleanCode = Number(currentProject.cleanCodeAvg || baseRating || 0);
           const wouldHireCount = projectReviews.filter((reviewItem) => reviewItem.wouldHire).length;
         %>
 
@@ -722,15 +724,17 @@
                 </a>
               <% } %>
 
-              <% if (isOwner) { %>
+              <% if (canModify) { %>
                 <a href="/projects/<%= currentProject._id %>/edit" class="btn btn-secondary">
                   <i data-lucide="edit" width="16" height="16"></i>
                   Edit
                 </a>
-                <button class="btn btn-danger" type="button">
-                  <i data-lucide="trash-2" width="16" height="16"></i>
-                  Delete
-                </button>
+                <form action="/projects/<%= currentProject._id %>/delete" method="post" style="display: inline;">
+                  <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this project? This action cannot be undone.');">
+                    <i data-lucide="trash-2" width="16" height="16"></i>
+                    Delete
+                  </button>
+                </form>
               <% } %>
             </div>
           </div>
@@ -2142,17 +2146,18 @@
             </a>
           </form>
 
-          <table class="logs-table">
-            <thead>
-              <tr>
-                <th>Timestamp</th>
-                <th>Action</th>
-                <th>Entity</th>
-                <th>User</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div class="logs-table-wrapper">
+            <table class="logs-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th>User</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
               <% (activityLogs || []).forEach((logItem) => {
                 const actionText = (logItem.action || '').toLowerCase();
                 const actionClass = actionText.includes('delete')
@@ -2171,6 +2176,7 @@
               <% }) %>
             </tbody>
           </table>
+          </div>
 
           <div class="pagination">
             <button class="pagination-btn" type="button" disabled>Previous</button>
