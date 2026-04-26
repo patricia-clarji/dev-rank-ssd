@@ -1,6 +1,7 @@
 const projectService = require("../services/projectService");
 const reviewService = require("../services/reviewService");
-const { getUserFlags, renderApp, mapProject, mapReview } = require("./viewModel");
+const { getUserFlags, renderApp } = require("../utils/viewRenderer");
+const mapperService = require("../services/mapperService");
 
 function parseCsv(csvValue) {
   return String(csvValue || "")
@@ -29,7 +30,7 @@ exports.reviewProject = async (req, res) => {
       pageTitle: `Review ${project.title}`,
       activeNav: "reviews",
       user: sessionUser,
-      project: mapProject(project),
+      project: mapperService.mapProject(project),
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
     });
@@ -82,8 +83,8 @@ exports.reviews = async (req, res) => {
       pageTitle: "Reviews",
       activeNav: "reviews",
       user: sessionUser,
-      receivedReviews: receivedReviews.map(mapReview).filter(Boolean),
-      givenReviews: givenReviews.map(mapReview).filter(Boolean),
+      receivedReviews: receivedReviews.map(mapperService.mapReview).filter(Boolean),
+      givenReviews: givenReviews.map(mapperService.mapReview).filter(Boolean),
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
     });

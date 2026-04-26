@@ -1,6 +1,6 @@
 const projectService = require("../services/projectService");
 const userService = require("../services/userService");
-const { getUserFlags, renderApp } = require("./viewModel");
+const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 
 exports.explore = async (req, res) => {
   try {

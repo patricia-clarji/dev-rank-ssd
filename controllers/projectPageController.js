@@ -1,13 +1,8 @@
 const projectService = require("../services/projectService");
 const skillService = require("../services/skillService");
-const { getUserFlags, renderApp, mapProject } = require("./viewModel");
-
-function parseCsv(csvValue) {
-  return String(csvValue || "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
+const { getUserFlags, renderApp } = require("../utils/viewRenderer");  
+const mapperService = require("../services/mapperService");
+const { parseCsv } = require("../utils/stringUtils");
 
 function isOwner(project, userId) {
   if (!project || !project.user || !userId) return false;
@@ -37,7 +32,7 @@ exports.projects = async (req, res) => {
       pageTitle: "Projects",
       activeNav: "projects",
       user: sessionUser,
-      projects: filteredProjects,
+      projects: filteredProjects.map(mapperService.mapProject),
       allProjects: projects,
       projectsSearchQuery: query,
       projectsStatusFilter: status,
@@ -102,7 +97,7 @@ exports.projectDetail = async (req, res) => {
       pageTitle: project.title,
       activeNav: "projects",
       user: sessionUser,
-      project: mapProject(project),
+      project: mapperService.mapProject(project),
       reviews,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
@@ -128,7 +123,7 @@ exports.editProject = async (req, res) => {
       pageTitle: `Edit ${project.title}`,
       activeNav: "projects",
       formMode: "edit",
-      project: mapProject(project),
+      project: mapperService.mapProject(project),
       user: sessionUser,
       skills,
       isReviewer: userFlags.isReviewer,

@@ -4,7 +4,7 @@ const nodemailer = require("nodemailer");
 const User = require("../models/mongo/User");
 const userService = require("../services/userService");
 const { generateToken } = require("../middleware/webAuth");
-const { content } = require("./viewModel");
+const { content } = require("../utils/viewRenderer");
 
 // Error message mapping
 const errorMessages = {

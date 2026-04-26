@@ -3,7 +3,8 @@ const Review = require("../models/mongo/Review");
 const reviewService = require("../services/reviewService");
 const certificationService = require("../services/certificationService");
 const projectService = require("../services/projectService");
-const { content, mapUser } = require("./viewModel");
+const { content } = require("../utils/viewRenderer");
+const mapperService = require("../services/mapperService");
 
 exports.landing = (req, res) => {
   res.render("pages/landing", {
@@ -57,7 +58,7 @@ exports.publicProfile = async (req, res) => {
       (c) => c.status === "pending"
     ).length;
 
-    const normalizedUser = mapUser(user);
+    const normalizedUser = mapperService.mapUser(user);
     normalizedUser.wouldHireRate = wouldHireRate;
 
     return res.render("pages/public-profile", {

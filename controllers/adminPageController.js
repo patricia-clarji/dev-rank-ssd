@@ -6,19 +6,9 @@ const projectService = require("../services/projectService");
 const reviewService = require("../services/reviewService");
 const certificationService = require("../services/certificationService");
 const activityLogService = require("../services/activityLogService");
-const { renderApp } = require("./viewModel");
-
-function toActionLabel(action) {
-  return String(action || "")
-    .toLowerCase()
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function isObjectId(value) {
-  return /^[a-f\d]{24}$/i.test(String(value || ""));
-}
+const mapperService = require("../services/mapperService");
+const { renderApp } = require("../utils/viewRenderer");
+const { toActionLabel, isObjectId } = require("../utils/stringUtils");
 
 async function buildFriendlyActivityLogs(logs) {
   const userIds = new Set();

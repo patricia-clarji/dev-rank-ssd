@@ -1,6 +1,6 @@
 const Review = require("../models/mongo/Review");
 const projectService = require("../services/projectService");
-const { getUserFlags, renderApp } = require("./viewModel");
+const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 
 exports.dashboard = async (req, res) => {
   try {

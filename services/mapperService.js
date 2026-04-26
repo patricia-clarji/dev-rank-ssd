@@ -1,4 +1,5 @@
-const content = require("../views/data/siteContent");
+// Data projection/mapping service
+// Transforms Mongoose documents into view-ready objects
 
 function toPlain(doc) {
   if (!doc) return null;
@@ -114,55 +115,10 @@ function mapActivityLog(logDoc) {
   };
 }
 
-function getUserFlags(user) {
-  if (!user) {
-    return { isReviewer: false, isAdmin: false };
-  }
-
-  return {
-    isReviewer: user.role === "reviewer" || user.role === "admin",
-    isAdmin: user.role === "admin",
-  };
-}
-
-function renderApp(res, page, options = {}) {
-  const user = options.user || null;
-  const normalizedUser = mapUser(user);
-  const userFlags = getUserFlags(normalizedUser);
-
-  const projects = (options.projects || []).map(mapProject).filter(Boolean);
-  const reviews = (options.reviews || []).map(mapReview).filter(Boolean);
-  const skills = options.skills || [];
-  const exploreUsers = (options.exploreUsers || options.users || []).map(mapUser).filter(Boolean);
-  const certificationRequests = (options.certificationRequests || options.certifications || []).map(mapCertification).filter(Boolean);
-  const activityLogs = (options.activityLogs || options.logs || []).map(mapActivityLog).filter(Boolean);
-
-  return res.render("pages/app", {
-    ...content,
-    ...options,
-    pageTitle: options.pageTitle || "DevRank",
-    bodyClass: "app-body",
-    page,
-    user: normalizedUser,
-    projects,
-    reviews,
-    skills,
-    exploreUsers,
-    certificationRequests,
-    activityLogs,
-    isReviewer: options.isReviewer ?? userFlags.isReviewer,
-    isAdmin: options.isAdmin ?? userFlags.isAdmin,
-    activeNav: options.activeNav || "dashboard",
-  });
-}
-
 module.exports = {
-  content,
   mapUser,
   mapProject,
   mapReview,
   mapCertification,
   mapActivityLog,
-  getUserFlags,
-  renderApp,
 };

@@ -2,7 +2,7 @@ const Review = require("../models/mongo/Review");
 const projectService = require("../services/projectService");
 const skillService = require("../services/skillService");
 const userService = require("../services/userService");
-const { getUserFlags, renderApp } = require("./viewModel");
+const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 
 exports.profile = async (req, res) => {
   try {

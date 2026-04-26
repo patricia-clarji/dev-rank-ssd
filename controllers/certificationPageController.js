@@ -1,6 +1,6 @@
 const certificationService = require("../services/certificationService");
 const reviewService = require("../services/reviewService");
-const { getUserFlags, renderApp } = require("./viewModel");
+const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 
 function parseCsv(csvValue) {
   return String(csvValue || "")
