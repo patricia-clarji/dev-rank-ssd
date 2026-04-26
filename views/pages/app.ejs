@@ -1258,6 +1258,11 @@
 
       <% } else if (page === "skills") { %>
         <%
+          const formatCategoryTitle = (value) => {
+            const text = String(value || "").trim();
+            if (!text) return "General";
+            return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+          };
           const groupedSkills = {};
           (skills || []).forEach((skillItem) => {
             const categories = Array.isArray(skillItem.category) ? skillItem.category : [skillItem.category || "General"];
@@ -1288,7 +1293,7 @@
                     ? `/skills?q=${encodeURIComponent(skillSearchQuery || '')}` 
                     : `/skills?category=${encodeURIComponent(categoryName)}&q=${encodeURIComponent(skillSearchQuery || '')}`;
                 %>
-                <a href="<%= href %>" class="category-pill <%= isActive ? 'active' : '' %>"><%= categoryName %></a>
+                <a href="<%= href %>" class="category-pill <%= isActive ? 'active' : '' %>"><%= formatCategoryTitle(categoryName) %></a>
               <% }) %>
             </div>
           </form>
@@ -1297,7 +1302,7 @@
             <% if (Object.keys(groupedSkills || {}).length > 0) { %>
               <% Object.keys(groupedSkills).forEach((categoryName) => { %>
                 <div class="skill-group">
-                  <h2 class="skill-group-title"><%= categoryName %></h2>
+                  <h2 class="skill-group-title"><%= formatCategoryTitle(categoryName) %></h2>
                   <div class="skills-grid">
                     <% groupedSkills[categoryName].forEach((skillItem) => {
                       const developers = Array.isArray(skillItem.users) ? skillItem.users.length : 0;
@@ -1377,7 +1382,7 @@
               <h1><%= currentSkill.name %></h1>
               <div class="tag-list">
                 <% (Array.isArray(currentSkill.category) ? currentSkill.category : [currentSkill.category || 'General']).forEach((category) => { %>
-                  <span class="tag"><%= category %></span>
+                  <span class="tag"><%= String(category || 'General').toUpperCase() %></span>
                 <% }) %>
               </div>
             </div>
@@ -1393,7 +1398,7 @@
               <div class="stat-label">Projects</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value"><%= Number(currentUser.profileScore || 4.5).toFixed(1) %></div>
+              <div class="stat-value"><%= Number(currentUser.profileScore || 0.0).toFixed(1) %></div>
               <div class="stat-label">Avg Rating</div>
             </div>
           </div>
@@ -1966,8 +1971,8 @@
                 <i data-lucide="activity" width="20" height="20"></i>
                 <span>View Activity Logs</span>
               </a>
-              <a href="/skills" class="quick-action">
-                <i data-lucide="code-2" width="20" height="20"></i>
+              <a href="/admin/skills" class="quick-action">
+                <i data-lucide="settings" width="20" height="20"></i>
                 <span>Manage Skills</span>
               </a>
               <a href="/explore" class="quick-action">
@@ -2182,6 +2187,283 @@
             <button class="pagination-btn" type="button" disabled>Previous</button>
             <span class="pagination-info">Page 1 of 1</span>
             <button class="pagination-btn" type="button" disabled>Next</button>
+          </div>
+        </div>
+
+      <% } else if (page === "admin-skills") { %>
+        <div class="activity-logs-page">
+          <div class="page-header">
+            <h1>Manage Skills</h1>
+            <p class="text-secondary">Add, edit, and organize platform skills</p>
+          </div>
+
+          <form action="/admin/skills" method="get" class="logs-toolbar">
+            <div class="search-box">
+              <i data-lucide="search" width="18" height="18" class="search-icon"></i>
+              <input type="text" name="q" value="<%= skillSearchQuery || '' %>" placeholder="Search skills..." />
+            </div>
+
+            <select class="form-select" style="width: auto" name="category">
+              <option value="">All Categories</option>
+              <option value="Frontend" <%= skillCategoryFilter === 'Frontend' ? 'selected' : '' %>>Frontend</option>
+              <option value="Backend" <%= skillCategoryFilter === 'Backend' ? 'selected' : '' %>>Backend</option>
+              <option value="Database" <%= skillCategoryFilter === 'Database' ? 'selected' : '' %>>Database</option>
+              <option value="DevOps" <%= skillCategoryFilter === 'DevOps' ? 'selected' : '' %>>DevOps</option>
+              <option value="Mobile" <%= skillCategoryFilter === 'Mobile' ? 'selected' : '' %>>Mobile</option>
+              <option value="Other" <%= skillCategoryFilter === 'Other' ? 'selected' : '' %>>Other</option>
+            </select>
+
+            <button class="btn btn-secondary" type="submit">
+              <i data-lucide="refresh-cw" width="16" height="16"></i>
+              Apply
+            </button>
+
+            <a class="btn btn-secondary" href="/admin/skills">
+              <i data-lucide="download" width="16" height="16"></i>
+              Reset
+            </a>
+
+            <a href="/admin/skills/new" class="btn btn-primary">
+              <i data-lucide="plus" width="16" height="16"></i>
+              Add New Skill
+            </a>
+          </form>
+
+          <div class="logs-table-wrapper">
+            <table class="logs-table">
+              <thead>
+                <tr>
+                  <th>Skill Name</th>
+                  <th>Category</th>
+                  <th>Users</th>
+                  <th>Preset</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+              <% (skills || []).forEach((skill) => { %>
+                <tr>
+                  <td><%= skill.name %></td>
+                  <td style="text-align: left;">
+                    <% if (Array.isArray(skill.category)) { %>
+                      <% skill.category.forEach((cat, index) => { %>
+                        <span class="badge" style="padding: 0px;"><%= cat %></span><% if (index < skill.category.length - 1) { %>,<% } %>
+                      <% }) %>
+                    <% } else { %>
+                      <span class="badge"><%= skill.category || 'General' %></span>
+                    <% } %>
+                  </td>
+                  <td><%= skill.userCount || 0 %></td>
+                  <td>
+                    <% if (skill.isPreset) { %>
+                      <span class="badge badge-success">Yes</span>
+                    <% } else { %>
+                      <span class="badge badge-secondary">No</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <a href="/admin/skills/<%= skill._id %>/edit" class="btn btn-sm btn-secondary">
+                      <i data-lucide="edit" width="14" height="14"></i>
+                      Edit
+                    </a>
+                    <form action="/admin/skills/<%= skill._id %>/delete" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this skill?')">
+                      <button type="submit" class="btn btn-sm btn-danger">
+                        <i data-lucide="trash-2" width="14" height="14"></i>
+                        Delete
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <% if (totalPages > 1) { %>
+          <div class="pagination">
+            <% if (hasPrevPage) { %>
+              <a href="?page=<%= currentPage - 1 %>&q=<%= skillSearchQuery %>&category=<%= skillCategoryFilter %>" class="pagination-btn">Previous</a>
+            <% } else { %>
+              <button class="pagination-btn" disabled>Previous</button>
+            <% } %>
+
+            <span class="pagination-info">Page <%= currentPage %> of <%= totalPages %> (<%= totalSkills %> skills)</span>
+
+            <% if (hasNextPage) { %>
+              <a href="?page=<%= currentPage + 1 %>&q=<%= skillSearchQuery %>&category=<%= skillCategoryFilter %>" class="pagination-btn">Next</a>
+            <% } else { %>
+              <button class="pagination-btn" disabled>Next</button>
+            <% } %>
+          </div>
+          <% } %>
+        </div>
+
+      <% } else if (page === "admin-skill-new") { %>
+        <div class="edit-profile-page">
+          <div class="edit-profile-container">
+            <div class="page-header">
+              <h1>Add New Skill</h1>
+              <p class="text-secondary">Create a new skill for the platform</p>
+            </div>
+
+            <form action="/admin/skills" method="post">
+              <div class="form-section">
+                <h2>Skill Information</h2>
+
+                <div class="form-group">
+                  <label class="form-label">Skill Name *</label>
+                  <input type="text" name="name" class="form-input" required />
+                  <span class="form-hint">The name of the skill (e.g., React, Node.js, Python)</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Categories</label>
+                  <div class="category-checkboxes">
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="frontend" />
+                        <span>Frontend</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="backend" />
+                        <span>Backend</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="database" />
+                        <span>Database</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="devops" />
+                        <span>DevOps</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="mobile" />
+                        <span>Mobile</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="other" />
+                        <span>Other</span>
+                      </label>
+                    </div>
+                  </div>
+                  <span class="form-hint">Select one or more categories for this skill</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" name="isPreset" />
+                    <span>Preset skill (available by default)</span>
+                  </label>
+                  <span class="form-hint">Preset skills are available to all users without needing to be added manually</span>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <a href="/admin/skills" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                  <i data-lucide="plus" width="16" height="16"></i>
+                  Create Skill
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      <% } else if (page === "admin-skill-edit") { %>
+        <div class="edit-profile-page">
+          <div class="edit-profile-container">
+            <div class="page-header">
+              <h1>Edit Skill</h1>
+              <p class="text-secondary">Update skill information</p>
+            </div>
+
+            <form action="/admin/skills/<%= skill._id %>/edit" method="post">
+              <div class="form-section">
+                <h2>Skill Information</h2>
+
+                <div class="form-group">
+                  <label class="form-label">Skill Name *</label>
+                  <input type="text" name="name" class="form-input" value="<%= skill.name %>" required />
+                  <span class="form-hint">The name of the skill (e.g., React, Node.js, Python)</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Categories</label>
+                  <div class="category-checkboxes">
+                    <%
+                      const skillCategories = (Array.isArray(skill.category) ? skill.category : [skill.category])
+                        .filter(Boolean)
+                        .flatMap((cat) => String(cat).split(','))
+                        .map((cat) => cat.trim().toLowerCase())
+                        .filter(Boolean);
+                    %>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="frontend" <%= skillCategories.includes('frontend') ? 'checked' : '' %> />
+                        <span>Frontend</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="backend" <%= skillCategories.includes('backend') ? 'checked' : '' %> />
+                        <span>Backend</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="database" <%= skillCategories.includes('database') ? 'checked' : '' %> />
+                        <span>Database</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="devops" <%= skillCategories.includes('devops') ? 'checked' : '' %> />
+                        <span>DevOps</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="mobile" <%= skillCategories.includes('mobile') ? 'checked' : '' %> />
+                        <span>Mobile</span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>
+                        <input type="checkbox" name="category" value="other" <%= skillCategories.includes('other') ? 'checked' : '' %> />
+                        <span>Other</span>
+                      </label>
+                    </div>
+                  </div>
+                  <span class="form-hint">Select one or more categories for this skill</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" name="isPreset" <%= skill.isPreset ? 'checked' : '' %> />
+                    <span>Preset skill (available by default)</span>
+                  </label>
+                  <span class="form-hint">Preset skills are available to all users without needing to be added manually</span>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <a href="/admin/skills" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                  <i data-lucide="save" width="16" height="16"></i>
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
