@@ -18,6 +18,11 @@
 
     <form action="/explore" method="get" class="header-search" role="search">
       <i data-lucide="search" width="18" height="18" class="header-search-icon" aria-hidden="true"></i>
+      <% if (typeof exploreIncludeDevelopers !== 'undefined') { %>
+        <input type="hidden" name="developers" value="<%= exploreIncludeDevelopers ? '1' : '0' %>" />
+        <input type="hidden" name="status" value="<%= typeof exploreStatusFilter === 'string' ? exploreStatusFilter : 'all' %>" />
+        <input type="hidden" name="role" value="<%= typeof exploreRoleFilter === 'string' ? exploreRoleFilter : 'all' %>" />
+      <% } %>
       <input
         type="text"
         name="q"

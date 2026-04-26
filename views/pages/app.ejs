@@ -1703,12 +1703,12 @@
             <a href="/explore?q=<%= encodeURIComponent(exploreSearchQuery || '') %>&status=<%= encodeURIComponent(exploreStatusFilter || 'all') %>&developers=0" class="tab <%= exploreIncludeDevelopers ? '' : 'active' %>">
               <i data-lucide="folder-git-2" width="16" height="16"></i>
               Projects
-              <span class="tab-count"><%= exploreProjectsTotal || (projects || []).length %></span>
+              <span class="tab-count"><%= typeof exploreProjectsTotal === 'number' ? exploreProjectsTotal : (projects || []).length %></span>
             </a>
             <a href="/explore?q=<%= encodeURIComponent(exploreSearchQuery || '') %>&status=<%= encodeURIComponent(exploreStatusFilter || 'all') %>&developers=1" class="tab <%= exploreIncludeDevelopers ? 'active' : '' %>">
               <i data-lucide="users" width="16" height="16"></i>
               Developers
-              <span class="tab-count"><%= exploreUsersTotal || (exploreUsers || []).length %></span>
+              <span class="tab-count"><%= typeof exploreUsersTotal === 'number' ? exploreUsersTotal : (exploreUsers || []).length %></span>
             </a>
           </div>
 

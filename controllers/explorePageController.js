@@ -2,6 +2,17 @@ const projectService = require("../services/projectService");
 const userService = require("../services/userService");
 const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 
+function matchesQuery(values, query) {
+  if (!query) return true;
+
+  const haystack = values
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(query);
+}
+
 exports.explore = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
@@ -25,59 +36,40 @@ exports.explore = async (req, res) => {
       return String(user._id) !== String(sessionUser._id);
     });
 
-    const filteredProjects = query
-      ? projects.filter((project) => {
-          const owner = project.user || {};
+    const filteredProjects = projects.filter((project) => {
+      const owner = project.user || {};
 
-          const haystack = [
-            project.title,
-            project.description,
-            ...(project.techStack || []),
-            owner.name,
-            owner.username,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
+      return matchesQuery(
+        [project.title, project.description, ...(project.techStack || []), owner.name, owner.username],
+        query
+      );
+    });
 
-          return haystack.includes(query);
-        })
-      : projects;
+    const matchingUsers = filteredExploreUsers.filter((user) => {
+      let roleMatch = true;
 
-    const filteredUsers = includeDevelopers
-      ? filteredExploreUsers.filter((user) => {
-          let roleMatch = true;
+      if (role === "developer") {
+        roleMatch = user.role === "developer";
+      } else if (role === "reviewer") {
+        roleMatch = user.role === "reviewer";
+      } else if (role === "both") {
+        roleMatch = user.role === "developer" || user.role === "reviewer";
+      }
 
-          if (role === "developer") {
-            roleMatch = user.role === "developer";
-          } else if (role === "reviewer") {
-            roleMatch = user.role === "reviewer";
-          } else if (role === "both") {
-            roleMatch =
-              user.role === "developer" || user.role === "reviewer";
-          }
+      const queryMatch = matchesQuery(
+        [
+          user.name,
+          user.username,
+          user.bio,
+          ...(user.skills || []).map((skill) => (typeof skill === "string" ? skill : skill.name)),
+        ],
+        query
+      );
 
-          let queryMatch = !query;
+      return roleMatch && queryMatch;
+    });
 
-          if (query) {
-            const haystack = [
-              user.name,
-              user.username,
-              user.bio,
-              ...(user.skills || []).map((skill) =>
-                typeof skill === "string" ? skill : skill.name
-              ),
-            ]
-              .filter(Boolean)
-              .join(" ")
-              .toLowerCase();
-
-            queryMatch = haystack.includes(query);
-          }
-
-          return roleMatch && queryMatch;
-        })
-      : [];
+    const filteredUsers = includeDevelopers ? matchingUsers : [];
 
     const userFlags = getUserFlags(sessionUser);
 
@@ -89,8 +81,8 @@ exports.explore = async (req, res) => {
       projects: filteredProjects,
       exploreUsers: filteredUsers,
 
-      exploreUsersTotal: filteredExploreUsers.length,
-      exploreProjectsTotal: projects.length,
+      exploreUsersTotal: matchingUsers.length,
+      exploreProjectsTotal: filteredProjects.length,
 
       exploreSearchQuery: query,
       exploreStatusFilter: status,
