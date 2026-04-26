@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../models/mongo/User");
 const userService = require("../services/userService");
+const { generateToken } = require("../middleware/webAuth");
 const { content } = require("./viewModel");
 
 // Error message mapping
@@ -127,7 +128,9 @@ exports.handleLogin = async (req, res) => {
       return res.redirect("/login?error=invalid_credentials");
     }
 
-    res.cookie("devrank_user", encodeURIComponent(user._id.toString()), {
+    const token = generateToken(user._id.toString());
+
+    res.cookie("devrank_token", token, {
       httpOnly: true,
       sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7,
@@ -163,17 +166,15 @@ exports.handleRegister = async (req, res) => {
       role: "developer",
     });
 
-    const userId = user._id.toString();
-    console.log("[Register] User created with ID:", userId);
+    const token = generateToken(user._id.toString());
     
-    res.cookie("devrank_user", encodeURIComponent(userId), {
+    res.cookie("devrank_token", token, {
       httpOnly: true,
       sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7,
       path: "/",
     });
 
-    console.log("[Register] Cookie set, redirecting to /dashboard");
     return res.redirect("/dashboard");
   } catch (error) {
     if (error.statusCode === 409) {
@@ -184,7 +185,7 @@ exports.handleRegister = async (req, res) => {
 };
 
 exports.logout = (req, res) => {
-  res.clearCookie("devrank_user");
+  res.clearCookie("devrank_token");
   return res.redirect("/login");
 };
 

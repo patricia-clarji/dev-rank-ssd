@@ -4,21 +4,25 @@ const path = require("path");
 const connectMongoDB = require("./config/mongodb.js");
 const sequelize = require("./config/sqlite.js");
 
-const webRoutes = require("./routes/webRoutes.js");
+const { attachCurrentUser } = require("./middleware/webAuth.js");
 const { registerEventListeners } = require("./listeners/registerEventListeners.js");
+const appRoutes = require("./routes/appRoutes.js");
 
 const app = express();
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
 registerEventListeners();
 
-// Mount web routes only (SSR app)
-app.use("/", webRoutes);
+// Attach current user to all requests
+app.use(attachCurrentUser);
+
+// Mount app routes (SSR app)
+app.use("/", appRoutes);
 
 app.use((req, res, next) => {
   return res.status(404).render("pages/not-found", {

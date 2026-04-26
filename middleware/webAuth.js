@@ -1,4 +1,8 @@
+const jwt = require("jsonwebtoken");
 const User = require("../models/mongo/User");
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRY = "7d";
 
 function getCookies(req) {
   const cookieHeader = req.headers.cookie || "";
@@ -10,11 +14,30 @@ function getCookies(req) {
   }, {});
 }
 
+function generateToken(userId) {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+}
+
+function verifyToken(token) {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded.userId;
+  } catch (error) {
+    return null;
+  }
+}
+
 async function attachCurrentUser(req, res, next) {
   try {
     const cookies = getCookies(req);
-    const userId = cookies.devrank_user;
+    const token = cookies.devrank_token;
 
+    if (!token) {
+      req.currentUser = null;
+      return next();
+    }
+
+    const userId = verifyToken(token);
     if (!userId) {
       req.currentUser = null;
       return next();
@@ -74,4 +97,5 @@ module.exports = {
   requireAuth,
   requireGuest,
   requireRole,
+  generateToken,
 };

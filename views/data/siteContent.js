@@ -19,10 +19,6 @@ const landingSteps = [
   { step: "3", title: "Get Reviewed", text: "Certified reviewers score your work and leave actionable notes." },
 ];
 
-
-
-const reviewFormScores = ["Code Quality", "Creativity", "Clean Code", "Documentation"];
-
 module.exports = {
   landingStats,
   landingFeatures,
