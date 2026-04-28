@@ -10,94 +10,6 @@ const mapperService = require("../services/mapperService");
 const { renderApp } = require("../utils/viewRenderer");
 const { toActionLabel, isObjectId } = require("../utils/stringUtils");
 
-async function buildFriendlyActivityLogs(logs) {
-  const userIds = new Set();
-  const projectIds = new Set();
-  const reviewIds = new Set();
-  const certificationIds = new Set();
-
-  logs.forEach((log) => {
-    if (isObjectId(log.userId)) userIds.add(String(log.userId));
-
-    const entity = String(log.entity || "").toLowerCase();
-    if (entity === "project" && isObjectId(log.entityId)) projectIds.add(String(log.entityId));
-    if (entity === "review" && isObjectId(log.entityId)) reviewIds.add(String(log.entityId));
-    if (entity === "certificationrequest" && isObjectId(log.entityId)) certificationIds.add(String(log.entityId));
-    if (entity === "user" && isObjectId(log.entityId)) userIds.add(String(log.entityId));
-
-    const metadata = log.metadata || {};
-    if (isObjectId(metadata.projectId)) projectIds.add(String(metadata.projectId));
-    if (isObjectId(metadata.followerId)) userIds.add(String(metadata.followerId));
-    if (isObjectId(metadata.targetId)) userIds.add(String(metadata.targetId));
-  });
-
-  const [users, projects, reviews, certifications] = await Promise.all([
-    userIds.size > 0
-      ? User.find({ _id: { $in: Array.from(userIds) } }).select("name username")
-      : [],
-    projectIds.size > 0
-      ? Project.find({ _id: { $in: Array.from(projectIds) } }).select("title")
-      : [],
-    reviewIds.size > 0
-      ? Review.find({ _id: { $in: Array.from(reviewIds) } })
-          .select("overallRating")
-          .populate("project", "title")
-      : [],
-    certificationIds.size > 0
-      ? CertificationRequest.find({ _id: { $in: Array.from(certificationIds) } }).populate("user", "name username")
-      : [],
-  ]);
-
-  const userMap = new Map(users.map((user) => [String(user._id), user]));
-  const projectMap = new Map(projects.map((project) => [String(project._id), project]));
-  const reviewMap = new Map(reviews.map((review) => [String(review._id), review]));
-  const certMap = new Map(certifications.map((request) => [String(request._id), request]));
-
-  return logs.map((log) => {
-    const metadata = log.metadata || {};
-    const actorUser = userMap.get(String(log.userId || ""));
-    const actorName = metadata.actorName || (actorUser && (actorUser.name || actorUser.username)) || "System";
-    const entity = String(log.entity || "").toLowerCase();
-
-    let targetLabel = metadata.title || metadata.name || metadata.target || "";
-
-    if (!targetLabel && entity === "project") {
-      const project = projectMap.get(String(log.entityId || metadata.projectId || ""));
-      targetLabel = project ? project.title : "Project";
-    }
-
-    if (!targetLabel && entity === "review") {
-      const review = reviewMap.get(String(log.entityId || ""));
-      targetLabel = review ? `Review for ${(review.project && review.project.title) || "Project"}` : "Review";
-    }
-
-    if (!targetLabel && entity === "certificationrequest") {
-      const request = certMap.get(String(log.entityId || ""));
-      targetLabel = request && request.user
-        ? `Certification request by ${request.user.name || request.user.username || "user"}`
-        : "Certification request";
-    }
-
-    if (!targetLabel && entity === "user") {
-      const targetUser = userMap.get(String(log.entityId || metadata.targetId || ""));
-      targetLabel = targetUser ? (targetUser.name || targetUser.username) : "User";
-    }
-
-    const entityLabel = entity === "certificationrequest" 
-      ? "Certification" 
-      : (entity ? entity.charAt(0).toUpperCase() + entity.slice(1) : "Record");
-
-    return {
-      ...log,
-      actionLabel: toActionLabel(log.action),
-      actorName,
-      entity: entityLabel,
-      targetLabel: targetLabel || entityLabel || "Record",
-      detailsText: metadata.adminNotes || metadata.status || metadata.role || "",
-    };
-  });
-}
-
 exports.adminDashboard = async (req, res) => {
   try {
     const [users, projects, reviews, certifications, rawActivityLogs] = await Promise.all([
@@ -107,7 +19,7 @@ exports.adminDashboard = async (req, res) => {
       certificationService.getAllRequests(),
       activityLogService.getAllLogs({}),
     ]);
-    const activityLogs = await buildFriendlyActivityLogs(rawActivityLogs);
+    const activityLogs = await activityLogService.buildFriendlyActivityLogs(rawActivityLogs);
 
     return renderApp(res, "admin-dashboard", {
       pageTitle: "Admin dashboard",
