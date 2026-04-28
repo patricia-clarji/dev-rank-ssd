@@ -1,47 +1,19 @@
 <%- include('../partials/head', { pageTitle, bodyClass }) %>
 <%
-  const incomingUser = user || {};
+  /* Controllers MUST supply these view-model variables:
+     currentUserName, firstName, normalizedSkills,
+     publicProfileUrl, ownCertification, certStatus, reviewsList,
+     hireRate, avgProjectRating, certificationRequirements, allRequirementsMet,
+     certificationRequests, projects, reviews
+  */
+  
+  // Normalize user object (controllers pass 'user', normalize to 'currentUser')
   const currentUser = {
-    ...incomingUser,
-    github: incomingUser.github || incomingUser.githubUrl || "",
-    linkedin: incomingUser.linkedin || incomingUser.linkedinUrl || "",
-    website: incomingUser.website || incomingUser.websiteUrl || "",
+    ...(user || {}),
+    github: (user && (user.github || user.githubUrl)) || "",
+    linkedin: (user && (user.linkedin || user.linkedinUrl)) || "",
+    website: (user && (user.website || user.websiteUrl)) || "",
   };
-  const currentUserName = currentUser.name || "User";
-  const firstName = currentUserName.split(" ")[0];
-  const userCertificationStatus = typeof certificationStatus !== 'undefined' ? certificationStatus : null;
-  const normalizedSkills = (currentUser.skills || []).map((skill, idx) => {
-    if (typeof skill === "string") {
-      return { id: "skill-" + idx, name: skill, category: "General" };
-    }
-    return {
-      id: skill._id || ("skill-" + idx),
-      name: skill.name || "",
-      category: skill.category || "General"
-    };
-  });
-  const publicProfileUrl = "/user/" + (currentUser.username || "developer");
-  const ownCertification = (certificationRequests || []).find((request) => {
-    const requestUserId = (request.user && request.user._id) ? String(request.user._id) : "";
-    return requestUserId && currentUser._id && requestUserId === String(currentUser._id);
-  });
-  const certStatus = isReviewer
-    ? "certified"
-    : (userCertificationStatus || (ownCertification ? ownCertification.status : "not-applied"));
-  const reviewsList = reviews || [];
-  const hireVotes = reviewsList.filter((reviewItem) => reviewItem.wouldHire).length;
-  const hireRate = reviewsList.length > 0 ? Math.round((hireVotes / reviewsList.length) * 100) : 0;
-  const avgProjectRating = (projects || []).length > 0
-    ? (projects || []).reduce((sum, projectItem) => sum + Number(projectItem.averageRating || 0), 0) / (projects || []).length
-    : 0;
-  const certificationRequirements = [
-    { text: "At least 5 published projects", met: (projects || []).length >= 5 },
-    { text: "Average rating of 4.0 or higher", met: avgProjectRating >= 4 },
-    { text: "Minimum 10 skills on profile", met: normalizedSkills.length >= 10 },
-    { text: "GitHub account connected", met: Boolean(currentUser.github) },
-    { text: "Profile complete (bio, avatar, etc.)", met: Boolean(currentUser.bio) }
-  ];
-  const allRequirementsMet = certificationRequirements.every((requirement) => requirement.met);
 %>
 
 <div class="layout">
@@ -53,8 +25,8 @@
       isAdmin, 
       isReviewer, 
       page,
-      reviewsCount: (reviews || []).length,
-      pendingCertificationsCount: (certificationRequests || []).filter(req => req.status === 'pending').length
+      reviewsCount: reviews.length,
+      pendingCertificationsCount: certificationRequests.filter(req => req.status === 'pending').length
     }) %>
 
     <main class="layout-main">
@@ -122,21 +94,13 @@
                 </a>
               </div>
               <div class="box">
-                <% (projects || []).forEach((project) => {
-                  const projectStatus = project.status || "draft";
-                  const statusClass = projectStatus === "reviewed"
-                    ? "badge badge-success"
-                    : (projectStatus === "seeking-review" ? "badge badge-warning" : "badge badge-secondary");
-                  const statusLabel = projectStatus === "reviewed"
-                    ? "Reviewed"
-                    : (projectStatus === "seeking-review" ? "Seeking Review" : "Draft");
-                %>
+                <% (projects || []).forEach((project) => { %>
                   <a href="/projects/<%= project._id %>" class="project-row">
                     <div class="project-info">
                       <div class="project-title">
                         <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
                         <span><%= project.title %></span>
-                        <span class="<%= statusClass %>"><%= statusLabel %></span>
+                        <span class="<%= project.statusClass %>"><%= project.statusLabel %></span>
                       </div>
                       <p class="project-desc"><%= project.description %></p>
                       <div class="project-meta">
@@ -151,10 +115,10 @@
                       </div>
                     </div>
                     <div class="project-stats">
-                      <% if ((project.reviewCount || 0) > 0) { %>
+                      <% if (project.hasReviews) { %>
                         <div class="project-rating">
                           <i data-lucide="star" width="14" height="14" class="star filled"></i>
-                          <span><%= Number(project.averageRating || 0).toFixed(1) %></span>
+                          <span><%= Number(project.averageRating).toFixed(1) %></span>
                         </div>
                         <span class="text-muted text-sm"><%= project.reviewCount %> reviews</span>
                       <% } else { %>
@@ -184,33 +148,24 @@
               </div>
               <div class="box">
                 <% if ((reviews || []).length > 0) { %>
-                  <% (reviews || []).forEach((review) => {
-                    const reviewerName = (review.reviewer && review.reviewer.name) || "Reviewer";
-                    const reviewerInitials = reviewerName
-                      .split(" ")
-                      .map((part) => part[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase();
-                    const projectLabel = review.projectTitle || ((review.project && review.project.title) || "Project");
-                  %>
+                  <% (reviews || []).forEach((review) => { %>
                     <div class="review-row">
                       <div class="review-header">
-                        <div class="avatar avatar-sm"><%= reviewerInitials %></div>
+                        <div class="avatar avatar-sm"><%= review.reviewerInitials %></div>
                         <div class="review-meta">
-                          <span class="review-reviewer"><%= reviewerName %></span>
+                          <span class="review-reviewer"><%= review.reviewerName %></span>
                           <span class="text-muted">reviewed</span>
-                          <span class="review-project"><%= projectLabel %></span>
+                          <span class="review-project"><%= review.projectLabel %></span>
                         </div>
                         <div class="review-rating">
                           <i data-lucide="star" width="14" height="14" class="star filled"></i>
-                          <span><%= Number(review.overallRating || 0).toFixed(1) %></span>
+                          <span><%= Number(review.overallRating).toFixed(1) %></span>
                         </div>
                       </div>
                       <div class="review-footer">
                         <span class="text-muted text-sm">
                           <i data-lucide="clock" width="12" height="12"></i>
-                          <%= new Date(review.createdAt).toLocaleDateString() %>
+                          <%= review.formattedDate %>
                         </span>
                         <% if (review.wouldHire) { %>
                           <span class="hire-badge positive">
@@ -598,39 +553,25 @@
           </form>
 
           <div class="projects-filters">
-            <% ['all', 'reviewed', 'seeking-review'].forEach((filterName) => {
-              const isActive = (projectsStatusFilter || 'all') === filterName;
-              const filterLabel = filterName === 'all' ? 'All' : (filterName === 'reviewed' ? 'Reviewed' : 'Seeking Review');
-              const filterCount = filterName === 'all'
-                ? (allProjects || projects || []).length
-                : (allProjects || projects || []).filter((project) => (project.status || 'draft') === filterName).length;
-            %>
-              <a href="/projects?status=<%= filterName %>&q=<%= encodeURIComponent(projectsSearchQuery || '') %>" class="filter-tab <%= isActive ? 'active' : '' %>"><%= filterLabel %> <span class="tab-count"><%= filterCount %></span></a>
+            <% (filterCounts || []).forEach((filter) => { %>
+              <a href="/projects?status=<%= filter.value %>&q=<%= encodeURIComponent(projectsSearchQuery || '') %>" class="filter-tab <%= filter.isActive ? 'active' : '' %>"><%= filter.label %> <span class="tab-count"><%= filter.count %></span></a>
             <% }) %>
           </div>
 
           <div class="projects-list">
-            <% (projects || []).forEach((project) => {
-              const projectStatus = project.status || "draft";
-              const statusClass = projectStatus === "reviewed"
-                ? "badge badge-success"
-                : (projectStatus === "seeking-review" ? "badge badge-warning" : "badge badge-secondary");
-              const statusLabel = projectStatus === "reviewed"
-                ? "Reviewed"
-                : (projectStatus === "seeking-review" ? "Seeking Review" : "Draft");
-            %>
+            <% (projects || []).forEach((project) => { %>
               <a href="/projects/<%= project._id %>" class="project-list-item">
                 <div class="project-list-main">
                   <div class="project-list-header">
                     <i data-lucide="folder-git-2" width="16" height="16" class="text-secondary"></i>
                     <h3 class="project-list-title"><%= project.title %></h3>
-                    <span class="<%= statusClass %>">
-                      <% if (projectStatus === 'reviewed') { %>
+                    <span class="<%= project.statusClass %>">
+                      <% if (project.status === 'reviewed') { %>
                         <i data-lucide="check-circle" width="12" height="12"></i>
-                      <% } else if (projectStatus === 'seeking-review') { %>
+                      <% } else if (project.status === 'seeking-review') { %>
                         <i data-lucide="eye" width="12" height="12"></i>
                       <% } %>
-                      <%= statusLabel %>
+                      <%= project.statusLabel %>
                     </span>
                   </div>
                   <p class="project-list-desc"><%= project.description %></p>
@@ -655,7 +596,7 @@
                   <% } %>
                    <span class="project-list-date">
                       <i data-lucide="clock" width="12" height="12"></i>
-                      <%= new Date(project.createdAt).toLocaleDateString() %>
+                      <%= project.formattedDate %>
                     </span>
                 </div>
               </a>
@@ -673,69 +614,56 @@
         </div>
 
       <% } else if (page === "project-detail") { %>
-        <%
-          const currentProject = project || {};
-          const projectOwner = currentProject.owner || {};
-          const isOwner = Boolean(currentUser._id && projectOwner._id && String(currentUser._id) === String(projectOwner._id));
-          const canModify = isOwner || isAdmin;
-          const projectReviews = reviews || [];
-          const baseRating = Number(currentProject.averageRating || 0);
-          const codeQuality = Number(currentProject.codeQualityAvg || baseRating || 0);
-          const creativity = Number(currentProject.creativityAvg || baseRating || 0);
-          const cleanCode = Number(currentProject.cleanCodeAvg || baseRating || 0);
-          const wouldHireCount = projectReviews.filter((reviewItem) => reviewItem.wouldHire).length;
-        %>
-
         <div class="project-detail-page">
           <div class="project-detail-header">
             <div class="project-detail-title">
               <i data-lucide="folder-git-2" width="24" height="24" class="text-secondary"></i>
-              <h1><%= currentProject.title %></h1>
-              <% if (currentProject.status === 'reviewed') { %>
+              <h1><%= project.title %></h1>
+              <% if (project.status === 'reviewed') { %>
                 <span class="badge badge-success">
                   <i data-lucide="check-circle" width="12" height="12"></i>
                   Reviewed
                 </span>
               <% } %>
-              <% if (currentProject.status === 'seeking-review') { %>
+              <% if (project.status === 'seeking-review') { %>
                 <span class="badge badge-warning">Seeking Review</span>
               <% } %>
             </div>
 
             <div class="project-detail-meta">
-              <a href="/user/<%= projectOwner.username || 'developer' %>">@<%= projectOwner.username || 'developer' %></a>
+              <a href="/user/<%= projectDetailVM.projectOwner.username || 'developer' %>">@<%= projectDetailVM.projectOwner.username || 'developer' %></a>
               <span>•</span>
-              <span>Created <%= currentProject.createdAt ? new Date(currentProject.createdAt).toLocaleDateString() : 'N/A' %></span>
+              <span>Created <%= project.createdAt ? new Date(project.createdAt).toLocaleDateString() : 'N/A' %></span>
             </div>
 
             <div class="project-detail-actions">
-              <% if (currentProject.repoUrl) { %>
-                <a href="<%= currentProject.repoUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+              <% if (project.repoUrl) { %>
+                <a href="<%= project.repoUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
                   <i data-lucide="github" width="16" height="16"></i>
                   View Repository
                 </a>
               <% } %>
 
-              <% if (currentProject.liveUrl) { %>
-                <a href="<%= currentProject.liveUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+              <% if (project.liveUrl) { %>
+                <a href="<%= project.liveUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
                   <i data-lucide="external-link" width="16" height="16"></i>
                   Live Demo
                 </a>
               <% } %>
 
-              <% if (isReviewer && !isOwner) { %>
-                <a href="/projects/<%= currentProject._id %>/review" class="btn btn-primary">
+              <% if (isReviewer && !projectDetailVM.isOwner) { %>
+                <a href="/projects/<%= project._id %>/review" class="btn btn-primary">
                   <i data-lucide="message-square" width="16" height="16"></i>
                   Write Review
                 </a>
               <% } %>
 
-              <% if (canModify) { %>
-                <a href="/projects/<%= currentProject._id %>/edit" class="btn btn-secondary">
+              <% if (projectDetailVM.canModify) { %>
+                <a href="/projects/<%= project._id %>/edit" class="btn btn-secondary">
                   <i data-lucide="edit" width="16" height="16"></i>
                   Edit
                 </a>
-                <form action="/projects/<%= currentProject._id %>/delete" method="post" style="display: inline;">
+                <form action="/projects/<%= project._id %>/delete" method="post" style="display: inline;">
                   <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this project? This action cannot be undone.');">
                     <i data-lucide="trash-2" width="16" height="16"></i>
                     Delete
@@ -749,13 +677,13 @@
             <div class="project-detail-main">
               <div class="project-section">
                 <h2>About</h2>
-                <p class="project-description"><%= currentProject.description || 'No description provided.' %></p>
+                <p class="project-description"><%= project.description || 'No description provided.' %></p>
               </div>
 
               <div class="project-section">
                 <h2>Tech Stack</h2>
                 <div class="project-tech-stack">
-                  <% (currentProject.techStack || []).forEach((tech) => { %>
+                  <% (project.techStack || []).forEach((tech) => { %>
                     <a href="/skills" class="tag"><%= tech %></a>
                   <% }) %>
                 </div>
@@ -763,31 +691,18 @@
 
               <div class="reviews-section">
                 <div class="reviews-header">
-                  <h2>Reviews (<%= projectReviews.length %>)</h2>
+                  <h2>Reviews (<%= projectReviewCards.length %>)</h2>
                 </div>
 
-                <% if (projectReviews.length > 0) { %>
-                  <% projectReviews.forEach((reviewItem) => {
-                    const reviewerName = (reviewItem.reviewer && reviewItem.reviewer.name) || "Reviewer";
-                    const reviewerUsername = (reviewItem.reviewer && reviewItem.reviewer.username) || "reviewer";
-                    const reviewerInitials = reviewerName
-                      .split(" ")
-                      .map((part) => part[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase();
-                    const reviewFeedback = reviewItem.feedback || reviewItem.note || "No written feedback provided.";
-                    const reviewSuggestions = Array.isArray(reviewItem.suggestions) && reviewItem.suggestions.length
-                      ? reviewItem.suggestions
-                      : ["Add more integration tests", "Document architecture decisions in the README"];
-                  %>
+                <% if (projectReviewCards.length > 0) { %>
+                  <% projectReviewCards.forEach((reviewItem) => { %>
                     <div class="review-card">
                       <div class="review-card-header">
                         <div class="review-author">
-                          <div class="avatar avatar-sm"><%= reviewerInitials %></div>
+                          <div class="avatar avatar-sm"><%= reviewItem.reviewerInitials || 'U' %></div>
                           <div class="review-author-info">
-                            <span class="review-author-name"><%= reviewerName %></span>
-                            <span class="review-date"><%= new Date(reviewItem.createdAt).toLocaleDateString() %> • @<%= reviewerUsername %></span>
+                            <span class="review-author-name"><%= reviewItem.reviewerName || ((reviewItem.reviewer && reviewItem.reviewer.name) || 'Reviewer') %></span>
+                            <span class="review-date"><%= reviewItem.displayDate || new Date(reviewItem.createdAt).toLocaleDateString() %> • @<%= reviewItem.reviewerUsername || ((reviewItem.reviewer && reviewItem.reviewer.username) || 'reviewer') %></span>
                           </div>
                         </div>
                         <div class="review-rating">
@@ -811,27 +726,26 @@
                         </div>
                       </div>
 
-                      <p class="review-feedback"><%= reviewFeedback %></p>
+                      <p class="review-feedback"><%= reviewItem.feedbackText || reviewItem.feedback || reviewItem.note || 'No written feedback provided.' %></p>
 
                       <div class="review-suggestions">
                         <h4>Suggestions</h4>
                         <ul>
-                          <% reviewSuggestions.forEach((suggestion) => { %>
+                          <% (reviewItem.suggestionsList || reviewItem.suggestions || []).forEach((suggestion) => { %>
                             <li><%= suggestion %></li>
                           <% }) %>
                         </ul>
                       </div>
 
                       <div class="review-footer">
-                        <% const canEditReview = isAdmin || (currentUser._id && reviewItem.reviewer && reviewItem.reviewer._id && String(currentUser._id) === String(reviewItem.reviewer._id)); %>
-                        <% if (canEditReview) { %>
+                        <% if (reviewItem.canEdit) { %>
                           <div class="review-actions">
-                            <a href="/reviews/<%= reviewItem._id %>/edit" class="review-action-btn">
+                            <a href="<%= reviewItem.editUrl || ('/reviews/' + reviewItem._id + '/edit') %>" class="review-action-btn">
                               <i data-lucide="edit" width="14" height="14"></i>
                               Edit
                             </a>
-                            <form action="/reviews/<%= reviewItem._id %>/delete" method="post" onsubmit="return confirm('Delete this review?');">
-                              <input type="hidden" name="returnTo" value="/projects/<%= reviewItem.project && reviewItem.project._id ? reviewItem.project._id : '' %>" />
+                            <form action="<%= reviewItem.deleteUrl || ('/reviews/' + reviewItem._id + '/delete') %>" method="post" onsubmit="return confirm('Delete this review?');">
+                              <input type="hidden" name="returnTo" value="<%= reviewItem.deleteReturnTo || ('/projects/' + (reviewItem.project && reviewItem.project._id ? reviewItem.project._id : '')) %>" />
                               <button type="submit" class="review-action-btn danger">
                                 <i data-lucide="trash-2" width="14" height="14"></i>
                                 Delete
@@ -858,8 +772,8 @@
                     <i data-lucide="message-square" class="empty-state-icon"></i>
                     <h3 class="empty-state-title">No reviews yet</h3>
                     <p class="empty-state-description">Be the first to review this project</p>
-                    <% if (isReviewer && currentProject._id) { %>
-                      <a href="/projects/<%= currentProject._id %>/review" class="btn btn-primary">Write Review</a>
+                    <% if (isReviewer && project._id) { %>
+                      <a href="/projects/<%= project._id %>/review" class="btn btn-primary">Write Review</a>
                     <% } %>
                   </div>
                 <% } %>
@@ -871,7 +785,7 @@
                 <div class="score-display">
                   <div class="score-value">
                     <i data-lucide="star" class="star filled"></i>
-                    <%= Number(currentProject.averageRating || 0).toFixed(1) %>
+                    <%= Number(project.averageRating || 0).toFixed(1) %>
                   </div>
                   <span class="score-label">Average Rating</span>
                 </div>
@@ -879,15 +793,15 @@
                 <div class="score-breakdown">
                   <div class="score-item">
                     <span class="score-item-label">Code Quality</span>
-                    <span class="score-item-value"><%= codeQuality.toFixed(1) %></span>
+                    <span class="score-item-value"><%= projectDetailVM.codeQuality.toFixed(1) %></span>
                   </div>
                   <div class="score-item">
                     <span class="score-item-label">Creativity</span>
-                    <span class="score-item-value"><%= creativity.toFixed(1) %></span>
+                    <span class="score-item-value"><%= projectDetailVM.creativity.toFixed(1) %></span>
                   </div>
                   <div class="score-item">
                     <span class="score-item-label">Clean Code</span>
-                    <span class="score-item-value"><%= cleanCode.toFixed(1) %></span>
+                    <span class="score-item-value"><%= projectDetailVM.cleanCode.toFixed(1) %></span>
                   </div>
                 </div>
               </div>
@@ -896,17 +810,17 @@
                 <h3>Hire Verdict</h3>
                 <div class="hire-stats">
                   <i data-lucide="check-circle" width="20" height="20"></i>
-                  <span><%= wouldHireCount %>/<%= projectReviews.length %> would hire</span>
+                  <span><%= reviewStats.wouldHireCount %>/<%= projectReviewCards.length %> would hire</span>
                 </div>
               </div>
 
               <div class="sidebar-section">
                 <h3>Project Owner</h3>
-                <a href="/user/<%= projectOwner.username || 'developer' %>" class="review-author">
-                  <div class="avatar avatar-sm"><%= (projectOwner.name || 'U').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() %></div>
+                <a href="/user/<%= projectDetailVM.projectOwner.username || 'developer' %>" class="review-author">
+                  <div class="avatar avatar-sm"><%= (projectDetailVM.projectOwner.name || 'U').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() %></div>
                   <div class="review-author-info">
-                    <span class="review-author-name"><%= projectOwner.name || 'Developer' %></span>
-                    <span class="text-muted">@<%= projectOwner.username || 'developer' %></span>
+                    <span class="review-author-name"><%= projectDetailVM.projectOwner.name || 'Developer' %></span>
+                    <span class="text-muted">@<%= projectDetailVM.projectOwner.username || 'developer' %></span>
                   </div>
                 </a>
               </div>
@@ -1012,23 +926,10 @@
         </div>
 
       <% } else if (page === "review-form") { %>
-        <%
-          const isEditMode = formMode === "edit";
-          const currentReview = typeof review !== "undefined" && review ? review : {};
-          const suggestionsArray = Array.isArray(currentReview.suggestions) ? currentReview.suggestions : [];
-          const selectedWouldHire = typeof currentReview.wouldHire === "boolean"
-            ? (currentReview.wouldHire ? "yes" : "no")
-            : "yes";
-          const wouldHireYesSelected = selectedWouldHire === "yes";
-          const wouldHireNoSelected = selectedWouldHire === "no";
-          const reviewAction = isEditMode && currentReview._id
-            ? `/reviews/${currentReview._id}/edit`
-            : `/projects/${project ? project._id : ''}/review`;
-        %>
         <div class="write-review-page">
           <div class="page-header">
-            <h1><%= isEditMode ? 'Edit Review' : 'Write Review' %></h1>
-            <p class="text-secondary"><%= isEditMode ? 'Update your review for this project' : 'Provide a structured review for this project' %></p>
+            <h1><%= formMode === 'edit' ? 'Edit Review' : 'Write Review' %></h1>
+            <p class="text-secondary"><%= formMode === 'edit' ? 'Update your review for this project' : 'Provide a structured review for this project' %></p>
           </div>
 
           <div class="review-project-info">
@@ -1044,7 +945,7 @@
             </div>
           </div>
 
-          <form action="<%= reviewAction %>" method="post">
+          <form action="<%= (formMode === 'edit' && review && review._id) ? `/reviews/${review._id}/edit` : `/projects/${project ? project._id : ''}/review` %>" method="post">
             <div class="form-section">
               <h2>Ratings</h2>
               <div class="form-group">
@@ -1053,7 +954,7 @@
                 <label class="form-label">Code Quality *</label>
                 <div class="star-rating" data-rating-root>
                   <% [5, 4, 3, 2, 1].forEach((score) => { %>
-                    <input type="radio" id="quality-rating-<%= score %>" name="codeQualityScore" value="<%= score %>" <%= Number(currentReview.codeQualityScore || 4) === score ? 'checked' : '' %> required />
+                    <input type="radio" id="quality-rating-<%= score %>" name="codeQualityScore" value="<%= score %>" <%= Number(review.codeQualityScore || 4) === score ? 'checked' : '' %> required />
                     <label for="quality-rating-<%= score %>" title="<%= score %> stars">★</label>
                   <% }) %>
                 </div>
@@ -1062,7 +963,7 @@
                 <label class="form-label">Creativity *</label>
                 <div class="star-rating" data-rating-root>
                   <% [5, 4, 3, 2, 1].forEach((score) => { %>
-                    <input type="radio" id="creativity-rating-<%= score %>" name="creativityScore" value="<%= score %>" <%= Number(currentReview.creativityScore || 4) === score ? 'checked' : '' %> required />
+                    <input type="radio" id="creativity-rating-<%= score %>" name="creativityScore" value="<%= score %>" <%= Number(review.creativityScore || 4) === score ? 'checked' : '' %> required />
                     <label for="creativity-rating-<%= score %>" title="<%= score %> stars">★</label>
                   <% }) %>
                 </div>
@@ -1071,7 +972,7 @@
                 <label class="form-label">Clean Code *</label>
                 <div class="star-rating" data-rating-root>
                   <% [5, 4, 3, 2, 1].forEach((score) => { %>
-                    <input type="radio" id="clean-rating-<%= score %>" name="cleanCodeScore" value="<%= score %>" <%= Number(currentReview.cleanCodeScore || 4) === score ? 'checked' : '' %> required />
+                    <input type="radio" id="clean-rating-<%= score %>" name="cleanCodeScore" value="<%= score %>" <%= Number(review.cleanCodeScore || 4) === score ? 'checked' : '' %> required />
                     <label for="clean-rating-<%= score %>" title="<%= score %> stars">★</label>
                   <% }) %>
                 </div>
@@ -1083,14 +984,14 @@
 
               <div class="form-group">
                 <label class="form-label">General Feedback *</label>
-                <textarea name="generalFeedback" class="form-textarea" rows="5" placeholder="Share your overall thoughts on the project." required><%= currentReview.generalFeedback || '' %></textarea>
+                <textarea name="generalFeedback" class="form-textarea" rows="5" placeholder="Share your overall thoughts on the project." required><%= review.generalFeedback || '' %></textarea>
               </div>
 
               <div class="form-group">
                 <label class="form-label">Suggestions (optional)</label>
                 <div class="suggestions-editor">
                   <div class="current-suggestions" data-suggestion-chip-group>
-                    <% (suggestionsArray || []).forEach((suggestion) => { %>
+                    <% (review.suggestions || []).forEach((suggestion) => { %>
                       <span class="skill-tag" data-suggestion-chip>
                         <%= suggestion %>
                         <button type="button" class="skill-remove" data-suggestion-remove title="Remove suggestion">
@@ -1100,7 +1001,7 @@
                     <% }) %>
                   </div>
 
-                  <input type="hidden" name="suggestionsCsv" value="<%= (suggestionsArray || []).join(', ') %>" data-suggestion-input />
+                  <input type="hidden" name="suggestionsCsv" value="<%= (review.suggestions || []).join(', ') %>" data-suggestion-input />
 
                   <div class="suggestion-input">
                     <input type="text" placeholder="Enter a suggestion..." data-suggestion-text-input class="form-input" />
@@ -1118,23 +1019,23 @@
               <p class="text-secondary mb-3">Based on this project, would you recommend hiring this developer?</p>
 
               <div class="hire-toggle">
-                <button type="button" class="hire-option yes <%= wouldHireYesSelected ? 'selected' : '' %>" onclick="document.getElementById('wouldHireInput').value='yes'">
+                <button type="button" class="hire-option yes <%= (typeof review.wouldHire === 'boolean' ? (review.wouldHire ? 'yes' : 'no') : 'yes') === 'yes' ? 'selected' : '' %>" onclick="document.getElementById('wouldHireInput').value='yes'">
                   <span>✓</span>
                   Yes, I would hire
                 </button>
-                <button type="button" class="hire-option no <%= wouldHireNoSelected ? 'selected' : '' %>" onclick="document.getElementById('wouldHireInput').value='no'">
+                <button type="button" class="hire-option no <%= (typeof review.wouldHire === 'boolean' ? (review.wouldHire ? 'yes' : 'no') : 'yes') === 'no' ? 'selected' : '' %>" onclick="document.getElementById('wouldHireInput').value='no'">
                   <span>✗</span>
                   No, I would not hire
                 </button>
-                <input id="wouldHireInput" type="hidden" name="wouldHire" value="<%= selectedWouldHire %>" />
+                <input id="wouldHireInput" type="hidden" name="wouldHire" value="<%= typeof review.wouldHire === 'boolean' ? (review.wouldHire ? 'yes' : 'no') : 'yes' %>" />
               </div>
             </div>
 
             <div class="form-actions">
-              <a href="<%= isEditMode ? '/reviews' : ('/projects/' + (project ? project._id : '')) %>" class="btn btn-secondary">Cancel</a>
+              <a href="<%= (formMode === 'edit') ? '/reviews' : ('/projects/' + (project ? project._id : '')) %>" class="btn btn-secondary">Cancel</a>
               <button type="submit" class="btn btn-primary">
                 <i data-lucide="save" width="16" height="16"></i>
-                <%= isEditMode ? 'Save Review' : 'Submit Review' %>
+                <%= (formMode === 'edit') ? 'Save Review' : 'Submit Review' %>
               </button>
             </div>
           </form>
@@ -1289,23 +1190,6 @@
         </div>
 
       <% } else if (page === "skills") { %>
-        <%
-          const formatCategoryTitle = (value) => {
-            const text = String(value || "").trim();
-            if (!text) return "General";
-            return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-          };
-          const groupedSkills = {};
-          (skills || []).forEach((skillItem) => {
-            const categories = Array.isArray(skillItem.category) ? skillItem.category : [skillItem.category || "General"];
-            const categoryName = categories[0];
-            if (!groupedSkills[categoryName]) {
-              groupedSkills[categoryName] = [];
-            }
-            groupedSkills[categoryName].push(skillItem);
-          });
-          const categoryNames = ["All"].concat(Object.keys(groupedSkills));
-        %>
         <div class="skills-page">
           <div class="page-header">
             <h1>Skills</h1>
@@ -1318,27 +1202,19 @@
               <input type="text" name="q" value="<%= skillSearchQuery || '' %>" placeholder="Search skills..." />
             </div>
             <div class="category-pills">
-              <% (allSkillCategories || categoryNames).forEach((categoryName) => { %>
-                <%
-                  const isActive = (selectedSkillCategory || 'All') === categoryName;
-                  const href = isActive 
-                    ? `/skills?q=${encodeURIComponent(skillSearchQuery || '')}` 
-                    : `/skills?category=${encodeURIComponent(categoryName)}&q=${encodeURIComponent(skillSearchQuery || '')}`;
-                %>
-                <a href="<%= href %>" class="category-pill <%= isActive ? 'active' : '' %>"><%= formatCategoryTitle(categoryName) %></a>
+              <% (categoryPills || []).forEach((pill) => { %>
+                <a href="<%= pill.href %>" class="category-pill <%= pill.isActive ? 'active' : '' %>"><%= pill.label %></a>
               <% }) %>
             </div>
           </form>
 
-          <% if (selectedSkillCategory === "All") { %>
+          <% if (isShowingAll) { %>
             <% if (Object.keys(groupedSkills || {}).length > 0) { %>
               <% Object.keys(groupedSkills).forEach((categoryName) => { %>
                 <div class="skill-group">
-                  <h2 class="skill-group-title"><%= formatCategoryTitle(categoryName) %></h2>
+                  <h2 class="skill-group-title"><%= categoryName %></h2>
                   <div class="skills-grid">
-                    <% groupedSkills[categoryName].forEach((skillItem) => {
-                      const developers = Array.isArray(skillItem.users) ? skillItem.users.length : 0;
-                    %>
+                    <% groupedSkills[categoryName].forEach((skillItem) => { %>
                       <a href="/skills/<%= skillItem._id %>" class="skill-card">
                         <div class="skill-card-icon">
                           <i data-lucide="code" width="24" height="24"></i>
@@ -1347,7 +1223,7 @@
                           <h3><%= skillItem.name %></h3>
                           <span class="skill-card-stat">
                             <i data-lucide="users" width="14" height="14"></i>
-                            <%= developers.toLocaleString() %> developers
+                            <%= skillItem.developerCount.toLocaleString() %> developers
                           </span>
                         </div>
                         <i data-lucide="chevron-right" width="16" height="16" class="skill-card-arrow"></i>
@@ -1366,9 +1242,7 @@
           <% } else { %>
             <% if ((skills || []).length > 0) { %>
               <div class="skills-grid">
-                <% skills.forEach((skillItem) => {
-                  const developers = Array.isArray(skillItem.users) ? skillItem.users.length : 0;
-                %>
+                <% skills.forEach((skillItem) => { %>
                   <a href="/skills/<%= skillItem._id %>" class="skill-card">
                     <div class="skill-card-icon">
                       <i data-lucide="code" width="24" height="24"></i>
@@ -1377,7 +1251,7 @@
                       <h3><%= skillItem.name %></h3>
                       <span class="skill-card-stat">
                         <i data-lucide="users" width="14" height="14"></i>
-                        <%= developers.toLocaleString() %> developers
+                        <%= skillItem.developerCount.toLocaleString() %> developers
                       </span>
                     </div>
                     <i data-lucide="chevron-right" width="16" height="16" class="skill-card-arrow"></i>
@@ -1395,11 +1269,6 @@
         </div>
 
       <% } else if (page === "skill-detail") { %>
-        <%
-          const currentSkill = skill || {};
-          const recentProjects = (projects || []).slice(0, 3);
-        %>
-
         <div class="skill-detail-page">
           <a href="/skills" class="btn btn-secondary btn-sm mb-4">
             <i data-lucide="arrow-left" width="16" height="16"></i>
@@ -1411,9 +1280,9 @@
               <i data-lucide="code" width="40" height="40"></i>
             </div>
             <div class="skill-detail-info">
-              <h1><%= currentSkill.name %></h1>
+              <h1><%= skill.name %></h1>
               <div class="tag-list">
-                <% (Array.isArray(currentSkill.category) ? currentSkill.category : [currentSkill.category || 'General']).forEach((category) => { %>
+                <% (Array.isArray(skill.category) ? skill.category : [skill.category || 'General']).forEach((category) => { %>
                   <span class="tag"><%= String(category || 'General').toUpperCase() %></span>
                 <% }) %>
               </div>
@@ -1512,14 +1381,6 @@
         </div>
 
       <% } else if (page === "certifications") { %>
-        <%
-          const certBenefits = [
-            { icon: "message-square", title: "Review Projects", description: "Provide official reviews that impact developer scores" },
-            { icon: "award", title: "Certified Badge", description: "Display a verified badge on your profile" },
-            { icon: "trending-up", title: "Build Reputation", description: "Establish yourself as a trusted code reviewer" },
-            { icon: "users", title: "Help Community", description: "Guide junior developers with your expertise" }
-          ];
-        %>
         <div class="certifications-page">
           <div class="page-header">
             <h1>Reviewer Certification</h1>
@@ -1830,29 +1691,6 @@
         </div>
 
       <% } else if (page === "admin-dashboard") { %>
-        <%
-          const activityEntries = activityLogs || [];
-          const usersList = exploreUsers || users || [];
-          const projectsList = projects || [];
-          const reviewsList = reviews || [];
-          const today = new Date();
-          const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          const usersToday = usersList.filter((userItem) => userItem.createdAt && new Date(userItem.createdAt) >= startOfToday).length;
-          const reviewsTodayCount = activityEntries.filter((entry) => {
-            const timestamp = entry.timestamp || entry.createdAt;
-            return String(entry.entity || "").toLowerCase() === "review" && timestamp && new Date(timestamp) >= startOfToday;
-          }).length;
-          const adminStats = {
-            totalUsers: usersList.length,
-            totalProjects: projectsList.length,
-            totalReviews: reviewsList.length,
-            pendingCerts: (certificationRequests || []).filter((request) => request.status === 'pending').length,
-            newUsersToday: usersToday,
-            reviewsToday: reviewsTodayCount
-          };
-          const recentActivity = activityEntries.slice(0, 5);
-          const pendingCerts = (certificationRequests || []).filter((request) => request.status === 'pending');
-        %>
         <div class="admin-dashboard">
           <div class="page-header">
             <h1>Admin Dashboard</h1>
@@ -1913,33 +1751,24 @@
               </div>
 
               <div class="activity-list">
-                <% recentActivity.forEach((activityItem) => {
-                  const actionText = (activityItem.action || '').toLowerCase();
-                  const activityType = actionText.includes('user')
-                    ? 'user'
-                    : (actionText.includes('project')
-                      ? 'project'
-                      : (actionText.includes('cert')
-                        ? 'cert'
-                        : (actionText.includes('review') ? 'review' : 'project')));
-                %>
+                <% recentActivity.forEach((activityItem) => { %>
                   <div class="activity-item">
-                    <div class="activity-icon <%= activityType %>">
-                      <% if (activityType === 'user') { %>
+                    <div class="activity-icon <%= activityItem.activityType %>">
+                      <% if (activityItem.activityType === 'user') { %>
                         <i data-lucide="users" width="14" height="14"></i>
-                      <% } else if (activityType === 'project') { %>
+                      <% } else if (activityItem.activityType === 'project') { %>
                         <i data-lucide="folder-git-2" width="14" height="14"></i>
-                      <% } else if (activityType === 'cert') { %>
+                      <% } else if (activityItem.activityType === 'cert') { %>
                         <i data-lucide="award" width="14" height="14"></i>
                       <% } else { %>
                         <i data-lucide="message-square" width="14" height="14"></i>
                       <% } %>
                     </div>
                     <div class="activity-content">
-                      <p><strong><%= activityItem.actorName || activityItem.actor %></strong> · <%= activityItem.actionLabel || activityItem.action %> · <%= activityItem.targetLabel || activityItem.target %></p>
+                      <p><strong><%= activityItem.actorName %></strong> · <%= activityItem.actionLabel %> · <%= activityItem.targetLabel %></p>
                       <span class="activity-time">
                         <i data-lucide="clock" width="12" height="12"></i>
-                        <%= activityItem.createdAt %>
+                        <%= activityItem.timestamp %>
                       </span>
                     </div>
                   </div>
@@ -2080,31 +1909,24 @@
 
                 <div class="cert-request-body">
                   <div class="cert-request-stats">
-                    <% const applicantUser = requestItem.user || {}; %>
-                    <% const applicantProjectsCount = (projects || []).filter((projectItem) => {
-                      const projectOwner = projectItem.owner || projectItem.user || {};
-                      const projectOwnerId = projectOwner._id || projectOwner;
-                      const applicantUserId = applicantUser._id || "";
-                      return projectOwnerId && applicantUserId && String(projectOwnerId) === String(applicantUserId);
-                    }).length; %>
                     <div class="cert-stat">
                       <i data-lucide="folder-git-2" width="18" height="18" class="text-accent"></i>
-                      <div class="cert-stat-value"><%= applicantProjectsCount %></div>
+                      <div class="cert-stat-value"><%= requestItem.applicantProjectsCount || 0 %></div>
                       <div class="cert-stat-label">Projects</div>
                     </div>
                     <div class="cert-stat">
                       <i data-lucide="star" width="18" height="18" class="text-warning"></i>
-                      <div class="cert-stat-value"><%= Number(applicantUser.profileScore || 0).toFixed(1) %></div>
+                      <div class="cert-stat-value"><%= Number(requestItem.applicantAvgRating || 0).toFixed(1) %></div>
                       <div class="cert-stat-label">Avg Rating</div>
                     </div>
                     <div class="cert-stat">
                       <i data-lucide="code" width="18" height="18" class="text-success"></i>
-                      <div class="cert-stat-value"><%= (applicantUser.skills || []).length %></div>
+                      <div class="cert-stat-value"><%= requestItem.applicantSkillsCount || 0 %></div>
                       <div class="cert-stat-label">Skills</div>
                     </div>
                     <div class="cert-stat">
                       <i data-lucide="briefcase" width="18" height="18" class="text-muted"></i>
-                      <div class="cert-stat-value"><%= requestItem.experience || 'N/A' %></div>
+                      <div class="cert-stat-value"><%= requestItem.yearsExperience || 'N/A' %></div>
                       <div class="cert-stat-label">Years Exp</div>
                     </div>
                   </div>

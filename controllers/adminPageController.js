@@ -7,8 +7,11 @@ const reviewService = require("../services/reviewService");
 const certificationService = require("../services/certificationService");
 const activityLogService = require("../services/activityLogService");
 const mapperService = require("../services/mapperService");
-const { renderApp } = require("../utils/viewRenderer");
+const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 const { toActionLabel, isObjectId } = require("../utils/stringUtils");
+const certificationViewModel = require("../utils/viewModels/certificationViewModel");
+const profileViewModel = require("../utils/viewModels/profileViewModel");
+const adminDashboardViewModel = require("../utils/viewModels/adminDashboardViewModel");
 
 exports.adminDashboard = async (req, res) => {
   try {
@@ -20,6 +23,15 @@ exports.adminDashboard = async (req, res) => {
       activityLogService.getAllLogs({}),
     ]);
     const activityLogs = await activityLogService.buildFriendlyActivityLogs(rawActivityLogs);
+    const userFlags = getUserFlags(req.currentUser);
+
+    const certificationsMapped = (certifications || []).map((cert) =>
+      certificationViewModel.mapCertificationRequestCard(cert, projects, cert.user, true)
+    );
+    const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, reviews, certifications, userFlags.isReviewer);
+    const adminStats = adminDashboardViewModel.mapAdminStats(users, projects, reviews, certifications, activityLogs);
+    const recentActivity = adminDashboardViewModel.mapActivityEntries(activityLogs).slice(0, 5);
+    const pendingCerts = adminDashboardViewModel.mapPendingCertifications(certifications);
 
     return renderApp(res, "admin-dashboard", {
       pageTitle: "Admin dashboard",
@@ -28,10 +40,15 @@ exports.adminDashboard = async (req, res) => {
       users,
       projects,
       reviews,
-      certifications,
+      certifications: certificationsMapped,
+      certificationRequests: certificationsMapped,
       activityLogs,
+      adminStats,
+      recentActivity,
+      pendingCerts,
       isAdmin: true,
       isReviewer: true,
+      ...profileVM,
     });
   } catch (error) {
     console.error("Admin dashboard render failed:", error);
@@ -48,11 +65,16 @@ exports.adminCertifications = async (req, res) => {
       certificationService.getAllRequests(),
       projectService.getAllProjects({}),
     ]);
+    const userFlags = getUserFlags(req.currentUser);
 
-    const certificationRequests = certifications.filter((request) => {
+    const certificationRequestsRaw = certifications.filter((request) => {
       if (statusFilter === "all") return true;
       return String(request.status || "").toLowerCase() === statusFilter;
     });
+
+    const certificationRequests = (certificationRequestsRaw || []).map((req) =>
+      certificationViewModel.mapCertificationRequestCard(req, projects, req.user, true)
+    );
 
     const certificationCounts = {
       pending: certifications.filter((request) => String(request.status || "").toLowerCase() === "pending").length,
@@ -60,6 +82,7 @@ exports.adminCertifications = async (req, res) => {
       rejected: certifications.filter((request) => String(request.status || "").toLowerCase() === "rejected").length,
       all: certifications.length,
     };
+    const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], certifications, userFlags.isReviewer);
 
     return renderApp(res, "admin-certifications", {
       pageTitle: "Certification requests",
@@ -72,6 +95,7 @@ exports.adminCertifications = async (req, res) => {
       projects,
       isAdmin: true,
       isReviewer: true,
+      ...profileVM,
     });
   } catch (error) {
     console.error("Admin certifications render failed:", error);
@@ -107,7 +131,7 @@ exports.adminLogs = async (req, res) => {
       action: action || undefined,
       entity: entity || undefined,
     });
-    const friendlyLogs = await buildFriendlyActivityLogs(rawLogs);
+    const friendlyLogs = await activityLogService.buildFriendlyActivityLogs(rawLogs);
 
     const logs = q
       ? friendlyLogs.filter((entry) => {
@@ -126,6 +150,10 @@ exports.adminLogs = async (req, res) => {
         })
       : friendlyLogs;
 
+    const userFlags = getUserFlags(req.currentUser);
+    const projects = [];
+    const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], [], userFlags.isReviewer);
+
     return renderApp(res, "admin-logs", {
       pageTitle: "Activity logs",
       activeNav: "admin",
@@ -136,6 +164,10 @@ exports.adminLogs = async (req, res) => {
       logsEntityFilter: entity,
       isAdmin: true,
       isReviewer: true,
+      projects,
+      reviews: [],
+      certificationRequests: [],
+      ...profileVM,
     });
   } catch (error) {
     console.error("Admin logs render failed:", error);
@@ -173,6 +205,9 @@ exports.adminSkills = async (req, res) => {
     const totalSkills = filteredSkills.length;
     const totalPages = Math.ceil(totalSkills / limit);
     const paginatedSkills = filteredSkills.slice(skip, skip + limit);
+    const userFlags = getUserFlags(req.currentUser);
+    const projects = [];
+    const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], [], userFlags.isReviewer);
 
     return renderApp(res, "admin-skills", {
       pageTitle: "Manage Skills",
@@ -188,6 +223,10 @@ exports.adminSkills = async (req, res) => {
       hasPrevPage: page > 1,
       isAdmin: true,
       isReviewer: true,
+      projects,
+      reviews: [],
+      certificationRequests: [],
+      ...profileVM,
     });
   } catch (error) {
     console.error("Admin skills render failed:", error);
@@ -197,12 +236,20 @@ exports.adminSkills = async (req, res) => {
 
 exports.newSkillForm = async (req, res) => {
   try {
+    const userFlags = getUserFlags(req.currentUser);
+    const projects = [];
+    const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], [], userFlags.isReviewer);
+
     return renderApp(res, "admin-skill-new", {
       pageTitle: "Add New Skill",
       activeNav: "admin",
       user: req.currentUser,
       isAdmin: true,
       isReviewer: true,
+      projects,
+      reviews: [],
+      certificationRequests: [],
+      ...profileVM,
     });
   } catch (error) {
     console.error("New skill form render failed:", error);
@@ -240,6 +287,10 @@ exports.editSkillForm = async (req, res) => {
       return res.redirect("/admin/skills");
     }
 
+    const userFlags = getUserFlags(req.currentUser);
+    const projects = [];
+    const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], [], userFlags.isReviewer);
+
     return renderApp(res, "admin-skill-edit", {
       pageTitle: "Edit Skill",
       activeNav: "admin",
@@ -247,6 +298,10 @@ exports.editSkillForm = async (req, res) => {
       skill,
       isAdmin: true,
       isReviewer: true,
+      projects,
+      reviews: [],
+      certificationRequests: [],
+      ...profileVM,
     });
   } catch (error) {
     console.error("Edit skill form render failed:", error);

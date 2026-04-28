@@ -1,6 +1,9 @@
 const certificationService = require("../services/certificationService");
 const reviewService = require("../services/reviewService");
+const projectService = require("../services/projectService");
 const { getUserFlags, renderApp } = require("../utils/viewRenderer");
+const profileViewModel = require("../utils/viewModels/profileViewModel");
+const certificationViewModel = require("../utils/viewModels/certificationViewModel");
 
 function parseCsv(csvValue) {
   return String(csvValue || "")
@@ -19,6 +22,9 @@ exports.certifications = async (req, res) => {
     });
     const latestRequest = certifications[0] || null;
     const userFlags = getUserFlags(sessionUser);
+    const projects = await projectService.getProjectsByUser(sessionUser._id);
+    const certBenefits = certificationViewModel.mapCertificationBenefits();
+    const certStatusVM = certificationViewModel.mapCertificationStatus(latestRequest ? latestRequest.status : null);
 
     return renderApp(res, "certifications", {
       pageTitle: "Certifications",
@@ -26,8 +32,13 @@ exports.certifications = async (req, res) => {
       user: sessionUser,
       certifications,
       certificationStatus: latestRequest ? latestRequest.status : null,
+      certBenefits,
+      certStatusVM,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      projects,
+      reviews: [],
+      certificationRequests: certifications,
     });
   } catch (error) {
     return res.redirect("/dashboard");
@@ -43,12 +54,20 @@ exports.applyCertification = async (req, res) => {
     return res.redirect("/certifications");
   }
 
+  const projects = await projectService.getProjectsByUser(sessionUser._id);
+  const certifications = await certificationService.getAllRequests();
+  const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, [], certifications, userFlags.isReviewer);
+
   return renderApp(res, "certification-apply", {
     pageTitle: "Apply for certification",
     activeNav: "certifications",
     user: sessionUser,
     isReviewer: userFlags.isReviewer,
     isAdmin: userFlags.isAdmin,
+    projects,
+    reviews: [],
+    ...profileVM,
+    certificationRequests: certifications,
   });
 };
 
@@ -107,6 +126,9 @@ exports.certifications = async (req, res) => {
     const wouldHireCount = givenReviews.filter((r) => r.wouldHire).length;
 
     const userFlags = getUserFlags(sessionUser);
+    const projects = await projectService.getProjectsByUser(sessionUser._id);
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, givenReviews, allRequests, userFlags.isReviewer);
+    const certBenefits = certificationViewModel.mapCertificationBenefits();
 
     return renderApp(res, "certifications", {
       pageTitle: "Certifications",
@@ -114,10 +136,13 @@ exports.certifications = async (req, res) => {
       user: sessionUser,
       certifications,
       certificationStatus: latestRequest ? latestRequest.status : null,
+      certBenefits,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
-
-      // dynamic stats
+      projects,
+      reviews: givenReviews,
+      ...profileVM,
+      certificationRequests: allRequests,
       reviewsGiven,
       avgRatingGiven,
       wouldHireCount,

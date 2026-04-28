@@ -22,7 +22,9 @@ function renderApp(res, page, options = {}) {
   const reviews = (options.reviews || []).map(mapperService.mapReview).filter(Boolean);
   const skills = options.skills || [];
   const exploreUsers = (options.exploreUsers || options.users || []).map(mapperService.mapUser).filter(Boolean);
-  const certificationRequests = (options.certificationRequests || options.certifications || []).map(mapperService.mapCertification).filter(Boolean);
+  const certificationRequests = Array.isArray(options.certificationRequests)
+    ? options.certificationRequests
+    : (options.certifications || []).map(mapperService.mapCertification).filter(Boolean);
   const activityLogs = (options.activityLogs || options.logs || []).map(mapperService.mapActivityLog).filter(Boolean);
 
   return res.render("pages/app", {

@@ -1,7 +1,11 @@
 const projectService = require("../services/projectService");
 const skillService = require("../services/skillService");
 const userService = require("../services/userService");
+const Review = require("../models/mongo/Review");
 const { getUserFlags, renderApp } = require("../utils/viewRenderer");
+const profileViewModel = require("../utils/viewModels/profileViewModel");
+const certificationService = require("../services/certificationService");
+const skillsViewModel = require("../utils/viewModels/skillsViewModel");
 
 function normalizeCategory(value) {
   if (Array.isArray(value)) {
@@ -68,18 +72,39 @@ exports.skills = async (req, res) => {
     }, {});
 
     const userFlags = getUserFlags(sessionUser);
+    const userProjects = await projectService.getProjectsByUser(sessionUser._id);
+    const userProjectIds = userProjects.map((p) => p._id);
+    const userReviews = userProjectIds.length > 0
+      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
+          .populate("project", "title")
+          .populate("reviewer", "name")
+      : [];
+    const certifications = await certificationService.getAllRequests();
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
+    const skillsList = skillsViewModel.mapSkillsList(skillsByCategory);
+    const groupedSkillsWithCounts = skillsViewModel.mapSkillsGroupedWithCounts(filteredSkills);
+    const groupedSkillsForTemplate = selectedCategoryKey !== "all"
+      ? { [selectedCategoryKey]: (groupedSkillsWithCounts[selectedCategoryKey] || []) }
+      : groupedSkillsWithCounts;
+    const categoryPills = skillsViewModel.mapCategoryPills(allSkillCategories, selectedCategory ? canonicalizeCategory(selectedCategory)[0] : "All", query);
 
     return renderApp(res, "skills", {
       pageTitle: "Skills",
       activeNav: "skills",
       user: sessionUser,
-      skills: skillsByCategory,
-      groupedSkills,
+      skills: skillsList,
+      groupedSkills: groupedSkillsForTemplate,
       allSkillCategories,
+      categoryPills,
       selectedSkillCategory: selectedCategory ? canonicalizeCategory(selectedCategory)[0] : "All",
       skillSearchQuery: query,
+      isShowingAll: selectedCategoryKey === "all",
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      projects: userProjects,
+      reviews: userReviews,
+      ...profileVM,
+      certificationRequests: certifications,
     });
   } catch (error) {
     return res.redirect("/dashboard");
@@ -91,22 +116,33 @@ exports.skillDetail = async (req, res) => {
     const sessionUser = req.currentUser;
     const skill = await skillService.getSkill(req.params.id);
     const projects = await projectService.getAllProjects({ techStack: skill.name });
-    const skillUsers = Array.isArray(skill.users) ? skill.users : [];
-    const topDevelopers = skillUsers.slice(0, 5);
     const userFlags = getUserFlags(sessionUser);
+    const userProjects = await projectService.getProjectsByUser(sessionUser._id);
+    const userProjectIds = userProjects.map((p) => p._id);
+    const userReviews = userProjectIds.length > 0
+      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
+          .populate("project", "title")
+          .populate("reviewer", "name")
+      : [];
+    const certifications = await certificationService.getAllRequests();
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
+    const skillDetailVM = skillsViewModel.mapSkillDetailPage(skill, projects);
 
     return renderApp(res, "skill-detail", {
       pageTitle: skill.name,
       activeNav: "skills",
       user: sessionUser,
       skill,
-      projects,
-      skillUsers,
-      topDevelopers,
-      totalDevelopers: skillUsers.length,
+      recentProjects: skillDetailVM.recentProjects,
+      skillUsers: skillDetailVM.topDevelopers,
+      topDevelopers: skillDetailVM.topDevelopers,
+      totalDevelopers: skillDetailVM.totalDevelopers,
       totalProjects: projects.length,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      ...profileVM,
+      certificationRequests: certifications,
+      reviews: userReviews,
     });
   } catch (error) {
     return res.redirect("/skills");

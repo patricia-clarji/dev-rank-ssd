@@ -1,6 +1,8 @@
 const Review = require("../models/mongo/Review");
 const projectService = require("../services/projectService");
 const { getUserFlags, renderApp } = require("../utils/viewRenderer");
+const profileViewModel = require("../utils/viewModels/profileViewModel");
+const dashboardViewModel = require("../utils/viewModels/dashboardViewModel");
 
 exports.dashboard = async (req, res) => {
   try {
@@ -18,16 +20,20 @@ exports.dashboard = async (req, res) => {
     }
 
     const userFlags = getUserFlags(sessionUser);
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, [], userFlags.isReviewer);
+    const dashboardProjects = dashboardViewModel.mapDashboardProjects(projects);
+    const dashboardReviews = dashboardViewModel.mapDashboardReviews(reviews);
 
     return renderApp(res, "dashboard", {
       pageTitle: "Dashboard",
       activeNav: "dashboard",
       user: sessionUser,
-      projects,
-      reviews,
+      projects: dashboardProjects,
+      reviews: dashboardReviews,
       numOfProjectsSeekingReview,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      ...profileVM,
     });
   } catch (error) {
     return res.redirect("/login");

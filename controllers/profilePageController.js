@@ -3,6 +3,7 @@ const projectService = require("../services/projectService");
 const skillService = require("../services/skillService");
 const userService = require("../services/userService");
 const { getUserFlags, renderApp } = require("../utils/viewRenderer");
+const profileViewModel = require("../utils/viewModels/profileViewModel");
 
 exports.profile = async (req, res) => {
   try {
@@ -19,6 +20,7 @@ exports.profile = async (req, res) => {
     }
 
     const userFlags = getUserFlags(sessionUser);
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, [], userFlags.isReviewer);
 
     return renderApp(res, "profile", {
       pageTitle: "Your profile",
@@ -28,6 +30,7 @@ exports.profile = async (req, res) => {
       reviews,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      ...profileVM,
     });
   } catch (error) {
     return res.redirect("/dashboard");
@@ -39,6 +42,18 @@ exports.editProfile = async (req, res) => {
     const sessionUser = req.currentUser;
     const skills = await skillService.getAllSkills({});
     const userFlags = getUserFlags(sessionUser);
+    const projects = await projectService.getProjectsByUser(sessionUser._id);
+    const projectIds = projects.map((project) => project._id);
+
+    let reviews = [];
+    if (projectIds.length > 0) {
+      reviews = await Review.find({ project: { $in: projectIds }, status: "published" })
+        .populate("project", "title status")
+        .populate("reviewer", "name email role githubUrl username")
+        .sort({ createdAt: -1 });
+    }
+
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, [], userFlags.isReviewer);
 
     return renderApp(res, "profile-edit", {
       pageTitle: "Edit profile",
@@ -47,6 +62,10 @@ exports.editProfile = async (req, res) => {
       skills,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      projects,
+      reviews,
+      certificationRequests: [],
+      ...profileVM,
     });
   } catch (error) {
     return res.redirect("/profile");

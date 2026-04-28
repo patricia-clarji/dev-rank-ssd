@@ -1,8 +1,13 @@
 const projectService = require("../services/projectService");
 const skillService = require("../services/skillService");
+const Review = require("../models/mongo/Review");
 const { getUserFlags, renderApp } = require("../utils/viewRenderer");  
 const mapperService = require("../services/mapperService");
 const { parseCsv } = require("../utils/stringUtils");
+const { mapProjectDetailReviewCard } = require("../utils/viewModels/projectViewModel");
+const profileViewModel = require("../utils/viewModels/profileViewModel");
+const certificationService = require("../services/certificationService");
+const projectViewModel = require("../utils/viewModels/projectViewModel");
 
 function isOwner(project, userId) {
   if (!project || !project.user || !userId) return false;
@@ -27,17 +32,31 @@ exports.projects = async (req, res) => {
         return haystack.includes(query);
       });
     const userFlags = getUserFlags(sessionUser);
+    const projectIds = projects.map((p) => p._id);
+    const reviews = projectIds.length > 0
+      ? await Review.find({ project: { $in: projectIds }, status: "published" })
+          .populate("project", "title")
+          .populate("reviewer", "name")
+      : [];
+    const certifications = await certificationService.getAllRequests();
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, certifications, userFlags.isReviewer);
+    const mappedProjects = filteredProjects.map(mapperService.mapProject);
+    const projectsList = projectViewModel.mapProjectsListItems(mappedProjects, projects);
+    const filterCounts = projectViewModel.mapProjectsFilterCounts(mappedProjects, status);
 
     return renderApp(res, "projects", {
       pageTitle: "Projects",
       activeNav: "projects",
       user: sessionUser,
-      projects: filteredProjects.map(mapperService.mapProject),
-      allProjects: projects,
+      projects: projectsList,
       projectsSearchQuery: query,
       projectsStatusFilter: status,
+      filterCounts,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      ...profileVM,
+      certificationRequests: certifications,
+      reviews,
     });
   } catch (error) {
     return res.redirect("/dashboard");
@@ -49,6 +68,15 @@ exports.newProject = async (req, res) => {
     const sessionUser = req.currentUser;
     const skills = await skillService.getAllSkills({});
     const userFlags = getUserFlags(sessionUser);
+    const projects = await projectService.getProjectsByUser(sessionUser._id);
+    const projectIds = projects.map((p) => p._id);
+    const userReviews = projectIds.length > 0
+      ? await Review.find({ project: { $in: projectIds }, status: "published" })
+          .populate("project", "title")
+          .populate("reviewer", "name")
+      : [];
+    const certifications = await certificationService.getAllRequests();
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, userReviews, certifications, userFlags.isReviewer);
 
     return renderApp(res, "project-form", {
       pageTitle: "New project",
@@ -59,6 +87,10 @@ exports.newProject = async (req, res) => {
       skills,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      projects,
+      reviews: userReviews,
+      ...profileVM,
+      certificationRequests: certifications,
     });
   } catch (error) {
     return res.redirect("/projects");
@@ -92,15 +124,35 @@ exports.projectDetail = async (req, res) => {
     const project = await projectService.getProject(req.params.id);
     const reviews = await projectService.getProjectReviews(req.params.id);
     const userFlags = getUserFlags(sessionUser);
+    const projectReviewCards = reviews.map((reviewDoc) =>
+      mapProjectDetailReviewCard(reviewDoc, sessionUser, userFlags.isAdmin)
+    );
+    const userProjects = await projectService.getProjectsByUser(sessionUser._id);
+    const userProjectIds = userProjects.map((p) => p._id);
+    const userReviews = userProjectIds.length > 0
+      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
+          .populate("project", "title")
+          .populate("reviewer", "name")
+      : [];
+    const certifications = await certificationService.getAllRequests();
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
+    const mappedProject = mapperService.mapProject(project);
+    const projectDetailVM = projectViewModel.mapProjectDetailPage(mappedProject, sessionUser, userFlags.isAdmin, userFlags.isReviewer);
+    const reviewStats = projectViewModel.mapProjectDetailStats(projectReviewCards);
 
     return renderApp(res, "project-detail", {
       pageTitle: project.title,
       activeNav: "projects",
       user: sessionUser,
-      project: mapperService.mapProject(project),
+      project: mappedProject,
+      projectDetailVM,
+      projectReviewCards,
+      reviewStats,
       reviews,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      ...profileVM,
+      certificationRequests: certifications,
     });
   } catch (error) {
     return res.redirect("/projects");
@@ -118,6 +170,15 @@ exports.editProject = async (req, res) => {
 
     const skills = await skillService.getAllSkills({});
     const userFlags = getUserFlags(sessionUser);
+    const userProjects = await projectService.getProjectsByUser(sessionUser._id);
+    const userProjectIds = userProjects.map((p) => p._id);
+    const userReviews = userProjectIds.length > 0
+      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
+          .populate("project", "title")
+          .populate("reviewer", "name")
+      : [];
+    const certifications = await certificationService.getAllRequests();
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
 
     return renderApp(res, "project-form", {
       pageTitle: `Edit ${project.title}`,
@@ -128,6 +189,10 @@ exports.editProject = async (req, res) => {
       skills,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      projects: userProjects,
+      reviews: userReviews,
+      ...profileVM,
+      certificationRequests: certifications,
     });
   } catch (error) {
     return res.redirect("/projects");

@@ -1,7 +1,11 @@
 const projectService = require("../services/projectService");
 const reviewService = require("../services/reviewService");
+const Review = require("../models/mongo/Review");
 const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 const mapperService = require("../services/mapperService");
+const profileViewModel = require("../utils/viewModels/profileViewModel");
+const certificationService = require("../services/certificationService");
+const reviewsListViewModel = require("../utils/viewModels/reviewsListViewModel");
 
 function parseCsv(csvValue) {
   return String(csvValue || "")
@@ -63,6 +67,15 @@ exports.reviewProject = async (req, res) => {
     }
 
     const userFlags = getUserFlags(sessionUser);
+    const userProjects = await projectService.getProjectsByUser(sessionUser._id);
+    const userProjectIds = userProjects.map((p) => p._id);
+    const userReviews = userProjectIds.length > 0
+      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
+          .populate("project", "title")
+          .populate("reviewer", "name")
+      : [];
+    const certifications = await certificationService.getAllRequests();
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
 
     return renderApp(res, "review-form", {
       pageTitle: `Review ${project.title}`,
@@ -73,6 +86,10 @@ exports.reviewProject = async (req, res) => {
       review: null,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      projects: userProjects,
+      reviews: userReviews,
+      ...profileVM,
+      certificationRequests: certifications,
     });
   } catch (error) {
     return res.redirect("/projects");
@@ -107,6 +124,15 @@ exports.editReview = async (req, res) => {
 
     const project = await projectService.getProject(review.project._id || review.project);
     const userFlags = getUserFlags(sessionUser);
+    const userProjects = await projectService.getProjectsByUser(sessionUser._id);
+    const userProjectIds = userProjects.map((p) => p._id);
+    const userReviews = userProjectIds.length > 0
+      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
+          .populate("project", "title")
+          .populate("reviewer", "name")
+      : [];
+    const certifications = await certificationService.getAllRequests();
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
 
     return renderApp(res, "review-form", {
       pageTitle: `Edit Review for ${project.title}`,
@@ -117,6 +143,10 @@ exports.editReview = async (req, res) => {
       review: mapperService.mapReview(review),
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      projects: userProjects,
+      reviews: userReviews,
+      ...profileVM,
+      certificationRequests: certifications,
     });
   } catch (error) {
     return res.redirect("/reviews");
@@ -168,17 +198,26 @@ exports.reviews = async (req, res) => {
     const userFlags = getUserFlags(sessionUser);
     const givenReviews = await reviewService.getAllReviews({ reviewerId: sessionUser._id });
     const receivedReviews = await reviewService.getReceivedReviews(sessionUser._id);
+    const projects = await projectService.getProjectsByUser(sessionUser._id);
+    const certifications = await certificationService.getAllRequests();
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, receivedReviews, certifications, userFlags.isReviewer);
+    const mappedReceivedReviews = receivedReviews.map(mapperService.mapReview).filter(Boolean);
+    const mappedGivenReviews = givenReviews.map(mapperService.mapReview).filter(Boolean);
+    const receivedReviewsList = reviewsListViewModel.mapReceivedReviews(mappedReceivedReviews);
+    const givenReviewsList = reviewsListViewModel.mapGivenReviews(mappedGivenReviews);
 
-    
-    
     return renderApp(res, "reviews", {
       pageTitle: "Reviews",
       activeNav: "reviews",
       user: sessionUser,
-      receivedReviews: receivedReviews.map(mapperService.mapReview).filter(Boolean),
-      givenReviews: givenReviews.map(mapperService.mapReview).filter(Boolean),
+      receivedReviews: receivedReviewsList,
+      givenReviews: givenReviewsList,
+      projects,
+      reviews: receivedReviews,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
+      ...profileVM,
+      certificationRequests: certifications,
     });
   } catch (error) {
     return res.redirect("/dashboard");
