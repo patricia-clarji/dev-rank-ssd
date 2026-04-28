@@ -1,6 +1,12 @@
 <%- include('../partials/head', { pageTitle, bodyClass }) %>
 <%
-  const currentUser = user || {};
+  const incomingUser = user || {};
+  const currentUser = {
+    ...incomingUser,
+    github: incomingUser.github || incomingUser.githubUrl || "",
+    linkedin: incomingUser.linkedin || incomingUser.linkedinUrl || "",
+    website: incomingUser.website || incomingUser.websiteUrl || "",
+  };
   const currentUserName = currentUser.name || "User";
   const firstName = currentUserName.split(" ")[0];
   const userCertificationStatus = typeof certificationStatus !== 'undefined' ? certificationStatus : null;
@@ -817,6 +823,22 @@
                       </div>
 
                       <div class="review-footer">
+                        <% const canEditReview = isAdmin || (currentUser._id && reviewItem.reviewer && reviewItem.reviewer._id && String(currentUser._id) === String(reviewItem.reviewer._id)); %>
+                        <% if (canEditReview) { %>
+                          <div class="review-actions">
+                            <a href="/reviews/<%= reviewItem._id %>/edit" class="review-action-btn">
+                              <i data-lucide="edit" width="14" height="14"></i>
+                              Edit
+                            </a>
+                            <form action="/reviews/<%= reviewItem._id %>/delete" method="post" onsubmit="return confirm('Delete this review?');">
+                              <input type="hidden" name="returnTo" value="/projects/<%= reviewItem.project && reviewItem.project._id ? reviewItem.project._id : '' %>" />
+                              <button type="submit" class="review-action-btn danger">
+                                <i data-lucide="trash-2" width="14" height="14"></i>
+                                Delete
+                              </button>
+                            </form>
+                          </div>
+                        <% } %>
                         <% if (reviewItem.wouldHire) { %>
                           <span class="hire-badge positive">
                             <i data-lucide="check-circle" width="14" height="14"></i>
@@ -991,12 +1013,22 @@
 
       <% } else if (page === "review-form") { %>
         <%
-          const suggestionsArray = [];
+          const isEditMode = formMode === "edit";
+          const currentReview = typeof review !== "undefined" && review ? review : {};
+          const suggestionsArray = Array.isArray(currentReview.suggestions) ? currentReview.suggestions : [];
+          const selectedWouldHire = typeof currentReview.wouldHire === "boolean"
+            ? (currentReview.wouldHire ? "yes" : "no")
+            : "yes";
+          const wouldHireYesSelected = selectedWouldHire === "yes";
+          const wouldHireNoSelected = selectedWouldHire === "no";
+          const reviewAction = isEditMode && currentReview._id
+            ? `/reviews/${currentReview._id}/edit`
+            : `/projects/${project ? project._id : ''}/review`;
         %>
         <div class="write-review-page">
           <div class="page-header">
-            <h1>Write Review</h1>
-            <p class="text-secondary">Provide a structured review for this project</p>
+            <h1><%= isEditMode ? 'Edit Review' : 'Write Review' %></h1>
+            <p class="text-secondary"><%= isEditMode ? 'Update your review for this project' : 'Provide a structured review for this project' %></p>
           </div>
 
           <div class="review-project-info">
@@ -1012,7 +1044,7 @@
             </div>
           </div>
 
-          <form action="/projects/<%= project ? project._id : '' %>/review" method="post">
+          <form action="<%= reviewAction %>" method="post">
             <div class="form-section">
               <h2>Ratings</h2>
               <div class="form-group">
@@ -1021,7 +1053,7 @@
                 <label class="form-label">Code Quality *</label>
                 <div class="star-rating" data-rating-root>
                   <% [5, 4, 3, 2, 1].forEach((score) => { %>
-                    <input type="radio" id="quality-rating-<%= score %>" name="codeQualityScore" value="<%= score %>" <%= score === 4 ? 'checked' : '' %> required />
+                    <input type="radio" id="quality-rating-<%= score %>" name="codeQualityScore" value="<%= score %>" <%= Number(currentReview.codeQualityScore || 4) === score ? 'checked' : '' %> required />
                     <label for="quality-rating-<%= score %>" title="<%= score %> stars">★</label>
                   <% }) %>
                 </div>
@@ -1030,7 +1062,7 @@
                 <label class="form-label">Creativity *</label>
                 <div class="star-rating" data-rating-root>
                   <% [5, 4, 3, 2, 1].forEach((score) => { %>
-                    <input type="radio" id="creativity-rating-<%= score %>" name="creativityScore" value="<%= score %>" <%= score === 4 ? 'checked' : '' %> required />
+                    <input type="radio" id="creativity-rating-<%= score %>" name="creativityScore" value="<%= score %>" <%= Number(currentReview.creativityScore || 4) === score ? 'checked' : '' %> required />
                     <label for="creativity-rating-<%= score %>" title="<%= score %> stars">★</label>
                   <% }) %>
                 </div>
@@ -1039,7 +1071,7 @@
                 <label class="form-label">Clean Code *</label>
                 <div class="star-rating" data-rating-root>
                   <% [5, 4, 3, 2, 1].forEach((score) => { %>
-                    <input type="radio" id="clean-rating-<%= score %>" name="cleanCodeScore" value="<%= score %>" <%= score === 4 ? 'checked' : '' %> required />
+                    <input type="radio" id="clean-rating-<%= score %>" name="cleanCodeScore" value="<%= score %>" <%= Number(currentReview.cleanCodeScore || 4) === score ? 'checked' : '' %> required />
                     <label for="clean-rating-<%= score %>" title="<%= score %> stars">★</label>
                   <% }) %>
                 </div>
@@ -1051,7 +1083,7 @@
 
               <div class="form-group">
                 <label class="form-label">General Feedback *</label>
-                <textarea name="generalFeedback" class="form-textarea" rows="5" placeholder="Share your overall thoughts on the project." required></textarea>
+                <textarea name="generalFeedback" class="form-textarea" rows="5" placeholder="Share your overall thoughts on the project." required><%= currentReview.generalFeedback || '' %></textarea>
               </div>
 
               <div class="form-group">
@@ -1086,23 +1118,23 @@
               <p class="text-secondary mb-3">Based on this project, would you recommend hiring this developer?</p>
 
               <div class="hire-toggle">
-                <button type="button" class="hire-option yes selected" onclick="document.getElementById('wouldHireInput').value='yes'">
+                <button type="button" class="hire-option yes <%= wouldHireYesSelected ? 'selected' : '' %>" onclick="document.getElementById('wouldHireInput').value='yes'">
                   <span>✓</span>
                   Yes, I would hire
                 </button>
-                <button type="button" class="hire-option no" onclick="document.getElementById('wouldHireInput').value='no'">
+                <button type="button" class="hire-option no <%= wouldHireNoSelected ? 'selected' : '' %>" onclick="document.getElementById('wouldHireInput').value='no'">
                   <span>✗</span>
                   No, I would not hire
                 </button>
-                <input id="wouldHireInput" type="hidden" name="wouldHire" value="yes" />
+                <input id="wouldHireInput" type="hidden" name="wouldHire" value="<%= selectedWouldHire %>" />
               </div>
             </div>
 
             <div class="form-actions">
-              <a href="/projects/<%= project ? project._id : '' %>" class="btn btn-secondary">Cancel</a>
+              <a href="<%= isEditMode ? '/reviews' : ('/projects/' + (project ? project._id : '')) %>" class="btn btn-secondary">Cancel</a>
               <button type="submit" class="btn btn-primary">
                 <i data-lucide="save" width="16" height="16"></i>
-                Submit Review
+                <%= isEditMode ? 'Save Review' : 'Submit Review' %>
               </button>
             </div>
           </form>
@@ -1597,7 +1629,10 @@
                   <div class="stat-label">Reviews Given</div>
                 </div>
                 <div class="stat-card">
-                  <div class="stat-value"><%= avgRatingGiven %></div>
+                  <div class="stat-value stat-value-inline">
+                    <i data-lucide="star" width="20" height="20" class="stat-value-icon"></i>
+                    <span><%= avgRatingGiven %></span>
+                  </div>
                   <div class="stat-label">Avg Rating Given</div>
                 </div>
                 <div class="stat-card">
@@ -2045,19 +2080,26 @@
 
                 <div class="cert-request-body">
                   <div class="cert-request-stats">
+                    <% const applicantUser = requestItem.user || {}; %>
+                    <% const applicantProjectsCount = (projects || []).filter((projectItem) => {
+                      const projectOwner = projectItem.owner || projectItem.user || {};
+                      const projectOwnerId = projectOwner._id || projectOwner;
+                      const applicantUserId = applicantUser._id || "";
+                      return projectOwnerId && applicantUserId && String(projectOwnerId) === String(applicantUserId);
+                    }).length; %>
                     <div class="cert-stat">
                       <i data-lucide="folder-git-2" width="18" height="18" class="text-accent"></i>
-                      <div class="cert-stat-value"><%= (projects || []).length %></div>
+                      <div class="cert-stat-value"><%= applicantProjectsCount %></div>
                       <div class="cert-stat-label">Projects</div>
                     </div>
                     <div class="cert-stat">
                       <i data-lucide="star" width="18" height="18" class="text-warning"></i>
-                      <div class="cert-stat-value"><%= Number(currentUser.profileScore).toFixed(1) %></div>
+                      <div class="cert-stat-value"><%= Number(applicantUser.profileScore || 0).toFixed(1) %></div>
                       <div class="cert-stat-label">Avg Rating</div>
                     </div>
                     <div class="cert-stat">
                       <i data-lucide="code" width="18" height="18" class="text-success"></i>
-                      <div class="cert-stat-value"><%= normalizedSkills.length %></div>
+                      <div class="cert-stat-value"><%= (applicantUser.skills || []).length %></div>
                       <div class="cert-stat-label">Skills</div>
                     </div>
                     <div class="cert-stat">

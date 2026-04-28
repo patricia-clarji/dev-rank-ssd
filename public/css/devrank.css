@@ -2932,8 +2932,60 @@ tbody tr:hover {
 .review-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-left: calc(24px + var(--spacing-2));
+  justify-content: flex-start;
+  width: 100%;
+  padding-top: var(--spacing-2);
+  border-top: 1px solid var(--color-border-default);
+}
+
+.review-footer > .hire-badge {
+  margin-left: auto;
+}
+
+.review-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.review-actions form {
+  margin: 0;
+}
+
+.review-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 6px 10px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  background: rgba(22, 24, 29, 0.55);
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.review-action-btn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-muted);
+  background: rgba(28, 33, 40, 0.9);
+  transform: translateY(-1px);
+}
+
+.review-action-btn.danger {
+  color: var(--color-danger-fg);
+}
+
+.review-action-btn.danger:hover {
+  color: #ff7b72;
+  border-color: rgba(248, 81, 73, 0.45);
+  background: rgba(248, 81, 73, 0.12);
 }
 
 .review-footer .text-muted {
@@ -4169,9 +4221,23 @@ tbody tr:hover {
 .review-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding-top: var(--spacing-2);
   border-top: 1px solid var(--color-border-default);
+}
+
+.review-footer > .hire-badge {
+  margin-left: auto;
+}
+
+.review-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.review-actions form {
+  margin: 0;
 }
 
 /* Responsive */
@@ -4962,6 +5028,18 @@ input[data-auto-rating] + label {
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--color-accent-fg);
+}
+
+.stat-value-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-1);
+}
+
+.stat-value-icon {
+  flex: none;
+  color: var(--color-warning-fg);
 }
 
 .stat-label {
