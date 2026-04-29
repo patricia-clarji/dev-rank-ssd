@@ -4,10 +4,44 @@ const nodemailer = require("nodemailer");
 const User = require("../models/mongo/User");
 const userService = require("../services/userService");
 const AppError = require("../utils/AppError");
-const {
-  PASSWORD_REQUIREMENTS_MESSAGE,
-  validatePassword,
-} = require("../utils/passwordValidation");
+
+const PASSWORD_REQUIREMENTS = Object.freeze([
+  {
+    key: "minLength",
+    label: "At least 8 characters",
+    test: (password) => password.length >= 8,
+  },
+  {
+    key: "number",
+    label: "At least 1 number",
+    test: (password) => /\d/.test(password),
+  },
+  {
+    key: "special",
+    label: "At least 1 special character",
+    test: (password) => /[^A-Za-z0-9]/.test(password),
+  },
+]);
+
+const PASSWORD_REQUIREMENTS_MESSAGE = "Password must be at least 8 characters and include a number and special character.";
+
+function validatePassword(password) {
+  const candidatePassword = String(password || "");
+  const requirements = PASSWORD_REQUIREMENTS.map((requirement) => ({
+    key: requirement.key,
+    label: requirement.label,
+    met: requirement.test(candidatePassword),
+  }));
+
+  const missingRequirements = requirements.filter((requirement) => !requirement.met);
+
+  return {
+    isValid: missingRequirements.length === 0,
+    requirements,
+    missingRequirements,
+    missingLabels: missingRequirements.map((requirement) => requirement.label),
+  };
+}
 
 const AUTH_ERROR_CODES = Object.freeze({
   INVALID_CREDENTIALS: "AUTH_INVALID_CREDENTIALS",
@@ -164,6 +198,36 @@ async function resetPassword({ token, password, confirmPassword }) {
   return user;
 }
 
+const errorMessages = {
+  invalid_credentials: "Invalid email or password",
+  password_weak: PASSWORD_REQUIREMENTS_MESSAGE,
+  password_mismatch: "Passwords do not match",
+  missing_fields: "Please fill in all required fields",
+  email_exists: "This email is already registered",
+  server_error: "An error occurred. Please try again",
+  user_exists: "Username already taken",
+  invalid_token: "Invalid or expired reset token",
+};
+
+function getAuthErrorCode(error, fallbackCode = "server_error") {
+  switch (error && error.errorCode) {
+    case AUTH_ERROR_CODES.INVALID_CREDENTIALS:
+      return "invalid_credentials";
+    case AUTH_ERROR_CODES.MISSING_FIELDS:
+      return "missing_fields";
+    case AUTH_ERROR_CODES.PASSWORD_MISMATCH:
+      return "password_mismatch";
+    case AUTH_ERROR_CODES.PASSWORD_WEAK:
+      return "password_weak";
+    case AUTH_ERROR_CODES.EMAIL_EXISTS:
+      return "email_exists";
+    case AUTH_ERROR_CODES.INVALID_TOKEN:
+      return "invalid_token";
+    default:
+      return fallbackCode;
+  }
+}
+
 module.exports = {
   AUTH_ERROR_CODES,
   loginWithCredentials,
@@ -171,4 +235,6 @@ module.exports = {
   getResetPasswordUser,
   requestPasswordReset,
   resetPassword,
+  getAuthErrorCode,
+  errorMessages,
 };

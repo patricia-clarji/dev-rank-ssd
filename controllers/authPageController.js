@@ -1,37 +1,7 @@
 const authService = require("../services/authService");
 const { generateToken } = require("../middleware/webAuth");
 const { content } = require("../utils/viewRenderer");
-const { PASSWORD_REQUIREMENTS_MESSAGE } = require("../utils/passwordValidation");
-
-const errorMessages = {
-  invalid_credentials: "Invalid email or password",
-  password_weak: PASSWORD_REQUIREMENTS_MESSAGE,
-  password_mismatch: "Passwords do not match",
-  missing_fields: "Please fill in all required fields",
-  email_exists: "This email is already registered",
-  server_error: "An error occurred. Please try again",
-  user_exists: "Username already taken",
-  invalid_token: "Invalid or expired reset token",
-};
-
-function getAuthErrorCode(error, fallbackCode = "server_error") {
-  switch (error && error.errorCode) {
-    case authService.AUTH_ERROR_CODES.INVALID_CREDENTIALS:
-      return "invalid_credentials";
-    case authService.AUTH_ERROR_CODES.MISSING_FIELDS:
-      return "missing_fields";
-    case authService.AUTH_ERROR_CODES.PASSWORD_MISMATCH:
-      return "password_mismatch";
-    case authService.AUTH_ERROR_CODES.PASSWORD_WEAK:
-      return "password_weak";
-    case authService.AUTH_ERROR_CODES.EMAIL_EXISTS:
-      return "email_exists";
-    case authService.AUTH_ERROR_CODES.INVALID_TOKEN:
-      return "invalid_token";
-    default:
-      return fallbackCode;
-  }
-}
+const { getAuthErrorCode, errorMessages } = require("../services/authService");
 
 exports.loginPage = (req, res) => {
   const errorCode = req.query.error;
