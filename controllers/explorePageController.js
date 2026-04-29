@@ -5,6 +5,7 @@ const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
 const certificationService = require("../services/certificationService");
 const exploreViewModel = require("../utils/viewModels/exploreViewModel");
+const { REVIEW_STATUSES } = require("../constants/statusConstants");
 
 function matchesQuery(values, query) {
   if (!query) return true;
@@ -79,7 +80,7 @@ exports.explore = async (req, res) => {
     const userProjects = sessionUser ? await projectService.getProjectsByUser(sessionUser._id) : [];
     const userProjectIds = userProjects.map((p) => p._id);
     const userReviews = userProjectIds.length > 0
-      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
+      ? await Review.find({ project: { $in: userProjectIds }, status: REVIEW_STATUSES.PUBLISHED })
           .populate("project", "title")
           .populate("reviewer", "name")
       : [];

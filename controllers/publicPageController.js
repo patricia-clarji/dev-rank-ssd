@@ -5,6 +5,7 @@ const certificationService = require("../services/certificationService");
 const projectService = require("../services/projectService");
 const { content } = require("../utils/viewRenderer");
 const mapperService = require("../services/mapperService");
+const { REVIEW_STATUSES, CERTIFICATION_STATUSES } = require("../constants/statusConstants");
 
 exports.landing = (req, res) => {
   res.render("pages/landing", {
@@ -45,7 +46,7 @@ exports.publicProfile = async (req, res) => {
 
     const projectIds = projects.map((project) => project._id);
     const projectReviews = projectIds.length > 0
-      ? await Review.find({ project: { $in: projectIds }, status: "published" })
+      ? await Review.find({ project: { $in: projectIds }, status: REVIEW_STATUSES.PUBLISHED })
       : [];
     const wouldHireRate = projectReviews.length > 0
       ? Math.round((projectReviews.filter((review) => review.wouldHire).length / projectReviews.length) * 100)
@@ -55,7 +56,7 @@ exports.publicProfile = async (req, res) => {
 
     const certifications = await certificationService.getAllRequests();
     const pendingCertificationsCount = certifications.filter(
-      (c) => c.status === "pending"
+      (c) => c.status === CERTIFICATION_STATUSES.PENDING
     ).length;
 
     const normalizedUser = mapperService.mapUser(user);

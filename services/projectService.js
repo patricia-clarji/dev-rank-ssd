@@ -51,7 +51,7 @@ exports.createProject = async ({ userId, title, description, repoUrl, liveUrl, t
 
     projectLogger.logProjectCreated(ownerUser._id.toString(), project._id.toString(), project.title, project.status);
 
-    return await project.populate("user", "name email role githubUrl");
+    return await project.populate("user", "name username email role githubUrl");
 };
 
 exports.getAllProjects = async (filters = {}) => {
@@ -77,14 +77,14 @@ exports.getAllProjects = async (filters = {}) => {
     }
 
     return await Project.find(query)
-        .populate("user", "name email role githubUrl")
+        .populate("user", "name username email role githubUrl")
         .sort({ createdAt: -1 });
 };
 
 exports.getProject = async (projectId) => {
     const project = await Project.findById(projectId).populate(
         "user",
-        "name email role githubUrl"
+        "name username email role githubUrl"
     );
 
     if (!project) {
@@ -152,7 +152,7 @@ exports.getProjectReviews = async (projectId) => {
 
 exports.getProjectByTitle = async (title) => {
     const project = await Project.findOne({ title })
-        .populate("user", "name email role githubUrl");
+        .populate("user", "name username email role githubUrl");
 
     if (!project) {
         throw new AppError("Project not found.", 404, ERROR_CODES.NOT_FOUND);
@@ -168,7 +168,7 @@ exports.getProjectsByUser = async (userId) => {
     }
 
     return await Project.find({ user: userId })
-        .populate("user", "name email role githubUrl")
+        .populate("user", "name username email role githubUrl")
         .sort({ createdAt: -1 });
 };
 

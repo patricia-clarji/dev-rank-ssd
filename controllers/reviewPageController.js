@@ -6,18 +6,15 @@ const mapperService = require("../services/mapperService");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
 const certificationService = require("../services/certificationService");
 const reviewsListViewModel = require("../utils/viewModels/reviewsListViewModel");
-
-function parseCsv(csvValue) {
-  return String(csvValue || "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function isOwner(project, userId) {
-  if (!project || !project.user || !userId) return false;
-  return String(project.user._id || project.user) === String(userId);
-}
+const { parseCsv } = require("../utils/stringUtils");
+const {
+  fetchUserData,
+  handleControllerError,
+  isProjectOwner,
+  canEditReview,
+  canDeleteReview
+} = require("../utils/controllerUtils");
+const { REVIEW_STATUSES } = require("../constants/statusConstants");
 
 function getReviewPayload(body) {
   const codeQualityScore = Number(body.codeQualityScore || 4);
@@ -33,20 +30,8 @@ function getReviewPayload(body) {
     wouldHire: body.wouldHire === "yes",
     generalFeedback: body.generalFeedback,
     suggestions: parseCsv(body.suggestionsCsv),
-    status: "published",
+    status: REVIEW_STATUSES.PUBLISHED,
   };
-}
-
-function canEditReview(review, user) {
-  if (!review || !user) return false;
-  if (user.role === "admin") return true;
-
-  const reviewOwnerId = review.reviewer && review.reviewer._id ? String(review.reviewer._id) : String(review.reviewer || "");
-  return reviewOwnerId && String(user._id) === reviewOwnerId;
-}
-
-function canDeleteReview(review, user) {
-  return canEditReview(review, user);
 }
 
 exports.reviewProject = async (req, res) => {
@@ -62,37 +47,30 @@ exports.reviewProject = async (req, res) => {
       return res.redirect(`/reviews/${existingReview._id}/edit`);
     }
 
-    if (isOwner(project, sessionUser._id)) {
+    if (isProjectOwner(project, sessionUser._id)) {
       return res.redirect(`/projects/${req.params.id}`);
     }
 
+    const { projects: userProjects, reviews: userReviews, certifications } = await fetchUserData(sessionUser);
     const userFlags = getUserFlags(sessionUser);
-    const userProjects = await projectService.getProjectsByUser(sessionUser._id);
-    const userProjectIds = userProjects.map((p) => p._id);
-    const userReviews = userProjectIds.length > 0
-      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
-          .populate("project", "title")
-          .populate("reviewer", "name")
-      : [];
-    const certifications = await certificationService.getAllRequests();
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
 
     return renderApp(res, "review-form", {
       pageTitle: `Review ${project.title}`,
       activeNav: "reviews",
-      user: sessionUser,
       formMode: "create",
+      user: sessionUser,
       project: mapperService.mapProject(project),
       review: null,
-      isReviewer: userFlags.isReviewer,
-      isAdmin: userFlags.isAdmin,
       projects: userProjects,
       reviews: userReviews,
-      ...profileVM,
       certificationRequests: certifications,
+      isReviewer: userFlags.isReviewer,
+      isAdmin: userFlags.isAdmin,
+      ...profileVM,
     });
   } catch (error) {
-    return res.redirect("/projects");
+    return handleControllerError(error, res, "/projects", "Review project form render failed:");
   }
 };
 
@@ -108,8 +86,7 @@ exports.submitReview = async (req, res) => {
 
     return res.redirect(`/projects/${req.params.id}`);
   } catch (error) {
-    console.error(error);
-    return res.redirect(`/projects/${req.params.id}/review`);
+    return handleControllerError(error, res, `/projects/${req.params.id}/review`, "Submit review failed:");
   }
 };
 
@@ -220,6 +197,6 @@ exports.reviews = async (req, res) => {
       certificationRequests: certifications,
     });
   } catch (error) {
-    return res.redirect("/dashboard");
+    return handleControllerError(error, res, "/dashboard", "Reviews page render failed:");
   }
 };

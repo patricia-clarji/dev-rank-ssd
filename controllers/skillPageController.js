@@ -6,6 +6,7 @@ const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
 const certificationService = require("../services/certificationService");
 const skillsViewModel = require("../utils/viewModels/skillsViewModel");
+const { REVIEW_STATUSES } = require("../constants/statusConstants");
 
 function normalizeCategory(value) {
   if (Array.isArray(value)) {
@@ -75,7 +76,7 @@ exports.skills = async (req, res) => {
     const userProjects = await projectService.getProjectsByUser(sessionUser._id);
     const userProjectIds = userProjects.map((p) => p._id);
     const userReviews = userProjectIds.length > 0
-      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
+      ? await Review.find({ project: { $in: userProjectIds }, status: REVIEW_STATUSES.PUBLISHED })
           .populate("project", "title")
           .populate("reviewer", "name")
       : [];
@@ -120,7 +121,7 @@ exports.skillDetail = async (req, res) => {
     const userProjects = await projectService.getProjectsByUser(sessionUser._id);
     const userProjectIds = userProjects.map((p) => p._id);
     const userReviews = userProjectIds.length > 0
-      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
+      ? await Review.find({ project: { $in: userProjectIds }, status: REVIEW_STATUSES.PUBLISHED })
           .populate("project", "title")
           .populate("reviewer", "name")
       : [];

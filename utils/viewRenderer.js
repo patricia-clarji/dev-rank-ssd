@@ -8,7 +8,7 @@ function getUserFlags(user) {
   }
 
   return {
-    isReviewer: user.role === "reviewer" || user.role === "admin",
+    isReviewer: (user.role === "reviewer" && user.isVerifiedReviewer) || user.role === "admin",
     isAdmin: user.role === "admin",
   };
 }

@@ -5,6 +5,7 @@ const reviewLogger = require("../loggers/reviewLogger");
 const { recalculateUserProfileScore } = require("./projectService");
 const AppError = require("../utils/AppError");
 const ERROR_CODES = require("../utils/errorCodes");
+const { REVIEW_STATUSES } = require("../constants/statusConstants");
 
 const calculateAverage = (reviews, field) => {
     if (reviews.length === 0) return 0;
@@ -16,7 +17,7 @@ const calculateAverage = (reviews, field) => {
 const recalculateProjectAggregates = async (projectId) => {
     const reviews = await Review.find({
         project: projectId,
-        status: "published",
+        status: REVIEW_STATUSES.PUBLISHED,
     });
 
     const totalReviews = reviews.length;

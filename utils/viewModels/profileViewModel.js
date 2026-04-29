@@ -1,4 +1,5 @@
 const mapperService = require("../../services/mapperService");
+const { USER_CERTIFICATION_STATUSES } = require("../../constants/statusConstants");
 
 function mapUserProfileView(userDoc, projects = [], reviews = [], certificationRequests = [], isReviewer = false) {
   const user = mapperService.mapUser(userDoc) || {};
@@ -27,8 +28,8 @@ function mapUserProfileView(userDoc, projects = [], reviews = [], certificationR
   const userCertificationStatus = null;
 
   const certStatus = isReviewer
-    ? "certified"
-    : (userCertificationStatus || (ownCertification ? ownCertification.status : "not-applied"));
+    ? USER_CERTIFICATION_STATUSES.CERTIFIED
+    : (userCertificationStatus || (ownCertification ? ownCertification.status : USER_CERTIFICATION_STATUSES.NOT_APPLIED));
 
   const reviewsList = reviews || [];
   const hireVotes = reviewsList.filter((reviewItem) => reviewItem.wouldHire).length;

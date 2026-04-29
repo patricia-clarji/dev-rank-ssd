@@ -13,8 +13,11 @@ exports.mapExploreProjects = (projects) => {
     title: project.title,
     description: project.description,
     techStack: project.techStack || [],
-    owner: project.owner || {},
-    ownerUsername: (project.owner && project.owner.username) || "developer",
+    owner: project.owner || project.user || {},
+    ownerUsername:
+      (project.owner && project.owner.username) ||
+      (project.user && project.user.username) ||
+      "developer",
     averageRating: project.averageRating || 0,
     status: project.status,
     isSeekingReview: project.status === "seeking-review",

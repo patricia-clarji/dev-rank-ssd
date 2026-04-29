@@ -1,28 +1,29 @@
 const projectService = require("../services/projectService");
 const skillService = require("../services/skillService");
 const Review = require("../models/mongo/Review");
-const { getUserFlags, renderApp } = require("../utils/viewRenderer");  
+const { renderApp } = require("../utils/viewRenderer");
 const mapperService = require("../services/mapperService");
 const { parseCsv } = require("../utils/stringUtils");
 const { mapProjectDetailReviewCard } = require("../utils/viewModels/projectViewModel");
-const profileViewModel = require("../utils/viewModels/profileViewModel");
-const certificationService = require("../services/certificationService");
 const projectViewModel = require("../utils/viewModels/projectViewModel");
-
-function isOwner(project, userId) {
-  if (!project || !project.user || !userId) return false;
-  return String(project.user._id || project.user) === String(userId);
-}
+const { getUserFlags } = require("../utils/viewRenderer");
+const profileViewModel = require("../utils/viewModels/profileViewModel");
+const {
+  fetchUserData,
+  handleControllerError,
+  isProjectOwner
+} = require("../utils/controllerUtils");
+const { PROJECT_STATUSES, FILTER_STATUSES } = require("../constants/statusConstants");
 
 exports.projects = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
     const query = String(req.query.q || "").trim().toLowerCase();
-    const status = String(req.query.status || "all").trim();
+    const status = String(req.query.status || FILTER_STATUSES.ALL).trim();
 
-    const projects = await projectService.getProjectsByUser(sessionUser._id);
+    const { projects, reviews, certifications } = await fetchUserData(sessionUser);
     const filteredProjects = projects
-      .filter((project) => (status === "all" ? true : String(project.status || "draft") === status))
+      .filter((project) => (status === FILTER_STATUSES.ALL ? true : String(project.status || PROJECT_STATUSES.DRAFT) === status))
       .filter((project) => {
         if (!query) return true;
         const haystack = [project.title, project.description, ...(project.techStack || [])]
@@ -31,18 +32,12 @@ exports.projects = async (req, res) => {
           .toLowerCase();
         return haystack.includes(query);
       });
-    const userFlags = getUserFlags(sessionUser);
-    const projectIds = projects.map((p) => p._id);
-    const reviews = projectIds.length > 0
-      ? await Review.find({ project: { $in: projectIds }, status: "published" })
-          .populate("project", "title")
-          .populate("reviewer", "name")
-      : [];
-    const certifications = await certificationService.getAllRequests();
-    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, certifications, userFlags.isReviewer);
+
     const mappedProjects = filteredProjects.map(mapperService.mapProject);
     const projectsList = projectViewModel.mapProjectsListItems(mappedProjects, projects);
     const filterCounts = projectViewModel.mapProjectsFilterCounts(mappedProjects, status);
+    const userFlags = getUserFlags(sessionUser);
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, certifications, userFlags.isReviewer);
 
     return renderApp(res, "projects", {
       pageTitle: "Projects",
@@ -52,14 +47,14 @@ exports.projects = async (req, res) => {
       projectsSearchQuery: query,
       projectsStatusFilter: status,
       filterCounts,
+      certificationRequests: certifications,
+      reviews,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
-      certificationRequests: certifications,
-      reviews,
     });
   } catch (error) {
-    return res.redirect("/dashboard");
+    return handleControllerError(error, res, "/dashboard", "Projects page render failed:");
   }
 };
 
@@ -67,16 +62,9 @@ exports.newProject = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
     const skills = await skillService.getAllSkills({});
+    const { projects, reviews, certifications } = await fetchUserData(sessionUser);
     const userFlags = getUserFlags(sessionUser);
-    const projects = await projectService.getProjectsByUser(sessionUser._id);
-    const projectIds = projects.map((p) => p._id);
-    const userReviews = projectIds.length > 0
-      ? await Review.find({ project: { $in: projectIds }, status: "published" })
-          .populate("project", "title")
-          .populate("reviewer", "name")
-      : [];
-    const certifications = await certificationService.getAllRequests();
-    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, userReviews, certifications, userFlags.isReviewer);
+    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, certifications, userFlags.isReviewer);
 
     return renderApp(res, "project-form", {
       pageTitle: "New project",
@@ -85,15 +73,15 @@ exports.newProject = async (req, res) => {
       project: null,
       user: sessionUser,
       skills,
+      projects,
+      reviews,
+      certificationRequests: certifications,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
-      projects,
-      reviews: userReviews,
       ...profileVM,
-      certificationRequests: certifications,
     });
   } catch (error) {
-    return res.redirect("/projects");
+    return handleControllerError(error, res, "/projects", "New project form render failed:");
   }
 };
 
@@ -109,12 +97,12 @@ exports.createProject = async (req, res) => {
       repoUrl: req.body.repoUrl,
       liveUrl: req.body.liveUrl,
       techStack,
-      status: req.body.status || "seeking-review",
+      status: req.body.status || PROJECT_STATUSES.SEEKING_REVIEW,
     });
 
     return res.redirect("/projects");
   } catch (error) {
-    return res.redirect("/projects/new");
+    return handleControllerError(error, res, "/projects/new", "Create project failed:");
   }
 };
 
@@ -123,18 +111,12 @@ exports.projectDetail = async (req, res) => {
     const sessionUser = req.currentUser;
     const project = await projectService.getProject(req.params.id);
     const reviews = await projectService.getProjectReviews(req.params.id);
-    const userFlags = getUserFlags(sessionUser);
     const projectReviewCards = reviews.map((reviewDoc) =>
-      mapProjectDetailReviewCard(reviewDoc, sessionUser, userFlags.isAdmin)
+      mapProjectDetailReviewCard(reviewDoc, sessionUser)
     );
-    const userProjects = await projectService.getProjectsByUser(sessionUser._id);
-    const userProjectIds = userProjects.map((p) => p._id);
-    const userReviews = userProjectIds.length > 0
-      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
-          .populate("project", "title")
-          .populate("reviewer", "name")
-      : [];
-    const certifications = await certificationService.getAllRequests();
+
+    const { projects: userProjects, reviews: userReviews, certifications } = await fetchUserData(sessionUser);
+    const userFlags = getUserFlags(sessionUser);
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
     const mappedProject = mapperService.mapProject(project);
     const projectDetailVM = projectViewModel.mapProjectDetailPage(mappedProject, sessionUser, userFlags.isAdmin, userFlags.isReviewer);
@@ -149,13 +131,13 @@ exports.projectDetail = async (req, res) => {
       projectReviewCards,
       reviewStats,
       reviews,
+      certificationRequests: certifications,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
-      certificationRequests: certifications,
     });
   } catch (error) {
-    return res.redirect("/projects");
+    return handleControllerError(error, res, "/projects", "Project detail render failed:");
   }
 };
 
@@ -164,38 +146,31 @@ exports.editProject = async (req, res) => {
     const sessionUser = req.currentUser;
     const project = await projectService.getProject(req.params.id);
 
-    if (!isOwner(project, sessionUser._id) && sessionUser.role !== "admin") {
+    if (!isProjectOwner(project, sessionUser._id) && sessionUser.role !== "admin") {
       return res.redirect(`/projects/${req.params.id}`);
     }
 
     const skills = await skillService.getAllSkills({});
+    const { projects: userProjects, reviews: userReviews, certifications } = await fetchUserData(sessionUser);
     const userFlags = getUserFlags(sessionUser);
-    const userProjects = await projectService.getProjectsByUser(sessionUser._id);
-    const userProjectIds = userProjects.map((p) => p._id);
-    const userReviews = userProjectIds.length > 0
-      ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
-          .populate("project", "title")
-          .populate("reviewer", "name")
-      : [];
-    const certifications = await certificationService.getAllRequests();
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
 
     return renderApp(res, "project-form", {
       pageTitle: `Edit ${project.title}`,
       activeNav: "projects",
       formMode: "edit",
-      project: mapperService.mapProject(project),
       user: sessionUser,
+      project: mapperService.mapProject(project),
       skills,
-      isReviewer: userFlags.isReviewer,
-      isAdmin: userFlags.isAdmin,
       projects: userProjects,
       reviews: userReviews,
-      ...profileVM,
       certificationRequests: certifications,
+      isReviewer: userFlags.isReviewer,
+      isAdmin: userFlags.isAdmin,
+      ...profileVM,
     });
   } catch (error) {
-    return res.redirect("/projects");
+    return handleControllerError(error, res, "/projects", "Edit project form render failed:");
   }
 };
 
@@ -204,7 +179,7 @@ exports.updateProject = async (req, res) => {
     const sessionUser = req.currentUser;
     const project = await projectService.getProject(req.params.id);
 
-    if (!isOwner(project, sessionUser._id) && sessionUser.role !== "admin") {
+    if (!isProjectOwner(project, sessionUser._id) && sessionUser.role !== "admin") {
       return res.redirect(`/projects/${req.params.id}`);
     }
 
@@ -220,7 +195,7 @@ exports.updateProject = async (req, res) => {
 
     return res.redirect(`/projects/${req.params.id}`);
   } catch (error) {
-    return res.redirect(`/projects/${req.params.id}/edit`);
+    return handleControllerError(error, res, `/projects/${req.params.id}/edit`, "Update project failed:");
   }
 };
 
@@ -229,13 +204,13 @@ exports.deleteProject = async (req, res) => {
     const sessionUser = req.currentUser;
     const project = await projectService.getProject(req.params.id);
 
-    if (!isOwner(project, sessionUser._id) && sessionUser.role !== "admin") {
+    if (!isProjectOwner(project, sessionUser._id) && sessionUser.role !== "admin") {
       return res.redirect(`/projects/${req.params.id}`);
     }
 
     await projectService.deleteProject(req.params.id);
     return res.redirect("/projects");
   } catch (error) {
-    return res.redirect(`/projects/${req.params.id}`);
+    return handleControllerError(error, res, `/projects/${req.params.id}`, "Delete project failed:");
   }
 };

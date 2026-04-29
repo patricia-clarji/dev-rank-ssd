@@ -12,6 +12,8 @@ const { toActionLabel, isObjectId } = require("../utils/stringUtils");
 const certificationViewModel = require("../utils/viewModels/certificationViewModel");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
 const adminDashboardViewModel = require("../utils/viewModels/adminDashboardViewModel");
+const { handleControllerError } = require("../utils/controllerUtils");
+const { CERTIFICATION_STATUSES, FILTER_STATUSES } = require("../constants/statusConstants");
 
 exports.adminDashboard = async (req, res) => {
   try {
@@ -51,15 +53,14 @@ exports.adminDashboard = async (req, res) => {
       ...profileVM,
     });
   } catch (error) {
-    console.error("Admin dashboard render failed:", error);
-    return res.redirect("/dashboard");
+    return handleControllerError(error, res, "/dashboard", "Admin dashboard render failed:");
   }
 };
 
 exports.adminCertifications = async (req, res) => {
   try {
-    const statusValues = ["pending", "approved", "rejected", "all"];
-    const statusFilter = statusValues.includes(req.query.status) ? req.query.status : "pending";
+    const statusValues = [CERTIFICATION_STATUSES.PENDING, CERTIFICATION_STATUSES.APPROVED, CERTIFICATION_STATUSES.REJECTED, FILTER_STATUSES.ALL];
+    const statusFilter = statusValues.includes(req.query.status) ? req.query.status : CERTIFICATION_STATUSES.PENDING;
 
     const [certifications, projects] = await Promise.all([
       certificationService.getAllRequests(),
@@ -68,7 +69,7 @@ exports.adminCertifications = async (req, res) => {
     const userFlags = getUserFlags(req.currentUser);
 
     const certificationRequestsRaw = certifications.filter((request) => {
-      if (statusFilter === "all") return true;
+      if (statusFilter === FILTER_STATUSES.ALL) return true;
       return String(request.status || "").toLowerCase() === statusFilter;
     });
 
@@ -77,9 +78,9 @@ exports.adminCertifications = async (req, res) => {
     );
 
     const certificationCounts = {
-      pending: certifications.filter((request) => String(request.status || "").toLowerCase() === "pending").length,
-      approved: certifications.filter((request) => String(request.status || "").toLowerCase() === "approved").length,
-      rejected: certifications.filter((request) => String(request.status || "").toLowerCase() === "rejected").length,
+      pending: certifications.filter((request) => String(request.status || "").toLowerCase() === CERTIFICATION_STATUSES.PENDING).length,
+      approved: certifications.filter((request) => String(request.status || "").toLowerCase() === CERTIFICATION_STATUSES.APPROVED).length,
+      rejected: certifications.filter((request) => String(request.status || "").toLowerCase() === CERTIFICATION_STATUSES.REJECTED).length,
       all: certifications.length,
     };
     const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], certifications, userFlags.isReviewer);
@@ -98,8 +99,7 @@ exports.adminCertifications = async (req, res) => {
       ...profileVM,
     });
   } catch (error) {
-    console.error("Admin certifications render failed:", error);
-    return res.redirect("/admin");
+    return handleControllerError(error, res, "/admin", "Admin certifications render failed:");
   }
 };
 
@@ -170,8 +170,7 @@ exports.adminLogs = async (req, res) => {
       ...profileVM,
     });
   } catch (error) {
-    console.error("Admin logs render failed:", error);
-    return res.redirect("/admin");
+    return handleControllerError(error, res, "/admin", "Admin logs render failed:");
   }
 };
 
@@ -229,8 +228,7 @@ exports.adminSkills = async (req, res) => {
       ...profileVM,
     });
   } catch (error) {
-    console.error("Admin skills render failed:", error);
-    return res.redirect("/admin");
+    return handleControllerError(error, res, "/admin", "Admin skills render failed:");
   }
 };
 
@@ -252,8 +250,7 @@ exports.newSkillForm = async (req, res) => {
       ...profileVM,
     });
   } catch (error) {
-    console.error("New skill form render failed:", error);
-    return res.redirect("/admin/skills");
+    return handleControllerError(error, res, "/admin/skills", "New skill form render failed:");
   }
 };
 
@@ -273,8 +270,7 @@ exports.createSkill = async (req, res) => {
 
     return res.redirect("/admin/skills");
   } catch (error) {
-    console.error("Create skill failed:", error);
-    return res.redirect("/admin/skills/new");
+    return handleControllerError(error, res, "/admin/skills/new", "Create skill failed:");
   }
 };
 
@@ -304,8 +300,7 @@ exports.editSkillForm = async (req, res) => {
       ...profileVM,
     });
   } catch (error) {
-    console.error("Edit skill form render failed:", error);
-    return res.redirect("/admin/skills");
+    return handleControllerError(error, res, "/admin/skills", "Edit skill form render failed:");
   }
 };
 
@@ -325,8 +320,7 @@ exports.updateSkill = async (req, res) => {
 
     return res.redirect("/admin/skills");
   } catch (error) {
-    console.error("Update skill failed:", error);
-    return res.redirect(`/admin/skills/${req.params.id}/edit`);
+    return handleControllerError(error, res, `/admin/skills/${req.params.id}/edit`, "Update skill failed:");
   }
 };
 
@@ -336,7 +330,6 @@ exports.deleteSkill = async (req, res) => {
     await skillService.deleteSkill(req.params.id);
     return res.redirect("/admin/skills");
   } catch (error) {
-    console.error("Delete skill failed:", error);
-    return res.redirect("/admin/skills");
+    return handleControllerError(error, res, "/admin/skills", "Delete skill failed:");
   }
 };

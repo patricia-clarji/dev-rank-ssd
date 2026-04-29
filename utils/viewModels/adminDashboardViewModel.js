@@ -3,6 +3,8 @@
  * Computes UI state for admin dashboard (stats, activity entries)
  */
 
+const { CERTIFICATION_STATUSES } = require("../../constants/statusConstants");
+
 exports.mapAdminStats = (users, projects, reviews, certificationRequests, activityLogs) => {
   const usersList = users || [];
   const projectsList = projects || [];
@@ -30,7 +32,7 @@ exports.mapAdminStats = (users, projects, reviews, certificationRequests, activi
     totalUsers: usersList.length,
     totalProjects: projectsList.length,
     totalReviews: reviewsList.length,
-    pendingCerts: certsList.filter((request) => request.status === "pending").length,
+    pendingCerts: certsList.filter((request) => request.status === CERTIFICATION_STATUSES.PENDING).length,
     newUsersToday: usersToday,
     reviewsToday: reviewsTodayCount,
   };
@@ -74,7 +76,7 @@ exports.mapPendingCertifications = (certificationRequests) => {
   }
 
   return certificationRequests
-    .filter((request) => request.status === "pending")
+    .filter((request) => request.status === CERTIFICATION_STATUSES.PENDING)
     .map((request) => {
       return {
         _id: request._id,

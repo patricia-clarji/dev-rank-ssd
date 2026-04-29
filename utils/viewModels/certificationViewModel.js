@@ -1,4 +1,5 @@
 const mapperService = require("../../services/mapperService");
+const { CERTIFICATION_STATUSES, USER_CERTIFICATION_STATUSES } = require("../../constants/statusConstants");
 
 function toPlain(doc) {
   if (!doc) return null;
@@ -65,7 +66,7 @@ function mapCertificationBenefits() {
 }
 
 function mapCertificationStatus(certStatus) {
-  if (certStatus === "certified" || certStatus === "approved") {
+  if (certStatus === USER_CERTIFICATION_STATUSES.CERTIFIED || certStatus === USER_CERTIFICATION_STATUSES.APPROVED) {
     return {
       statusText:
         "Congratulations! You are a certified reviewer and can review projects on DevRank.",
@@ -73,14 +74,14 @@ function mapCertificationStatus(certStatus) {
       badgeIcon: "check-circle",
       badgeLabel: "Certified Reviewer",
     };
-  } else if (certStatus === "pending") {
+  } else if (certStatus === USER_CERTIFICATION_STATUSES.PENDING) {
     return {
       statusText: "Your certification request is pending review. We will notify you once it has been processed.",
       badgeClass: "status-badge-large pending",
       badgeIcon: "clock",
       badgeLabel: "Pending Review",
     };
-  } else if (certStatus === "rejected") {
+  } else if (certStatus === USER_CERTIFICATION_STATUSES.REJECTED) {
     return {
       statusText: "Your latest request was rejected. You can improve your profile and apply again.",
       badgeClass: "status-badge-large rejected",

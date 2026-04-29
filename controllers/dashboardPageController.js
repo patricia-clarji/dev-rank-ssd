@@ -1,23 +1,19 @@
 const Review = require("../models/mongo/Review");
 const projectService = require("../services/projectService");
-const { getUserFlags, renderApp } = require("../utils/viewRenderer");
+const { renderApp, getUserFlags } = require("../utils/viewRenderer");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
 const dashboardViewModel = require("../utils/viewModels/dashboardViewModel");
+const {
+  fetchUserData,
+  handleControllerError
+} = require("../utils/controllerUtils");
 
 exports.dashboard = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
 
-    const projects = await projectService.getProjectsByUser(sessionUser._id);
-    const projectIds = projects.map((project) => project._id);
+    const { projects, reviews } = await fetchUserData(sessionUser);
     const numOfProjectsSeekingReview = await projectService.getProjectsSeekingReviewCount();
-    let reviews = [];
-    if (projectIds.length > 0) {
-      reviews = await Review.find({ project: { $in: projectIds }, status: "published" })
-        .populate("project", "title status")
-        .populate("reviewer", "name email role githubUrl username")
-        .sort({ createdAt: -1 });
-    }
 
     const userFlags = getUserFlags(sessionUser);
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, [], userFlags.isReviewer);
@@ -36,6 +32,6 @@ exports.dashboard = async (req, res) => {
       ...profileVM,
     });
   } catch (error) {
-    return res.redirect("/login");
+    return handleControllerError(error, res, "/login", "Dashboard render failed:");
   }
 };

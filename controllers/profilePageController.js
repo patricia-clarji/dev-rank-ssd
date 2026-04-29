@@ -2,23 +2,17 @@ const Review = require("../models/mongo/Review");
 const projectService = require("../services/projectService");
 const skillService = require("../services/skillService");
 const userService = require("../services/userService");
-const { getUserFlags, renderApp } = require("../utils/viewRenderer");
+const { renderApp, getUserFlags } = require("../utils/viewRenderer");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
+const {
+  fetchUserData,
+  handleControllerError
+} = require("../utils/controllerUtils");
 
 exports.profile = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
-    const projects = await projectService.getProjectsByUser(sessionUser._id);
-    const projectIds = projects.map((project) => project._id);
-
-    let reviews = [];
-    if (projectIds.length > 0) {
-      reviews = await Review.find({ project: { $in: projectIds }, status: "published" })
-        .populate("project", "title status")
-        .populate("reviewer", "name email role githubUrl username")
-        .sort({ createdAt: -1 });
-    }
-
+    const { projects, reviews } = await fetchUserData(sessionUser);
     const userFlags = getUserFlags(sessionUser);
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, [], userFlags.isReviewer);
 
@@ -33,7 +27,7 @@ exports.profile = async (req, res) => {
       ...profileVM,
     });
   } catch (error) {
-    return res.redirect("/dashboard");
+    return handleControllerError(error, res, "/dashboard", "Profile render failed:");
   }
 };
 
@@ -41,18 +35,8 @@ exports.editProfile = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
     const skills = await skillService.getAllSkills({});
+    const { projects, reviews } = await fetchUserData(sessionUser);
     const userFlags = getUserFlags(sessionUser);
-    const projects = await projectService.getProjectsByUser(sessionUser._id);
-    const projectIds = projects.map((project) => project._id);
-
-    let reviews = [];
-    if (projectIds.length > 0) {
-      reviews = await Review.find({ project: { $in: projectIds }, status: "published" })
-        .populate("project", "title status")
-        .populate("reviewer", "name email role githubUrl username")
-        .sort({ createdAt: -1 });
-    }
-
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, [], userFlags.isReviewer);
 
     return renderApp(res, "profile-edit", {
@@ -60,15 +44,15 @@ exports.editProfile = async (req, res) => {
       activeNav: "settings",
       user: sessionUser,
       skills,
-      isReviewer: userFlags.isReviewer,
-      isAdmin: userFlags.isAdmin,
       projects,
       reviews,
       certificationRequests: [],
+      isReviewer: userFlags.isReviewer,
+      isAdmin: userFlags.isAdmin,
       ...profileVM,
     });
   } catch (error) {
-    return res.redirect("/profile");
+    return handleControllerError(error, res, "/profile", "Edit profile render failed:");
   }
 };
 
@@ -101,6 +85,6 @@ exports.updateProfile = async (req, res) => {
 
     return res.redirect("/profile");
   } catch (error) {
-    return res.redirect("/profile/edit");
+    return handleControllerError(error, res, "/profile/edit", "Update profile failed:");
   }
 };
