@@ -2639,42 +2639,24 @@ tbody tr:hover {
   margin-top: var(--spacing-2);
 }
 
-.password-feedback-title {
-  margin-bottom: var(--spacing-2);
-}
-
-.password-requirements-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 6px;
-}
-
-.password-requirements-list li {
+.password-helper-text {
+  margin-bottom: 0;
   font-size: 0.8125rem;
-  line-height: var(--leading-normal);
+  line-height: 1.55;
   color: var(--color-text-muted);
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
-.password-requirements-list li::before {
-  content: "•";
-  font-size: 0.875rem;
+.password-helper-text [data-password-requirement] {
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
 }
 
-.password-requirements-list li.is-met {
+.password-helper-text [data-password-requirement].is-met {
   color: var(--color-success-fg);
 }
 
-.password-requirements-list li.is-met::before {
-  content: "✓";
-}
-
-.password-requirements-list li.is-unmet {
-  color: var(--color-text-muted);
+.password-helper-text [data-password-requirement].is-unmet {
+  color: var(--color-danger-fg);
 }
 
 .password-feedback-error,

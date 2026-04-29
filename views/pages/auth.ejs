@@ -1,134 +1,143 @@
 <%- include('../partials/head', { pageTitle, bodyClass }) %>
 
-<%- include('../partials/toast', { errorMessage, successMessage, warningMessage }) %>
+<%- include('../partials/toast', { errorMessage, successMessage, warningMessage
+}) %>
 
 <div class="auth-page <%= mode === 'register' ? 'auth-page-register' : '' %>">
   <div class="auth-container">
     <div class="auth-intro">
-      <p class="auth-eyebrow"><%= mode === 'login' ? 'Welcome back' : 'Join the platform' %></p>
-      <h1 class="auth-title"><%= mode === 'login' ? 'Sign in to DevRank' : 'Create your account' %></h1>
-      <p class="auth-subtitle"><%= mode === 'login' ? 'Get back to your projects, reviews, and admin tools in one clean step.' : 'Set up a verified developer profile with projects, skills, and peer feedback.' %></p>
+      <p class="auth-eyebrow"><%= mode === 'login' ? 'Welcome back' :
+        'Join the platform' %></p>
+      <h1 class="auth-title"><%= mode === 'login' ? 'Sign in to DevRank' :
+        'Create your account' %></h1>
+      <p class="auth-subtitle"><%= mode === 'login' ?
+        'Get back to your projects, reviews, and admin tools in one clean step.'
+        :
+        'Set up a verified developer profile with projects, skills, and peer feedback.'
+        %></p>
     </div>
 
     <div class="auth-card">
-      <form action="/<%= mode === 'login' ? 'login' : 'register' %>" method="post" <%= mode === 'register' ? 'data-password-validation' : '' %>>
+      <form action="/<%= mode === 'login' ? 'login' : 'register' %>"
+        method="post" <%=mode === 'register' ? 'data-password-validation' : ''
+        %>>
         <% if (mode === 'register') { %>
-          <div class="form-group">
-            <label class="form-label">Username</label>
-            <input
-              type="text"
-              name="username"
-              class="form-input"
-              required
-              autocomplete="username"
-              placeholder="johndoe"
-            />
-            <span class="form-hint">This will be your public profile URL</span>
-          </div>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input
+            type="text"
+            name="username"
+            class="form-input"
+            required
+            autocomplete="username"
+            placeholder="johndoe" />
+          <span class="form-hint">This will be your public profile URL</span>
+        </div>
 
-          <div class="form-group">
-            <label class="form-label">Email address</label>
-            <input
-              type="email"
-              name="email"
-              class="form-input"
-              required
-              autocomplete="email"
-              placeholder="you@example.com"
-            />
-          </div>
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input
+            type="email"
+            name="email"
+            class="form-input"
+            required
+            autocomplete="email"
+            placeholder="you@example.com" />
+        </div>
 
-          <div class="form-group">
-            <label class="form-label">Full name</label>
-            <input
-              type="text"
-              name="name"
-              class="form-input"
-              required
-              placeholder="John Doe"
-            />
-          </div>
+        <div class="form-group">
+          <label class="form-label">Full name</label>
+          <input
+            type="text"
+            name="name"
+            class="form-input"
+            required
+            placeholder="John Doe" />
+        </div>
 
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <div class="password-input">
-              <input
-                type="password"
-                name="password"
-                class="form-input"
-                required
-                autocomplete="new-password"
-                placeholder="Minimum 8 characters"
-                data-password-field
-              />
-              <button type="button" class="password-toggle" aria-label="Toggle password visibility">
-                <i data-lucide="eye" width="16" height="16"></i>
-              </button>
-            </div>
-            <div class="password-feedback" aria-live="polite">
-              <p class="form-hint password-feedback-title">Password requirements</p>
-              <ul class="password-requirements-list">
-                <li data-password-requirement="minLength">At least 8 characters</li>
-                <li data-password-requirement="uppercase">At least 1 uppercase letter</li>
-                <li data-password-requirement="lowercase">At least 1 lowercase letter</li>
-                <li data-password-requirement="number">At least 1 number</li>
-                <li data-password-requirement="special">At least 1 special character</li>
-              </ul>
-              <p class="form-error password-feedback-error hidden" data-password-feedback-error></p>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Confirm password</label>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="password-input">
             <input
               type="password"
-              name="confirmPassword"
+              name="password"
               class="form-input"
               required
               autocomplete="new-password"
-              placeholder="Confirm your password"
-              data-confirm-password-field
-            />
-            <p class="form-error password-match-error hidden" data-password-match-error>Passwords do not match.</p>
+              placeholder="Minimum 8 characters"
+              data-password-field />
+            <button type="button" class="password-toggle"
+              aria-label="Toggle password visibility">
+              <i data-lucide="eye" width="16" height="16"></i>
+            </button>
           </div>
+          <div class="password-feedback" aria-live="polite">
+            <p class="form-hint password-helper-text">
+              Password must
+              <span data-password-requirement="minLength">be at least 8
+                characters</span>,
+              <span data-password-requirement="number">a number</span>, and
+              <span data-password-requirement="special">a special
+                character</span>.
+            </p>
+            <p class="form-error password-feedback-error hidden"
+              data-password-feedback-error></p>
+          </div>
+        </div>
 
-          <button type="submit" class="btn btn-primary btn-block auth-submit">Create account</button>
+        <div class="form-group">
+          <label class="form-label">Confirm password</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            class="form-input"
+            required
+            autocomplete="new-password"
+            placeholder="Confirm your password"
+            data-confirm-password-field />
+          <p class="form-error password-match-error hidden"
+            data-password-match-error>Passwords do not match.</p>
+        </div>
 
-          <p class="auth-terms">
-            By creating an account, you agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
-          </p>
+        <button type="submit"
+          class="btn btn-primary btn-block auth-submit">Create account</button>
+
+        <p class="auth-terms">
+          By creating an account, you agree to the <a href="#">Terms of
+            Service</a> and <a href="#">Privacy Policy</a>.
+        </p>
         <% } else { %>
-          <div class="form-group">
-            <label class="form-label">Email address</label>
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input
+            type="email"
+            name="email"
+            class="form-input"
+            required
+            autocomplete="email" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            Password
+            <a href="/forgot-password" class="auth-forgot">Forgot password?</a>
+          </label>
+          <div class="password-input">
             <input
-              type="email"
-              name="email"
+              type="password"
+              name="password"
               class="form-input"
               required
-              autocomplete="email"
-            />
+              autocomplete="current-password" />
+            <button type="button" class="password-toggle"
+              aria-label="Toggle password visibility">
+              <i data-lucide="eye" width="16" height="16"></i>
+            </button>
           </div>
+        </div>
 
-          <div class="form-group">
-            <label class="form-label">
-              Password
-              <a href="/forgot-password" class="auth-forgot">Forgot password?</a>
-            </label>
-            <div class="password-input">
-              <input
-                type="password"
-                name="password"
-                class="form-input"
-                required
-                autocomplete="current-password"
-              />
-              <button type="button" class="password-toggle" aria-label="Toggle password visibility">
-                <i data-lucide="eye" width="16" height="16"></i>
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary btn-block auth-submit">Sign in</button>
+        <button type="submit" class="btn btn-primary btn-block auth-submit">Sign
+          in</button>
         <% } %>
       </form>
     </div>
@@ -136,7 +145,8 @@
     <div class="auth-card auth-footer-card">
       <p>
         <%= mode === 'login' ? 'New to DevRank?' : 'Already have an account?' %>
-        <a href="<%= mode === 'login' ? '/register' : '/login' %>"><%= mode === 'login' ? 'Create an account' : 'Sign in' %></a>
+        <a href="<%= mode === 'login' ? '/register' : '/login' %>"><%= mode ===
+          'login' ? 'Create an account' : 'Sign in' %></a>
       </p>
     </div>
   </div>

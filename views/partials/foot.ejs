@@ -52,22 +52,18 @@
 
 	var passwordRequirementLabels = {
 		minLength: "at least 8 characters",
-		uppercase: "1 uppercase letter",
-		lowercase: "1 lowercase letter",
 		number: "1 number",
 		special: "1 special character"
 	};
 
 	function getPasswordState(value) {
-		var password = String(value || "");
+	var password = String(value || "");
 
-		return {
-			minLength: password.length >= 8,
-			uppercase: /[A-Z]/.test(password),
-			lowercase: /[a-z]/.test(password),
-			number: /\d/.test(password),
-			special: /[^A-Za-z0-9]/.test(password)
-		};
+	return {
+		minLength: password.length >= 8,
+		number: /\d/.test(password),
+		special: /[^A-Za-z0-9]/.test(password)
+	};
 	}
 
 	document.querySelectorAll("form[data-password-validation]").forEach(function (form) {
@@ -94,20 +90,14 @@
 			});
 
 			form.querySelectorAll("[data-password-requirement]").forEach(function (item) {
-				var key = item.getAttribute("data-password-requirement");
-				var met = !!passwordState[key];
-				item.classList.toggle("is-met", met);
-				item.classList.toggle("is-unmet", !met);
+			var key = item.getAttribute("data-password-requirement");
+			var met = !!passwordState[key];
+			item.classList.toggle("is-met", met);
+			item.classList.toggle("is-unmet", !met);
 			});
 
 			var hasPasswordValue = passwordInput.value.length > 0;
-			var passwordMessage = unmetKeys.length
-				? "Still missing: " + unmetKeys.map(function (key) {
-					return passwordRequirementLabels[key];
-				}).join(", ") + "."
-				: "";
-
-			setElementVisibility(feedbackError, hasPasswordValue && unmetKeys.length > 0, passwordMessage);
+			setElementVisibility(feedbackError, false, "");
 
 			var passwordsMatch = !confirmInput || confirmInput.value === passwordInput.value;
 			setElementVisibility(matchError, !!confirmInput && confirmInput.value.length > 0 && !passwordsMatch, "Passwords do not match.");

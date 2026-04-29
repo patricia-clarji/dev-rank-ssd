@@ -5,16 +5,6 @@ const PASSWORD_REQUIREMENTS = Object.freeze([
         test: (password) => password.length >= 8,
     },
     {
-        key: "uppercase",
-        label: "At least 1 uppercase letter",
-        test: (password) => /[A-Z]/.test(password),
-    },
-    {
-        key: "lowercase",
-        label: "At least 1 lowercase letter",
-        test: (password) => /[a-z]/.test(password),
-    },
-    {
         key: "number",
         label: "At least 1 number",
         test: (password) => /\d/.test(password),
@@ -26,7 +16,7 @@ const PASSWORD_REQUIREMENTS = Object.freeze([
     },
 ]);
 
-const PASSWORD_REQUIREMENTS_MESSAGE = "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+const PASSWORD_REQUIREMENTS_MESSAGE = "Password must be at least 8 characters and include a number and special character.";
 
 function validatePassword(password) {
     const candidatePassword = String(password || "");
