@@ -1,10 +1,11 @@
 const authService = require("../services/authService");
 const { generateToken } = require("../middleware/webAuth");
 const { content } = require("../utils/viewRenderer");
+const { PASSWORD_REQUIREMENTS_MESSAGE } = require("../utils/passwordValidation");
 
 const errorMessages = {
   invalid_credentials: "Invalid email or password",
-  password_too_short: "Password must be at least 6 characters",
+  password_weak: PASSWORD_REQUIREMENTS_MESSAGE,
   password_mismatch: "Passwords do not match",
   missing_fields: "Please fill in all required fields",
   email_exists: "This email is already registered",
@@ -21,8 +22,8 @@ function getAuthErrorCode(error, fallbackCode = "server_error") {
       return "missing_fields";
     case authService.AUTH_ERROR_CODES.PASSWORD_MISMATCH:
       return "password_mismatch";
-    case authService.AUTH_ERROR_CODES.PASSWORD_TOO_SHORT:
-      return "password_too_short";
+    case authService.AUTH_ERROR_CODES.PASSWORD_WEAK:
+      return "password_weak";
     case authService.AUTH_ERROR_CODES.EMAIL_EXISTS:
       return "email_exists";
     case authService.AUTH_ERROR_CODES.INVALID_TOKEN:

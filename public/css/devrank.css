@@ -2635,6 +2635,58 @@ tbody tr:hover {
   color: var(--color-text-primary);
 }
 
+.password-feedback {
+  margin-top: var(--spacing-2);
+}
+
+.password-feedback-title {
+  margin-bottom: var(--spacing-2);
+}
+
+.password-requirements-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.password-requirements-list li {
+  font-size: 0.8125rem;
+  line-height: var(--leading-normal);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.password-requirements-list li::before {
+  content: "•";
+  font-size: 0.875rem;
+}
+
+.password-requirements-list li.is-met {
+  color: var(--color-success-fg);
+}
+
+.password-requirements-list li.is-met::before {
+  content: "✓";
+}
+
+.password-requirements-list li.is-unmet {
+  color: var(--color-text-muted);
+}
+
+.password-feedback-error,
+.password-match-error {
+  margin-bottom: 0;
+}
+
+.auth-card .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .auth-footer-card {
   text-align: center;
   background-color: transparent;

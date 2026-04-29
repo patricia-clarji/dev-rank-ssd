@@ -4,22 +4,21 @@ const nodemailer = require("nodemailer");
 const User = require("../models/mongo/User");
 const userService = require("../services/userService");
 const AppError = require("../utils/AppError");
+const {
+  PASSWORD_REQUIREMENTS_MESSAGE,
+  validatePassword,
+} = require("../utils/passwordValidation");
 
 const AUTH_ERROR_CODES = Object.freeze({
   INVALID_CREDENTIALS: "AUTH_INVALID_CREDENTIALS",
   MISSING_FIELDS: "AUTH_MISSING_FIELDS",
   PASSWORD_MISMATCH: "AUTH_PASSWORD_MISMATCH",
-  PASSWORD_TOO_SHORT: "AUTH_PASSWORD_TOO_SHORT",
+  PASSWORD_WEAK: "AUTH_PASSWORD_WEAK",
   EMAIL_EXISTS: "AUTH_EMAIL_EXISTS",
   INVALID_TOKEN: "AUTH_INVALID_TOKEN",
 });
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
-const PASSWORD_MIN_LENGTH = 6;
-
-function isPasswordTooShort(password) {
-  return String(password || "").length < PASSWORD_MIN_LENGTH;
-}
 
 function createAuthError(message, statusCode, errorCode) {
   return new AppError(message, statusCode, errorCode);
@@ -60,8 +59,8 @@ async function registerWithCredentials({ username, name, email, password, confir
     throw createAuthError("Passwords do not match", 400, AUTH_ERROR_CODES.PASSWORD_MISMATCH);
   }
 
-  if (isPasswordTooShort(candidatePassword)) {
-    throw createAuthError("Password must be at least 6 characters", 400, AUTH_ERROR_CODES.PASSWORD_TOO_SHORT);
+  if (!validatePassword(candidatePassword).isValid) {
+    throw createAuthError(PASSWORD_REQUIREMENTS_MESSAGE, 400, AUTH_ERROR_CODES.PASSWORD_WEAK);
   }
 
   try {
@@ -147,8 +146,8 @@ async function resetPassword({ token, password, confirmPassword }) {
     throw createAuthError("Passwords do not match", 400, AUTH_ERROR_CODES.PASSWORD_MISMATCH);
   }
 
-  if (isPasswordTooShort(candidatePassword)) {
-    throw createAuthError("Password must be at least 6 characters", 400, AUTH_ERROR_CODES.PASSWORD_TOO_SHORT);
+  if (!validatePassword(candidatePassword).isValid) {
+    throw createAuthError(PASSWORD_REQUIREMENTS_MESSAGE, 400, AUTH_ERROR_CODES.PASSWORD_WEAK);
   }
 
   const user = await getResetPasswordUser(resetToken);

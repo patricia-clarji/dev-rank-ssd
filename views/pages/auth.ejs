@@ -11,7 +11,7 @@
     </div>
 
     <div class="auth-card">
-      <form action="/<%= mode === 'login' ? 'login' : 'register' %>" method="post">
+      <form action="/<%= mode === 'login' ? 'login' : 'register' %>" method="post" <%= mode === 'register' ? 'data-password-validation' : '' %>>
         <% if (mode === 'register') { %>
           <div class="form-group">
             <label class="form-label">Username</label>
@@ -59,10 +59,22 @@
                 required
                 autocomplete="new-password"
                 placeholder="Minimum 8 characters"
+                data-password-field
               />
               <button type="button" class="password-toggle" aria-label="Toggle password visibility">
                 <i data-lucide="eye" width="16" height="16"></i>
               </button>
+            </div>
+            <div class="password-feedback" aria-live="polite">
+              <p class="form-hint password-feedback-title">Password requirements</p>
+              <ul class="password-requirements-list">
+                <li data-password-requirement="minLength">At least 8 characters</li>
+                <li data-password-requirement="uppercase">At least 1 uppercase letter</li>
+                <li data-password-requirement="lowercase">At least 1 lowercase letter</li>
+                <li data-password-requirement="number">At least 1 number</li>
+                <li data-password-requirement="special">At least 1 special character</li>
+              </ul>
+              <p class="form-error password-feedback-error hidden" data-password-feedback-error></p>
             </div>
           </div>
 
@@ -75,7 +87,9 @@
               required
               autocomplete="new-password"
               placeholder="Confirm your password"
+              data-confirm-password-field
             />
+            <p class="form-error password-match-error hidden" data-password-match-error>Passwords do not match.</p>
           </div>
 
           <button type="submit" class="btn btn-primary btn-block auth-submit">Create account</button>
