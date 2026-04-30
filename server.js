@@ -4,7 +4,7 @@ const path = require("path");
 const connectMongoDB = require("./config/mongodb.js");
 const sequelize = require("./config/sqlite.js");
 
-const { attachCurrentUser } = require("./middleware/webAuth");
+const { attachCurrentUser } = require("./middleware/webAuth.js");
 const { registerEventListeners } = require("./listeners/registerEventListeners.js");
 const appRoutes = require("./routes/appRoutes.js");
 
@@ -28,35 +28,25 @@ app.use((req, res, next) => {
   return res.status(404).render("pages/not-found", {
     pageTitle: "Page not found",
     bodyClass: "not-found-body",
-    message: "The page you requested does not exist.",
   });
 });
 
-// Global error handler (4 params required for Express to treat this as error handler)
+// Global error handler (render-based)
 app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || err.status || 500;
-  const isDevelopment = process.env.NODE_ENV !== "production";
+  console.error("[Unhandled Error]", err.stack);
 
-  console.error("[Error Handler]", {
-    statusCode,
-    message: err.message,
-    stack: isDevelopment ? err.stack : undefined,
-  });
-
-  // AppError with custom status code
   if (err.isAppError) {
-    return res.status(statusCode).render("pages/not-found", {
+    return res.status(err.statusCode).render("pages/not-found", {
       pageTitle: "Something went wrong",
       bodyClass: "not-found-body",
       message: err.message,
     });
   }
 
-  // Generic error fallback
   return res.status(500).render("pages/not-found", {
     pageTitle: "Internal Server Error",
     bodyClass: "not-found-body",
-    message: isDevelopment ? err.message : "An unexpected error occurred.",
+    message: "An unexpected error occurred.",
   });
 });
 

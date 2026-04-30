@@ -12,39 +12,6 @@ function parseCsv(csvValue) {
     .filter(Boolean);
 }
 
-exports.certifications = async (req, res) => {
-  try {
-    const sessionUser = req.currentUser;
-    const allRequests = await certificationService.getAllRequests();
-    const certifications = allRequests.filter((request) => {
-      const requestUserId = request && request.user && request.user._id;
-      return requestUserId && String(requestUserId) === String(sessionUser._id);
-    });
-    const latestRequest = certifications[0] || null;
-    const userFlags = getUserFlags(sessionUser);
-    const projects = await projectService.getProjectsByUser(sessionUser._id);
-    const certBenefits = certificationViewModel.mapCertificationBenefits();
-    const certStatusVM = certificationViewModel.mapCertificationStatus(latestRequest ? latestRequest.status : null);
-
-    return renderApp(res, "certifications", {
-      pageTitle: "Certifications",
-      activeNav: "certifications",
-      user: sessionUser,
-      certifications,
-      certificationStatus: latestRequest ? latestRequest.status : null,
-      certBenefits,
-      certStatusVM,
-      isReviewer: userFlags.isReviewer,
-      isAdmin: userFlags.isAdmin,
-      projects,
-      reviews: [],
-      certificationRequests: certifications,
-    });
-  } catch (error) {
-    return res.redirect("/dashboard");
-  }
-};
-
 exports.applyCertification = async (req, res) => {
   const sessionUser = req.currentUser;
   const userFlags = getUserFlags(sessionUser);
