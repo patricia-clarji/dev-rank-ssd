@@ -122,7 +122,7 @@ exports.handleRegister = async (req, res) => {
       path: "/",
     });
 
-    return res.redirect("/dashboard");
+    return res.redirect("/profile/complete");
   } catch (error) {
     return res.redirect(`/register?error=${getAuthErrorCode(error, "server_error")}`);
   }

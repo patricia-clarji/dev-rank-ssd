@@ -473,30 +473,32 @@ website: (user && (user.website || user.websiteUrl)) || "",
       });
     </script>
       <% } else if (page === "profile-edit") { %>
+        <% const isProfileCompletionMode = profileMode === 'complete'; %>
+        <% const profileFormAction = profileActionPath || '/profile/edit'; %>
+        <% const profileSubmitText = profileSubmitLabel || 'Save changes'; %>
+        <% const profileCancelLink = profileCancelPath || '/profile'; %>
       <div class="edit-profile-page">
         <div class="edit-profile-container">
           <div class="page-header">
-            <h1>Edit Profile</h1>
-            <p class="text-secondary">Update your public profile information</p>
+            <h1><%= isProfileCompletionMode ? 'Complete Profile' : 'Edit Profile' %></h1>
+            <p class="text-secondary"><%= isProfileCompletionMode ? 'Add the details needed to finish setting up your account' : 'Update your public profile information' %></p>
           </div>
 
-          <form action="/profile/edit" method="post">
+          <form action="<%= profileFormAction %>" method="post">
+              <input type="hidden" name="profileMode" value="<%= isProfileCompletionMode ? 'complete' : 'edit' %>" />
             <div class="form-section">
               <h2>Basic Information</h2>
 
-              <div class="form-group">
-                <label class="form-label">Name</label>
-                <input type="text" name="name" class="form-input"
-                  value="<%= currentUser.name || '' %>" />
-              </div>
+                <div class="form-group">
+                  <label class="form-label">Name</label>
+                  <input type="text" name="name" class="form-input" value="<%= currentUser.name || '' %>" <%= isProfileCompletionMode ? 'required' : '' %> />
+                </div>
 
-              <div class="form-group">
-                <label class="form-label">Bio</label>
-                <textarea name="bio" class="form-textarea"
-                  rows="4"><%= currentUser.bio || '' %></textarea>
-                <span class="form-hint">Brief description for your profile. Max
-                  200 characters.</span>
-              </div>
+                <div class="form-group">
+                  <label class="form-label">Bio</label>
+                  <textarea name="bio" class="form-textarea" rows="4" <%= isProfileCompletionMode ? 'required' : '' %>><%= currentUser.bio || '' %></textarea>
+                  <span class="form-hint">Brief description for your profile. Max 200 characters.</span>
+                </div>
 
               <div class="form-row">
                 <div class="form-group">
@@ -515,12 +517,10 @@ website: (user && (user.website || user.websiteUrl)) || "",
             <div class="form-section">
               <h2>Social Links</h2>
 
-              <div class="form-group">
-                <label class="form-label">GitHub</label>
-                <input type="url" name="github" class="form-input"
-                  value="<%= currentUser.github || '' %>"
-                  placeholder="https://github.com/username" />
-              </div>
+                <div class="form-group">
+                  <label class="form-label">GitHub</label>
+                  <input type="url" name="github" class="form-input" value="<%= currentUser.github || '' %>" placeholder="https://github.com/username" <%= isProfileCompletionMode ? 'required' : '' %> />
+                </div>
 
               <div class="form-group">
                 <label class="form-label">LinkedIn</label>
@@ -586,16 +586,18 @@ website: (user && (user.website || user.websiteUrl)) || "",
               </div>
             </div>
 
-            <div class="form-actions">
-              <a href="/profile" class="btn btn-secondary">Cancel</a>
-              <button type="submit" class="btn btn-primary">
-                <i data-lucide="save" width="16" height="16"></i>
-                Save changes
-              </button>
-            </div>
-          </form>
+              <div class="form-actions">
+                <% if (!isProfileCompletionMode) { %>
+                  <a href="<%= profileCancelLink %>" class="btn btn-secondary">Cancel</a>
+                <% } %>
+                <button type="submit" class="btn btn-primary">
+                  <i data-lucide="save" width="16" height="16"></i>
+                  <%= profileSubmitText %>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
 
       <% } else if (page === "projects") { %>
       <div class="projects-page">
@@ -1069,13 +1071,12 @@ website: (user && (user.website || user.websiteUrl)) || "",
       </div>
 
       <% } else if (page === "review-form") { %>
-      <div class="write-review-page">
-        <div class="page-header">
-          <h1><%= formMode === 'edit' ? 'Edit Review' : 'Write Review' %></h1>
-          <p class="text-secondary"><%= formMode === 'edit' ?
-            'Update your review for this project' :
-            'Provide a structured review for this project' %></p>
-        </div>
+        <% const reviewData = review || {}; %>
+        <div class="write-review-page">
+          <div class="page-header">
+            <h1><%= formMode === 'edit' ? 'Edit Review' : 'Write Review' %></h1>
+            <p class="text-secondary"><%= formMode === 'edit' ? 'Update your review for this project' : 'Provide a structured review for this project' %></p>
+          </div>
 
         <div class="review-project-info">
           <div class="review-project-header">
@@ -1092,82 +1093,63 @@ website: (user && (user.website || user.websiteUrl)) || "",
           </div>
         </div>
 
-        <form
-          action="<%= (formMode === 'edit' && review && review._id) ? `/reviews/${review._id}/edit` : `/projects/${project ? project._id : ''}/review` %>"
-          method="post">
-          <div class="form-section">
-            <h2>Ratings</h2>
-            <div class="form-group">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Code Quality *</label>
-              <div class="star-rating" data-rating-root>
-                <% [5, 4, 3, 2, 1].forEach((score) => { %>
-                <input type="radio" id="quality-rating-<%= score %>"
-                  name="codeQualityScore" value="<%= score %>"
-                  <%=Number(review.codeQualityScore || 4) === score ? 'checked'
-                  : '' %> required />
-                <label for="quality-rating-<%= score %>"
-                  title="<%= score %> stars">★</label>
-                <% }) %>
+          <form action="<%= (formMode === 'edit' && review && review._id) ? `/reviews/${review._id}/edit` : `/projects/${project ? project._id : ''}/review` %>" method="post">
+            <div class="form-section">
+              <h2>Ratings</h2>
+              <div class="form-group">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Code Quality *</label>
+                <div class="star-rating" data-rating-root>
+                  <% [5, 4, 3, 2, 1].forEach((score) => { %>
+                    <input type="radio" id="quality-rating-<%= score %>" name="codeQualityScore" value="<%= score %>" <%= Number(reviewData.codeQualityScore || 4) === score ? 'checked' : '' %> required />
+                    <label for="quality-rating-<%= score %>" title="<%= score %> stars">★</label>
+                  <% }) %>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Creativity *</label>
+                <div class="star-rating" data-rating-root>
+                  <% [5, 4, 3, 2, 1].forEach((score) => { %>
+                    <input type="radio" id="creativity-rating-<%= score %>" name="creativityScore" value="<%= score %>" <%= Number(reviewData.creativityScore || 4) === score ? 'checked' : '' %> required />
+                    <label for="creativity-rating-<%= score %>" title="<%= score %> stars">★</label>
+                  <% }) %>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Clean Code *</label>
+                <div class="star-rating" data-rating-root>
+                  <% [5, 4, 3, 2, 1].forEach((score) => { %>
+                    <input type="radio" id="clean-rating-<%= score %>" name="cleanCodeScore" value="<%= score %>" <%= Number(reviewData.cleanCodeScore || 4) === score ? 'checked' : '' %> required />
+                    <label for="clean-rating-<%= score %>" title="<%= score %> stars">★</label>
+                  <% }) %>
+                </div>
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Creativity *</label>
-              <div class="star-rating" data-rating-root>
-                <% [5, 4, 3, 2, 1].forEach((score) => { %>
-                <input type="radio" id="creativity-rating-<%= score %>"
-                  name="creativityScore" value="<%= score %>"
-                  <%=Number(review.creativityScore || 4) === score ? 'checked' :
-                  '' %> required />
-                <label for="creativity-rating-<%= score %>"
-                  title="<%= score %> stars">★</label>
-                <% }) %>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Clean Code *</label>
-              <div class="star-rating" data-rating-root>
-                <% [5, 4, 3, 2, 1].forEach((score) => { %>
-                <input type="radio" id="clean-rating-<%= score %>"
-                  name="cleanCodeScore" value="<%= score %>"
-                  <%=Number(review.cleanCodeScore || 4) === score ? 'checked' :
-                  '' %> required />
-                <label for="clean-rating-<%= score %>"
-                  title="<%= score %> stars">★</label>
-                <% }) %>
-              </div>
-            </div>
-          </div>
 
           <div class="form-section">
             <h2>Feedback</h2>
 
-            <div class="form-group">
-              <label class="form-label">General Feedback *</label>
-              <textarea name="generalFeedback" class="form-textarea" rows="5"
-                placeholder="Share your overall thoughts on the project."
-                required><%= review.generalFeedback || '' %></textarea>
-            </div>
+              <div class="form-group">
+                <label class="form-label">General Feedback *</label>
+                <textarea name="generalFeedback" class="form-textarea" rows="5" placeholder="Share your overall thoughts on the project." required><%= reviewData.generalFeedback || '' %></textarea>
+              </div>
 
-            <div class="form-group">
-              <label class="form-label">Suggestions (optional)</label>
-              <div class="suggestions-editor">
-                <div class="current-suggestions" data-suggestion-chip-group>
-                  <% (review.suggestions || []).forEach((suggestion) => { %>
-                  <span class="skill-tag" data-suggestion-chip>
-                    <%= suggestion %>
-                    <button type="button" class="skill-remove"
-                      data-suggestion-remove title="Remove suggestion">
-                      <i data-lucide="x" width="12" height="12"></i>
-                    </button>
-                  </span>
-                  <% }) %>
-                </div>
+              <div class="form-group">
+                <label class="form-label">Suggestions (optional)</label>
+                <div class="suggestions-editor">
+                  <div class="current-suggestions" data-suggestion-chip-group>
+                    <% (reviewData.suggestions || []).forEach((suggestion) => { %>
+                      <span class="skill-tag" data-suggestion-chip>
+                        <%= suggestion %>
+                        <button type="button" class="skill-remove" data-suggestion-remove title="Remove suggestion">
+                          <i data-lucide="x" width="12" height="12"></i>
+                        </button>
+                      </span>
+                    <% }) %>
+                  </div>
 
-                <input type="hidden" name="suggestionsCsv"
-                  value="<%= (review.suggestions || []).join(', ') %>"
-                  data-suggestion-input />
+                  <input type="hidden" name="suggestionsCsv" value="<%= (reviewData.suggestions || []).join(', ') %>" data-suggestion-input />
 
                 <div class="suggestion-input">
                   <input type="text" placeholder="Enter a suggestion..."
@@ -1187,23 +1169,18 @@ website: (user && (user.website || user.websiteUrl)) || "",
             <p class="text-secondary mb-3">Based on this project, would you
               recommend hiring this developer?</p>
 
-            <div class="hire-toggle">
-              <button type="button"
-                class="hire-option yes <%= (typeof review.wouldHire === 'boolean' ? (review.wouldHire ? 'yes' : 'no') : 'yes') === 'yes' ? 'selected' : '' %>"
-                onclick="document.getElementById('wouldHireInput').value='yes'">
-                <span>✓</span>
-                Yes, I would hire
-              </button>
-              <button type="button"
-                class="hire-option no <%= (typeof review.wouldHire === 'boolean' ? (review.wouldHire ? 'yes' : 'no') : 'yes') === 'no' ? 'selected' : '' %>"
-                onclick="document.getElementById('wouldHireInput').value='no'">
-                <span>✗</span>
-                No, I would not hire
-              </button>
-              <input id="wouldHireInput" type="hidden" name="wouldHire"
-                value="<%= typeof review.wouldHire === 'boolean' ? (review.wouldHire ? 'yes' : 'no') : 'yes' %>" />
+              <div class="hire-toggle">
+                <button type="button" class="hire-option yes <%= (typeof reviewData.wouldHire === 'boolean' ? (reviewData.wouldHire ? 'yes' : 'no') : 'yes') === 'yes' ? 'selected' : '' %>" onclick="document.getElementById('wouldHireInput').value='yes'">
+                  <span>✓</span>
+                  Yes, I would hire
+                </button>
+                <button type="button" class="hire-option no <%= (typeof reviewData.wouldHire === 'boolean' ? (reviewData.wouldHire ? 'yes' : 'no') : 'yes') === 'no' ? 'selected' : '' %>" onclick="document.getElementById('wouldHireInput').value='no'">
+                  <span>✗</span>
+                  No, I would not hire
+                </button>
+                <input id="wouldHireInput" type="hidden" name="wouldHire" value="<%= typeof reviewData.wouldHire === 'boolean' ? (reviewData.wouldHire ? 'yes' : 'no') : 'yes' %>" />
+              </div>
             </div>
-          </div>
 
           <div class="form-actions">
             <a

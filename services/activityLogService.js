@@ -168,6 +168,8 @@ exports.buildFriendlyActivityLogs = async (logs) => {
       ? "Certification" 
       : (entity ? entity.charAt(0).toUpperCase() + entity.slice(1) : "Record");
 
+    const timestamp = log.timestamp || log.createdAt || new Date();
+
     return {
       ...log,
       actionLabel: toActionLabel(log.action),
@@ -175,6 +177,8 @@ exports.buildFriendlyActivityLogs = async (logs) => {
       entity: entityLabel,
       targetLabel: targetLabel || entityLabel || "Record",
       detailsText: metadata.adminNotes || metadata.status || metadata.role || "",
+      timestamp: new Date(timestamp).toLocaleString(),
+      createdAt: new Date(timestamp).toLocaleString(),
     };
   });
 }
