@@ -2,6 +2,11 @@ const ActivityLog = require("../models/sql/ActivityLog");
 const {Op} = require("sequelize");
 const AppError = require("../utils/AppError");
 const ERROR_CODES = require("../utils/errorCodes");
+const { toActionLabel, isObjectId } = require("../utils/stringUtils");
+const User = require("../models/mongo/User");
+const Project = require("../models/mongo/Project");
+const Review = require("../models/mongo/Review");
+const CertificationRequest = require("../models/mongo/CertificationRequest");
 
 exports.createLog = async ({ userId, action, entity, entityId, metadata }) => {
     return await ActivityLog.create({ userId, action, entity, entityId, metadata });

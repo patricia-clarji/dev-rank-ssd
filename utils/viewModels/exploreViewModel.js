@@ -18,7 +18,7 @@ exports.mapExploreProjects = (projects) => {
       (project.owner && project.owner.username) ||
       (project.user && project.user.username) ||
       "developer",
-    averageRating: project.averageRating || 0,
+    averageRating: Number(project.aggregateRating ?? 0),
     status: project.status,
     isSeekingReview: project.status === "seeking-review",
   }));

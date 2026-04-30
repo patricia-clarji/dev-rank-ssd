@@ -9,6 +9,31 @@ const {
   handleControllerError
 } = require("../utils/controllerUtils");
 
+async function renderProfileForm(req, res, { pageTitle, activeNav, actionPath, submitLabel, cancelPath, profileMode, errorRedirectPath, errorPrefix }) {
+  const sessionUser = req.currentUser;
+  const skills = await skillService.getAllSkills({});
+  const { projects, reviews } = await fetchUserData(sessionUser);
+  const userFlags = getUserFlags(sessionUser);
+  const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, [], userFlags.isReviewer);
+
+  return renderApp(res, "profile-edit", {
+    pageTitle,
+    activeNav,
+    user: sessionUser,
+    skills,
+    projects,
+    reviews,
+    certificationRequests: [],
+    isReviewer: userFlags.isReviewer,
+    isAdmin: userFlags.isAdmin,
+    profileMode,
+    profileActionPath: actionPath,
+    profileSubmitLabel: submitLabel,
+    profileCancelPath: cancelPath,
+    ...profileVM,
+  });
+}
+
 exports.profile = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
@@ -33,26 +58,31 @@ exports.profile = async (req, res) => {
 
 exports.editProfile = async (req, res) => {
   try {
-    const sessionUser = req.currentUser;
-    const skills = await skillService.getAllSkills({});
-    const { projects, reviews } = await fetchUserData(sessionUser);
-    const userFlags = getUserFlags(sessionUser);
-    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, [], userFlags.isReviewer);
-
-    return renderApp(res, "profile-edit", {
+    return renderProfileForm(req, res, {
       pageTitle: "Edit profile",
       activeNav: "settings",
-      user: sessionUser,
-      skills,
-      projects,
-      reviews,
-      certificationRequests: [],
-      isReviewer: userFlags.isReviewer,
-      isAdmin: userFlags.isAdmin,
-      ...profileVM,
+      actionPath: "/profile/edit",
+      submitLabel: "Save changes",
+      cancelPath: "/profile",
+      profileMode: "edit",
     });
   } catch (error) {
     return handleControllerError(error, res, "/profile", "Edit profile render failed:");
+  }
+};
+
+exports.completeProfile = async (req, res) => {
+  try {
+    return renderProfileForm(req, res, {
+      pageTitle: "Complete profile",
+      activeNav: "settings",
+      actionPath: "/profile/complete",
+      submitLabel: "Complete profile",
+      cancelPath: null,
+      profileMode: "complete",
+    });
+  } catch (error) {
+    return handleControllerError(error, res, "/dashboard", "Complete profile render failed:");
   }
 };
 
@@ -83,8 +113,8 @@ exports.updateProfile = async (req, res) => {
       }
     }
 
-    return res.redirect("/profile");
+    return res.redirect(req.body.profileMode === "complete" ? "/dashboard" : "/profile");
   } catch (error) {
-    return handleControllerError(error, res, "/profile/edit", "Update profile failed:");
+    return handleControllerError(error, res, req.body.profileMode === "complete" ? "/profile/complete" : "/profile/edit", "Update profile failed:");
   }
 };
