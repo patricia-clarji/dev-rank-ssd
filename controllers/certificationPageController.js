@@ -4,6 +4,15 @@ const projectService = require("../services/projectService");
 const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
 const certificationViewModel = require("../utils/viewModels/certificationViewModel");
+const mapperService = require("../services/mapperService");
+const ERROR_CODES = require("../utils/errorCodes");
+
+const CERTIFICATION_ERROR_MESSAGES = {
+  [ERROR_CODES.VALIDATION]: "Please complete all required certification fields with valid information.",
+  [ERROR_CODES.DUPLICATE]: "You already have a certification request or an approved certification.",
+  [ERROR_CODES.NOT_FOUND]: "We couldn't find your user account.",
+  default: "We couldn't submit your certification request. Please try again.",
+};
 
 function parseCsv(csvValue) {
   return String(csvValue || "")
@@ -16,14 +25,28 @@ exports.applyCertification = async (req, res) => {
   const sessionUser = req.currentUser;
   const userFlags = getUserFlags(sessionUser);
 
-  // Prevent reviewers and admins from applying for certification
   if (userFlags.isReviewer) {
     return res.redirect("/certifications");
   }
 
+  const ownCertificationRecord = await certificationService.getRequestByUserId(sessionUser._id);
+  if (ownCertificationRecord && ownCertificationRecord.status === "pending") {
+    return res.redirect("/certifications");
+  }
+
+  const ownCertification = ownCertificationRecord
+    ? mapperService.mapCertification(ownCertificationRecord)
+    : null;
+
   const projects = await projectService.getProjectsByUser(sessionUser._id);
   const certifications = await certificationService.getAllRequests();
-  const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, [], certifications, userFlags.isReviewer);
+  const profileVM = profileViewModel.mapUserProfileView(
+    sessionUser,
+    projects,
+    [],
+    ownCertification ? [ownCertification] : [],
+    userFlags.isReviewer
+  );
 
   return renderApp(res, "certification-apply", {
     pageTitle: "Apply for certification",
@@ -34,7 +57,9 @@ exports.applyCertification = async (req, res) => {
     projects,
     reviews: [],
     ...profileVM,
+    ownCertification,
     certificationRequests: certifications,
+    certificationErrorMessage: CERTIFICATION_ERROR_MESSAGES[req.query.error] || null,
   });
 };
 
@@ -43,7 +68,6 @@ exports.submitCertification = async (req, res) => {
     const sessionUser = req.currentUser;
     const userFlags = getUserFlags(sessionUser);
 
-    // Prevent reviewers and admins from submitting certification
     if (userFlags.isReviewer) {
       return res.redirect("/certifications");
     }
@@ -51,6 +75,7 @@ exports.submitCertification = async (req, res) => {
     await certificationService.apply({
       userId: sessionUser._id,
       cvUrl: req.body.cvUrl,
+      linkedinProfile: req.body.linkedinProfile,
       experience: req.body.experience,
       motivation: req.body.motivation,
       techExpertise: parseCsv(req.body.techExpertiseCsv),
@@ -58,7 +83,9 @@ exports.submitCertification = async (req, res) => {
 
     return res.redirect("/certifications");
   } catch (error) {
-    return res.redirect("/certifications/apply");
+    const errorCode = error?.errorCode || "default";
+    return res.redirect(`/certifications/apply?error=${encodeURIComponent(errorCode)}`);
+
   }
 };
 
@@ -67,12 +94,10 @@ exports.certifications = async (req, res) => {
     const sessionUser = req.currentUser;
 
     const allRequests = await certificationService.getAllRequests();
-    const certifications = allRequests.filter((request) => {
-      const requestUserId = request && request.user && request.user._id;
-      return requestUserId && String(requestUserId) === String(sessionUser._id);
-    });
-
-    const latestRequest = certifications[0] || null;
+    const ownCertificationRecord = await certificationService.getRequestByUserId(sessionUser._id);
+    const ownCertification = ownCertificationRecord
+      ? mapperService.mapCertification(ownCertificationRecord)
+      : null;
 
     const givenReviews = await reviewService.getAllReviews({
       reviewerId: sessionUser._id,
@@ -83,26 +108,32 @@ exports.certifications = async (req, res) => {
     const avgRatingGiven =
       reviewsGiven > 0
         ? Number(
-            (
-              givenReviews.reduce((sum, r) => sum + r.overallRating, 0) /
-              reviewsGiven
-            ).toFixed(2)
-          )
+          (
+            givenReviews.reduce((sum, r) => sum + r.overallRating, 0) /
+            reviewsGiven
+          ).toFixed(2)
+        )
         : 0;
 
     const wouldHireCount = givenReviews.filter((r) => r.wouldHire).length;
 
     const userFlags = getUserFlags(sessionUser);
     const projects = await projectService.getProjectsByUser(sessionUser._id);
-    const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, givenReviews, allRequests, userFlags.isReviewer);
+    const profileVM = profileViewModel.mapUserProfileView(
+      sessionUser,
+      projects,
+      givenReviews,
+      ownCertification ? [ownCertification] : [],
+      userFlags.isReviewer
+    );
     const certBenefits = certificationViewModel.mapCertificationBenefits();
 
     return renderApp(res, "certifications", {
       pageTitle: "Certifications",
       activeNav: "certifications",
       user: sessionUser,
-      certifications,
-      certificationStatus: latestRequest ? latestRequest.status : null,
+      ownCertification,
+      certificationStatus: ownCertification ? ownCertification.status : null,
       certBenefits,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,

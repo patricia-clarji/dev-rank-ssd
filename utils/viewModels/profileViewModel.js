@@ -1,8 +1,15 @@
 const mapperService = require("../../services/mapperService");
 const { USER_CERTIFICATION_STATUSES } = require("../../constants/statusConstants");
 
+function normalizeCertificationRequests(certificationRequests) {
+  if (!certificationRequests) return [];
+  if (Array.isArray(certificationRequests)) return certificationRequests;
+  return [certificationRequests];
+}
+
 function mapUserProfileView(userDoc, projects = [], reviews = [], certificationRequests = [], isReviewer = false) {
   const user = mapperService.mapUser(userDoc) || {};
+  const normalizedCertificationRequests = normalizeCertificationRequests(certificationRequests);
 
   const currentUserName = user.name || "User";
   const firstName = String(currentUserName).split(" ")[0];
@@ -20,13 +27,15 @@ function mapUserProfileView(userDoc, projects = [], reviews = [], certificationR
 
   const publicProfileUrl = "/user/" + (user.username || "developer");
 
-  const ownCertification = (certificationRequests || []).find((request) => {
+  const ownCertification = normalizedCertificationRequests.find((request) => {
     const requestUserId = (request.user && request.user._id) ? String(request.user._id) : "";
     return requestUserId && user._id && requestUserId === String(user._id);
   });
 
-  const userCertificationStatus = null;
-
+    const userCertificationStatus = user.isVerifiedReviewer
+    ? USER_CERTIFICATION_STATUSES.CERTIFIED
+    : (user.reviewerStatus || null);
+    
   const certStatus = isReviewer
     ? USER_CERTIFICATION_STATUSES.CERTIFIED
     : (userCertificationStatus || (ownCertification ? ownCertification.status : USER_CERTIFICATION_STATUSES.NOT_APPLIED));
