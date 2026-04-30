@@ -2,11 +2,12 @@ const ActivityLog = require("../models/sql/ActivityLog");
 const {Op} = require("sequelize");
 const AppError = require("../utils/AppError");
 const ERROR_CODES = require("../utils/errorCodes");
-const { toActionLabel, isObjectId } = require("../utils/stringUtils");
 const User = require("../models/mongo/User");
 const Project = require("../models/mongo/Project");
 const Review = require("../models/mongo/Review");
 const CertificationRequest = require("../models/mongo/CertificationRequest");
+const { isObjectId, toActionLabel } = require("../utils/stringUtils");
+
 
 exports.createLog = async ({ userId, action, entity, entityId, metadata }) => {
     return await ActivityLog.create({ userId, action, entity, entityId, metadata });
@@ -167,6 +168,8 @@ exports.buildFriendlyActivityLogs = async (logs) => {
       ? "Certification" 
       : (entity ? entity.charAt(0).toUpperCase() + entity.slice(1) : "Record");
 
+    const timestamp = log.timestamp || log.createdAt || new Date();
+
     return {
       ...log,
       actionLabel: toActionLabel(log.action),
@@ -174,6 +177,8 @@ exports.buildFriendlyActivityLogs = async (logs) => {
       entity: entityLabel,
       targetLabel: targetLabel || entityLabel || "Record",
       detailsText: metadata.adminNotes || metadata.status || metadata.role || "",
+      timestamp: new Date(timestamp).toLocaleString(),
+      createdAt: new Date(timestamp).toLocaleString(),
     };
   });
 }
