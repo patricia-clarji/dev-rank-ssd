@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
     enum: ["developer", "reviewer", "admin"],
     default: "developer",
   },
+  isSuperAdmin: { type: Boolean, default: false },
   bio: { type: String },
   company: { type: String },
   location: { type: String },

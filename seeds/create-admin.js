@@ -8,30 +8,42 @@ const createAdmin = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
 
-    const existing = await User.findOne({ role: "admin" });
-    if (existing) {
-      console.log("⚠️ Admin already exists");
+    const existingSuperAdmin = await User.findOne({ isSuperAdmin: true });
+    if (existingSuperAdmin) {
+      console.log("⚠️ Super admin already exists");
       process.exit(0);
     }
 
     const password = "admin123"; // change this later
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const admin = await User.create({
-      name: "DevRank Admin",
-      username: "admin",
-      email: "admin@devrank.com",
-      passwordHash,
-      role: "admin",
-      isVerifiedReviewer: true,
-      reviewerStatus: "approved",
-    });
+    let admin = await User.findOne({ username: "admin" });
+    if (admin) {
+      admin.role = "admin";
+      admin.isSuperAdmin = true;
+      admin.isVerifiedReviewer = true;
+      admin.reviewerStatus = "approved";
+      admin.passwordHash = passwordHash;
+      await admin.save();
+    } else {
+      admin = await User.create({
+        name: "DevRank Admin",
+        username: "admin",
+        email: "admin@devrank.com",
+        passwordHash,
+        role: "admin",
+        isSuperAdmin: true,
+        isVerifiedReviewer: true,
+        reviewerStatus: "approved",
+      });
+    }
 
     console.log("✅ Admin created:");
     console.log({
       email: admin.email,
       username: admin.username,
       password: password,
+      isSuperAdmin: true,
     });
 
     process.exit(0);

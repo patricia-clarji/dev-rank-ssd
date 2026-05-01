@@ -4,6 +4,7 @@ const Review = require("../models/mongo/Review");
 const CertificationRequest = require("../models/mongo/CertificationRequest");
 const projectService = require("../services/projectService");
 const reviewService = require("../services/reviewService");
+const userService = require("../services/userService");
 const certificationService = require("../services/certificationService");
 const activityLogService = require("../services/activityLogService");
 const mapperService = require("../services/mapperService");
@@ -14,6 +15,68 @@ const profileViewModel = require("../utils/viewModels/profileViewModel");
 const adminDashboardViewModel = require("../utils/viewModels/adminDashboardViewModel");
 const { handleControllerError } = require("../utils/controllerUtils");
 const { CERTIFICATION_STATUSES, FILTER_STATUSES } = require("../constants/statusConstants");
+
+exports.adminUsers = async (req, res) => {
+  try {
+    const q = String(req.query.q || "").trim().toLowerCase();
+    const roleFilter = String(req.query.role || "all").trim().toLowerCase();
+
+    const users = await User.find().select("-passwordHash").populate("skills");
+    const filteredUsers = users.filter((userItem) => {
+      const matchesRole = roleFilter === "all" || String(userItem.role || "").toLowerCase() === roleFilter;
+      const searchable = [userItem.name, userItem.username, userItem.email, userItem.role]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      const matchesQuery = !q || searchable.includes(q);
+      return matchesRole && matchesQuery;
+    });
+
+    const roleStats = {
+      total: users.length,
+      developers: users.filter((userItem) => userItem.role === "developer").length,
+      reviewers: users.filter((userItem) => userItem.role === "reviewer").length,
+      admins: users.filter((userItem) => userItem.role === "admin").length,
+      superAdmins: users.filter((userItem) => userItem.isSuperAdmin).length,
+    };
+
+    const userFlags = getUserFlags(req.currentUser);
+    const profileVM = profileViewModel.mapUserProfileView(req.currentUser, [], [], [], userFlags.isReviewer);
+
+    return renderApp(res, "admin-users", {
+      pageTitle: "Manage users",
+      activeNav: "admin-users",
+      user: req.currentUser,
+      users: filteredUsers.map((userItem) => mapperService.mapUser(userItem)),
+      roleSearchQuery: q,
+      roleFilter,
+      roleStats,
+      projects: [],
+      reviews: [],
+      certificationRequests: [],
+      isAdmin: true,
+      isReviewer: true,
+      isSuperAdmin: true,
+      ...profileVM,
+    });
+  } catch (error) {
+    return handleControllerError(error, res, "/admin", "Admin users render failed:");
+  }
+};
+
+exports.updateUserRole = async (req, res) => {
+  try {
+    await userService.updateUserRole({
+      actorId: req.currentUser._id,
+      targetUserId: req.params.id,
+      newRole: req.body.role,
+    });
+
+    return res.redirect("/admin/users");
+  } catch (error) {
+    return res.redirect("/admin/users");
+  }
+};
 
 exports.adminDashboard = async (req, res) => {
   try {

@@ -4,12 +4,15 @@ const mapperService = require("../services/mapperService");
 
 function getUserFlags(user) {
   if (!user) {
-    return { isReviewer: false, isAdmin: false };
+    return { isReviewer: false, isAdmin: false, isSuperAdmin: false };
   }
 
+  const isSuperAdmin = Boolean(user.isSuperAdmin);
+
   return {
-    isReviewer: (user.role === "reviewer" && user.isVerifiedReviewer) || user.role === "admin",
-    isAdmin: user.role === "admin",
+    isReviewer: (user.role === "reviewer" && user.isVerifiedReviewer) || user.role === "admin" || isSuperAdmin,
+    isAdmin: user.role === "admin" || isSuperAdmin,
+    isSuperAdmin,
   };
 }
 
@@ -42,6 +45,7 @@ function renderApp(res, page, options = {}) {
     activityLogs,
     isReviewer: options.isReviewer ?? userFlags.isReviewer,
     isAdmin: options.isAdmin ?? userFlags.isAdmin,
+    isSuperAdmin: options.isSuperAdmin ?? userFlags.isSuperAdmin,
     activeNav: options.activeNav || "dashboard",
   });
 }

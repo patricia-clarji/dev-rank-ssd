@@ -91,11 +91,24 @@ function requireRole(...roles) {
   };
 }
 
+function requireSuperAdmin(req, res, next) {
+  if (!req.currentUser) {
+    return res.redirect("/login");
+  }
+
+  if (!req.currentUser.isSuperAdmin) {
+    return res.redirect("/admin");
+  }
+
+  return next();
+}
+
 module.exports = {
   getCookies,
   attachCurrentUser,
   requireAuth,
   requireGuest,
   requireRole,
+  requireSuperAdmin,
   generateToken,
 };

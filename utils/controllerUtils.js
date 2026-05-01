@@ -62,6 +62,7 @@ function buildCommonViewModel(user, projects, reviews, certifications) {
     certifications,
     isReviewer: userFlags.isReviewer,
     isAdmin: userFlags.isAdmin,
+    isSuperAdmin: userFlags.isSuperAdmin,
     ...profileVM,
   };
 }

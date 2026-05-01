@@ -59,6 +59,13 @@
           Admin Dashboard
         </a>
 
+          <% if (isSuperAdmin) { %>
+          <a class="sidebar-link <%= activeNav === 'admin-users' ? 'active' : '' %>" href="/admin/users">
+            <i data-lucide="user-cog" width="16" height="16"></i>
+            Manage Users
+          </a>
+          <% } %>
+
         <a class="sidebar-link <%= page === 'admin-certifications' ? 'active' : '' %>" href="/admin/certifications">
           <i data-lucide="users" width="16" height="16"></i>
           Certification Requests

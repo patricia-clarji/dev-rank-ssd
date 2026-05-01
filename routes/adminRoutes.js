@@ -1,10 +1,12 @@
 const express = require("express");
-const { requireRole } = require("../middleware/webAuth");
+const { requireRole, requireSuperAdmin } = require("../middleware/webAuth");
 const adminController = require("../controllers/adminPageController");
 
 const router = express.Router();
 
 router.get("/admin", requireRole("admin"), adminController.adminDashboard);
+router.get("/admin/users", requireSuperAdmin, adminController.adminUsers);
+router.post("/admin/users/:id/role", requireSuperAdmin, adminController.updateUserRole);
 router.get("/admin/certifications", requireRole("admin"), adminController.adminCertifications);
 router.post("/admin/certifications/:id/approve", requireRole("admin"), adminController.approveCertification);
 router.post("/admin/certifications/:id/reject", requireRole("admin"), adminController.rejectCertification);

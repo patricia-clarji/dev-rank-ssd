@@ -14,6 +14,12 @@ github: (user && (user.github || user.githubUrl)) || "",
 linkedin: (user && (user.linkedin || user.linkedinUrl)) || "",
 website: (user && (user.website || user.websiteUrl)) || "",
 };
+
+const safeReviews = Array.isArray(reviews) ? reviews : [];
+const safeCertifications = Array.isArray(certificationRequests) ? certificationRequests : [];
+const isAdminArea = activeNav === "admin-dashboard" || String(page || "").startsWith("admin-");
+const sidebarReviewsCount = isAdminArea ? 0 : safeReviews.length;
+const sidebarPendingCertificationsCount = safeCertifications.filter((req) => String(req.status || "").toLowerCase() === "pending").length;
 %>
 
 <div class="layout">
@@ -23,11 +29,11 @@ website: (user && (user.website || user.websiteUrl)) || "",
     <%- include('../partials/sidebar', {
     activeNav,
     isAdmin,
+    isSuperAdmin,
     isReviewer,
     page,
-    reviewsCount: reviews.length,
-    pendingCertificationsCount: certificationRequests.filter(req => req.status
-    === 'pending').length
+    reviewsCount: sidebarReviewsCount,
+    pendingCertificationsCount: sidebarPendingCertificationsCount
     }) %>
 
     <main class="layout-main">
@@ -2136,6 +2142,12 @@ website: (user && (user.website || user.websiteUrl)) || "",
               <i data-lucide="award" width="20" height="20"></i>
               <span>Manage Certifications</span>
             </a>
+            <% if (isSuperAdmin) { %>
+            <a href="/admin/users" class="quick-action">
+              <i data-lucide="user-cog" width="20" height="20"></i>
+              <span>Manage Users</span>
+            </a>
+            <% } %>
             <a href="/admin/logs" class="quick-action">
               <i data-lucide="activity" width="20" height="20"></i>
               <span>View Activity Logs</span>
@@ -2149,6 +2161,102 @@ website: (user && (user.website || user.websiteUrl)) || "",
               <span>Browse Users</span>
             </a>
           </div>
+        </div>
+      </div>
+
+      <% } else if (page === "admin-users") { %>
+      <%
+        const userRows = Array.isArray(users) ? users : [];
+        const safeRoleStats = roleStats || { total: 0, developers: 0, reviewers: 0, admins: 0, superAdmins: 0 };
+      %>
+      <div class="activity-logs-page">
+        <div class="page-header">
+          <h1>Manage Users</h1>
+          <p class="text-secondary">Change roles from the super-admin account</p>
+          <p class="text-muted">
+            <%= safeRoleStats.total %> total ·
+            <%= safeRoleStats.developers %> developers ·
+            <%= safeRoleStats.reviewers %> reviewers ·
+            <%= safeRoleStats.admins %> admins ·
+            <%= safeRoleStats.superAdmins %> super-admin
+          </p>
+        </div>
+        <form action="/admin/users" method="get" class="logs-toolbar">
+          <div class="search-box">
+            <i data-lucide="search" width="18" height="18" class="search-icon"></i>
+            <input type="text" name="q" value="<%= roleSearchQuery || '' %>" placeholder="Search users..." />
+          </div>
+
+          <select class="form-select" style="width: auto" name="role">
+            <option value="all" <%= (roleFilter || 'all') === 'all' ? 'selected' : '' %>>All Roles</option>
+            <option value="developer" <%= roleFilter === 'developer' ? 'selected' : '' %>>Developer</option>
+            <option value="reviewer" <%= roleFilter === 'reviewer' ? 'selected' : '' %>>Reviewer</option>
+            <option value="admin" <%= roleFilter === 'admin' ? 'selected' : '' %>>Admin</option>
+          </select>
+
+          <button class="btn btn-secondary" type="submit">
+            <i data-lucide="filter" width="16" height="16"></i>
+            Apply
+          </button>
+
+          <a class="btn btn-secondary" href="/admin/users">
+            <i data-lucide="refresh-cw" width="16" height="16"></i>
+            Reset
+          </a>
+        </form>
+
+        <div class="logs-table-wrapper users-roles-table-wrapper">
+          <table class="logs-table users-roles-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Joined</th>
+                <th>Change Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% userRows.forEach((userItem) => { %>
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="avatar avatar-sm"><%= (userItem.name || 'U').charAt(0) %></div>
+                    <div>
+                      <div><strong><%= userItem.name %></strong></div>
+                      <div class="text-muted">@<%= userItem.username %></div>
+                      <% if (userItem.isSuperAdmin) { %>
+                      <span class="badge badge-success">Super Admin</span>
+                      <% } %>
+                    </div>
+                  </div>
+                </td>
+                <td><%= userItem.email %></td>
+                <td>
+                  <span class="badge <%= userItem.role === 'admin' ? 'badge-success' : (userItem.role === 'reviewer' ? 'badge-warning' : 'badge-secondary') %>"><%= userItem.role %></span>
+                </td>
+                <td style="white-space: nowrap"><%= userItem.createdAt ? new Date(userItem.createdAt).toLocaleDateString() : 'N/A' %></td>
+                <td>
+                  <% if (userItem.isSuperAdmin) { %>
+                  <span class="text-muted">Locked</span>
+                  <% } else { %>
+                  <form action="/admin/users/<%= userItem._id %>/role" method="post" style="display:flex;gap:8px;align-items:center;">
+                    <select class="form-select" name="role" style="width:auto; min-width: 130px;">
+                      <option value="developer" <%= userItem.role === 'developer' ? 'selected' : '' %>>Developer</option>
+                      <option value="reviewer" <%= userItem.role === 'reviewer' ? 'selected' : '' %>>Reviewer</option>
+                      <option value="admin" <%= userItem.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                      <i data-lucide="save" width="14" height="14"></i>
+                      Save
+                    </button>
+                  </form>
+                  <% } %>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
         </div>
       </div>
 

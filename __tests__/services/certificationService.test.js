@@ -32,7 +32,8 @@ describe('certificationService', () => {
     const req = await createCertification(user._id);
     await certificationService.approve(req._id, 'note');
     await expect(certificationService.approve(req._id, 'note')).rejects.toThrow(AppError);
-    const req2 = await createCertification(user._id);
+    const secondUser = await createUser({ name: 'CertUser2', email: 'cert2@test.com' });
+    const req2 = await createCertification(secondUser._id);
     await expect(certificationService.reject(req2._id, 'note')).resolves.toBeDefined();
     await expect(certificationService.reject(req2._id, 'note')).rejects.toThrow(AppError);
   });

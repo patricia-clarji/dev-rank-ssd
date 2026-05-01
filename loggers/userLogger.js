@@ -9,6 +9,13 @@ const logUserUpdated = (userId, name) => {
   log(userId, LOG_ACTIONS.UPDATE_USER, LOG_ENTITIES.USER, userId, { name });
 };
 
+const logUserRoleChanged = (actorId, targetUserId, oldRole, newRole) => {
+  log(actorId, LOG_ACTIONS.UPDATE_USER, LOG_ENTITIES.USER, targetUserId, {
+    oldRole,
+    newRole,
+  });
+};
+
 const logUserDeleted = (userId, name) => {
   log(userId, LOG_ACTIONS.DELETE_USER, LOG_ENTITIES.USER, userId, { name });
 };
@@ -36,6 +43,7 @@ const logUserUnfollowed = (followerId, targetId) => {
 module.exports = {
   logUserRegistered,
   logUserUpdated,
+  logUserRoleChanged,
   logUserDeleted,
   logUserSkillsAdded,
   logUserSkillRemoved,

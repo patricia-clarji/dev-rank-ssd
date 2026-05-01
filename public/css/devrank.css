@@ -5720,6 +5720,16 @@ input[data-auto-rating] + label {
   color: var(--color-text-muted);
 }
 
+/* Compact variant for admin user role table */
+.users-roles-table {
+  min-width: 680px;
+}
+
+.users-roles-table th,
+.users-roles-table td {
+  padding: var(--spacing-2) var(--spacing-2);
+}
+
 .logs-table tr:last-child td {
   border-bottom: none;
 }
@@ -5760,6 +5770,10 @@ input[data-auto-rating] + label {
   .logs-table {
     border-radius: var(--radius-small);
     min-width: 650px;
+  }
+
+  .users-roles-table {
+    min-width: 600px;
   }
 
   .logs-table th,

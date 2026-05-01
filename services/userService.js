@@ -9,6 +9,8 @@ const Project = require("../models/mongo/Project");
 const Review = require("../models/mongo/Review");
 const CertificationRequest = require("../models/mongo/CertificationRequest");
 
+const ALLOWED_ROLES = ["developer", "reviewer", "admin"];
+
 exports.registerUser = async ({ username, name, email, password, role, bio, githubUrl, avatarUrl, company, location, linkedin, website }) => {
   const existing = await User.findOne({ email });
   if (existing) {
@@ -292,3 +294,47 @@ exports.getUserSkills = async (userId) => {
   }
   return user.skills;
 }
+
+exports.updateUserRole = async ({ actorId, targetUserId, newRole }) => {
+  const normalizedRole = String(newRole || "").trim().toLowerCase();
+
+  if (!actorId || !targetUserId) {
+    throw new AppError("User not found.", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  if (!ALLOWED_ROLES.includes(normalizedRole)) {
+    throw new AppError("Invalid role selected.", 400, ERROR_CODES.VALIDATION);
+  }
+
+  if (String(actorId) === String(targetUserId)) {
+    throw new AppError("You cannot change your own role.", 403, ERROR_CODES.FORBIDDEN);
+  }
+
+  const actor = await User.findById(actorId);
+  if (!actor) {
+    throw new AppError("User not found.", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const targetUser = await User.findById(targetUserId);
+  if (!targetUser) {
+    throw new AppError("User not found.", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  if (targetUser.isSuperAdmin) {
+    throw new AppError("The super admin role cannot be changed here.", 403, ERROR_CODES.FORBIDDEN);
+  }
+
+  if (targetUser.role === normalizedRole) {
+    throw new AppError("This user already has that role.", 409, ERROR_CODES.DUPLICATE);
+  }
+
+  targetUser.role = normalizedRole;
+  targetUser.isVerifiedReviewer = normalizedRole !== "developer";
+  targetUser.reviewerStatus = normalizedRole === "developer" ? "none" : "approved";
+
+  await targetUser.save();
+
+  userLogger.logUserRoleChanged(actor._id.toString(), targetUser._id.toString(), actor.role, normalizedRole);
+
+  return targetUser;
+};
