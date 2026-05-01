@@ -30,6 +30,13 @@ function renderApp(res, page, options = {}) {
     : (options.certifications || []).map(mapperService.mapCertification).filter(Boolean);
   const activityLogs = (options.activityLogs || options.logs || []).map(mapperService.mapActivityLog).filter(Boolean);
 
+  const sidebarReviewsCount = Number(options.sidebarReviewsCount ?? reviews.length ?? 0);
+  const sidebarPendingCertificationsCount = Number(
+    options.sidebarPendingCertificationsCount ??
+    certificationRequests.filter((req) => req.status === "pending").length ??
+    0
+  );
+
   return res.render("pages/app", {
     ...content,
     ...options,
@@ -43,6 +50,8 @@ function renderApp(res, page, options = {}) {
     exploreUsers,
     certificationRequests,
     activityLogs,
+    sidebarReviewsCount,
+    sidebarPendingCertificationsCount,
     isReviewer: options.isReviewer ?? userFlags.isReviewer,
     isAdmin: options.isAdmin ?? userFlags.isAdmin,
     isSuperAdmin: options.isSuperAdmin ?? userFlags.isSuperAdmin,

@@ -12,7 +12,8 @@ const {
   handleControllerError,
   isProjectOwner,
   canEditReview,
-  canDeleteReview
+  canDeleteReview,
+  buildSidebarCounts
 } = require("../utils/controllerUtils");
 const { REVIEW_STATUSES } = require("../constants/statusConstants");
 
@@ -33,6 +34,7 @@ function getReviewPayload(body) {
     status: REVIEW_STATUSES.PUBLISHED,
   };
 }
+
 
 exports.reviewProject = async (req, res) => {
   try {
@@ -55,6 +57,11 @@ exports.reviewProject = async (req, res) => {
     const userFlags = getUserFlags(sessionUser);
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
 
+    const sidebarCounts = buildSidebarCounts({
+      reviews: userReviews,
+      certifications,
+    });
+
     return renderApp(res, "review-form", {
       pageTitle: `Review ${project.title}`,
       activeNav: "reviews",
@@ -68,6 +75,7 @@ exports.reviewProject = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
+      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/projects", "Review project form render failed:");
@@ -105,11 +113,16 @@ exports.editReview = async (req, res) => {
     const userProjectIds = userProjects.map((p) => p._id);
     const userReviews = userProjectIds.length > 0
       ? await Review.find({ project: { $in: userProjectIds }, status: "published" })
-          .populate("project", "title")
-          .populate("reviewer", "name")
+        .populate("project", "title")
+        .populate("reviewer", "name")
       : [];
     const certifications = await certificationService.getAllRequests();
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
+
+    const sidebarCounts = buildSidebarCounts({
+      reviews: userReviews,
+      certifications,
+    });
 
     return renderApp(res, "review-form", {
       pageTitle: `Edit Review for ${project.title}`,
@@ -123,7 +136,9 @@ exports.editReview = async (req, res) => {
       projects: userProjects,
       reviews: userReviews,
       ...profileVM,
+      ...sidebarCounts,
       certificationRequests: certifications,
+
     });
   } catch (error) {
     return res.redirect("/reviews");
@@ -171,7 +186,7 @@ exports.deleteReview = async (req, res) => {
 exports.reviews = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
-    
+
     const userFlags = getUserFlags(sessionUser);
     const givenReviews = await reviewService.getAllReviews({ reviewerId: sessionUser._id });
     const receivedReviews = await reviewService.getReceivedReviews(sessionUser._id);
@@ -182,6 +197,11 @@ exports.reviews = async (req, res) => {
     const mappedGivenReviews = givenReviews.map(mapperService.mapReview).filter(Boolean);
     const receivedReviewsList = reviewsListViewModel.mapReceivedReviews(mappedReceivedReviews);
     const givenReviewsList = reviewsListViewModel.mapGivenReviews(mappedGivenReviews);
+
+    const sidebarCounts = buildSidebarCounts({
+      reviews: receivedReviews,
+      certifications,
+    });
 
     return renderApp(res, "reviews", {
       pageTitle: "Reviews",
@@ -194,6 +214,7 @@ exports.reviews = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
+      ...sidebarCounts,
       certificationRequests: certifications,
     });
   } catch (error) {

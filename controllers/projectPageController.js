@@ -11,7 +11,8 @@ const profileViewModel = require("../utils/viewModels/profileViewModel");
 const {
   fetchUserData,
   handleControllerError,
-  isProjectOwner
+  isProjectOwner,
+  buildSidebarCounts
 } = require("../utils/controllerUtils");
 const { PROJECT_STATUSES, FILTER_STATUSES } = require("../constants/statusConstants");
 
@@ -39,6 +40,11 @@ exports.projects = async (req, res) => {
     const userFlags = getUserFlags(sessionUser);
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, certifications, userFlags.isReviewer);
 
+    const sidebarCounts = buildSidebarCounts({
+      reviews,
+      certifications,
+    });
+
     return renderApp(res, "projects", {
       pageTitle: "Projects",
       activeNav: "projects",
@@ -52,6 +58,7 @@ exports.projects = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
+      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/dashboard", "Projects page render failed:");
@@ -66,6 +73,11 @@ exports.newProject = async (req, res) => {
     const userFlags = getUserFlags(sessionUser);
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, certifications, userFlags.isReviewer);
 
+    const sidebarCounts = buildSidebarCounts({
+      reviews,
+      certifications,
+    });
+
     return renderApp(res, "project-form", {
       pageTitle: "New project",
       activeNav: "projects",
@@ -79,6 +91,7 @@ exports.newProject = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
+      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/projects", "New project form render failed:");
@@ -122,6 +135,11 @@ exports.projectDetail = async (req, res) => {
     const projectDetailVM = projectViewModel.mapProjectDetailPage(mappedProject, sessionUser, userFlags.isAdmin, userFlags.isReviewer);
     const reviewStats = projectViewModel.mapProjectDetailStats(projectReviewCards);
 
+    const sidebarCounts = buildSidebarCounts({
+      reviews,
+      certifications,
+    });
+
     return renderApp(res, "project-detail", {
       pageTitle: project.title,
       activeNav: "projects",
@@ -135,6 +153,7 @@ exports.projectDetail = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
+      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/projects", "Project detail render failed:");
@@ -155,6 +174,11 @@ exports.editProject = async (req, res) => {
     const userFlags = getUserFlags(sessionUser);
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
 
+    const sidebarCounts = buildSidebarCounts({
+      reviews,
+      certifications,
+    });
+
     return renderApp(res, "project-form", {
       pageTitle: `Edit ${project.title}`,
       activeNav: "projects",
@@ -168,6 +192,7 @@ exports.editProject = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
+      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/projects", "Edit project form render failed:");

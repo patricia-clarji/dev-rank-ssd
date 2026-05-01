@@ -83,6 +83,15 @@ function handleControllerError(error, res, redirectPath, errorMessage = null) {
   return res.redirect(redirectPath);
 }
 
+function buildSidebarCounts({ reviews = [], certifications = [] } = {}) {
+  return {
+    sidebarReviewsCount: reviews.length,
+    sidebarPendingCertificationsCount: certifications.filter(
+      (request) => request.status === "pending"
+    ).length,
+  };
+}
+
 /**
  * Checks if a user owns a project
  * @param {Object} project - The project object
@@ -127,4 +136,5 @@ module.exports = {
   isProjectOwner,
   canEditReview,
   canDeleteReview,
+  buildSidebarCounts,
 };

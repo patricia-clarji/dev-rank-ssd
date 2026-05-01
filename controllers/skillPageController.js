@@ -7,6 +7,7 @@ const profileViewModel = require("../utils/viewModels/profileViewModel");
 const certificationService = require("../services/certificationService");
 const skillsViewModel = require("../utils/viewModels/skillsViewModel");
 const { REVIEW_STATUSES } = require("../constants/statusConstants");
+const { buildSidebarCounts } = require("../utils/controllerUtils");
 
 function normalizeCategory(value) {
   if (Array.isArray(value)) {
@@ -77,8 +78,8 @@ exports.skills = async (req, res) => {
     const userProjectIds = userProjects.map((p) => p._id);
     const userReviews = userProjectIds.length > 0
       ? await Review.find({ project: { $in: userProjectIds }, status: REVIEW_STATUSES.PUBLISHED })
-          .populate("project", "title")
-          .populate("reviewer", "name")
+        .populate("project", "title")
+        .populate("reviewer", "name")
       : [];
     const certifications = await certificationService.getAllRequests();
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
@@ -88,6 +89,11 @@ exports.skills = async (req, res) => {
       ? { [selectedCategoryKey]: (groupedSkillsWithCounts[selectedCategoryKey] || []) }
       : groupedSkillsWithCounts;
     const categoryPills = skillsViewModel.mapCategoryPills(allSkillCategories, selectedCategory ? canonicalizeCategory(selectedCategory)[0] : "All", query);
+
+    const sidebarCounts = buildSidebarCounts({
+      reviews: userReviews,
+      certifications,
+    });
 
     return renderApp(res, "skills", {
       pageTitle: "Skills",
@@ -105,6 +111,7 @@ exports.skills = async (req, res) => {
       projects: userProjects,
       reviews: userReviews,
       ...profileVM,
+      ...sidebarCounts,
       certificationRequests: certifications,
     });
   } catch (error) {
@@ -122,12 +129,17 @@ exports.skillDetail = async (req, res) => {
     const userProjectIds = userProjects.map((p) => p._id);
     const userReviews = userProjectIds.length > 0
       ? await Review.find({ project: { $in: userProjectIds }, status: REVIEW_STATUSES.PUBLISHED })
-          .populate("project", "title")
-          .populate("reviewer", "name")
+        .populate("project", "title")
+        .populate("reviewer", "name")
       : [];
     const certifications = await certificationService.getAllRequests();
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
     const skillDetailVM = skillsViewModel.mapSkillDetailPage(skill, projects);
+
+    const sidebarCounts = buildSidebarCounts({
+      reviews: userReviews,
+      certifications,
+    });
 
     return renderApp(res, "skill-detail", {
       pageTitle: skill.name,
@@ -142,6 +154,7 @@ exports.skillDetail = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
+      ...sidebarCounts,
       certificationRequests: certifications,
       reviews: userReviews,
     });
