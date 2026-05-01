@@ -82,7 +82,13 @@ exports.mapPendingCertifications = (certificationRequests) => {
         _id: request._id,
         name: (request.user && request.user.name) || request.name || "Applicant",
         username: (request.user && request.user.username) || request.username || "user",
-        submittedAt: request.submittedAt || request.createdAt,
+        submittedAt: request.submittedAt
+          ? new Intl.DateTimeFormat("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }).format(new Date(request.submittedAt))
+          : "",
       };
     });
 };

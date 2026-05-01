@@ -45,9 +45,9 @@ exports.applyCertification = async (req, res) => {
     : null;
 
   const projects = await projectService.getProjectsByUser(sessionUser._id);
-  const certifications = await certificationService.getAllRequests();
   const { reviews: receivedReviews } = await fetchUserData(sessionUser);
-
+  const certifications = await certificationService.getAllRequests();
+  
   const profileVM = profileViewModel.mapUserProfileView(
     sessionUser,
     projects,
@@ -133,10 +133,12 @@ exports.certifications = async (req, res) => {
 
     const userFlags = getUserFlags(sessionUser);
     const projects = await projectService.getProjectsByUser(sessionUser._id);
+    const { reviews: receivedReviews } = await fetchUserData(sessionUser);
+
     const profileVM = profileViewModel.mapUserProfileView(
       sessionUser,
       projects,
-      givenReviews,
+      receivedReviews,
       ownCertification ? [ownCertification] : [],
       userFlags.isReviewer
     );
