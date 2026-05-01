@@ -29,8 +29,14 @@ exports.applyCertification = async (req, res) => {
     return res.redirect("/certifications");
   }
 
-  const ownCertificationRecord = await certificationService.getRequestByUserId(sessionUser._id);
-  if (ownCertificationRecord && ownCertificationRecord.status === "pending") {
+    const ownCertificationRecord = await certificationService.getRequestByUserId(sessionUser._id);
+  if (
+    ownCertificationRecord &&
+    (
+      ownCertificationRecord.status === "pending" ||
+      ownCertificationRecord.status === "approved"
+    )
+  ) {
     return res.redirect("/certifications");
   }
 
