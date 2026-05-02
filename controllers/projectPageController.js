@@ -175,7 +175,7 @@ exports.editProject = async (req, res) => {
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
 
     const sidebarCounts = buildSidebarCounts({
-      reviews,
+      userReviews,
       certifications,
     });
 

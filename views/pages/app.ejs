@@ -1071,12 +1071,10 @@ String(req.status || "").toLowerCase() === "pending").length;
                   <option value="seeking-review" <%=project && project.status
                     === 'seeking-review' ? 'selected' : '' %>>Seeking
                     Review</option>
-                  <option value="under-review" <%=project && project.status ===
-                    'under-review' ? 'selected' : '' %>>Under Review</option>
                   <option value="reviewed" <%=project && project.status ===
                     'reviewed' ? 'selected' : '' %>>Reviewed</option>
-                  <option value="archived" <%=project && project.status ===
-                    'archived' ? 'selected' : '' %>>Archived</option>
+                  <option value="draft" <%=project && project.status ===
+                    'draft' ? 'selected' : '' %>>Draft</option>
                 </select>
               </div>
             </div>
@@ -2198,7 +2196,7 @@ String(req.status || "").toLowerCase() === "pending").length;
               <i data-lucide="settings" width="20" height="20"></i>
               <span>Manage Skills</span>
             </a>
-            <a href="/explore" class="quick-action">
+            <a href="/explore?q=&status=all&developers=1" class="quick-action">
               <i data-lucide="users" width="20" height="20"></i>
               <span>Browse Users</span>
             </a>
@@ -2579,17 +2577,17 @@ String(req.status || "").toLowerCase() === "pending").length;
 
           <select class="form-select" style="width: auto" name="category">
             <option value>All Categories</option>
-            <option value="Frontend" <%=skillCategoryFilter === 'Frontend' ?
+            <option value="frontend" <%=skillCategoryFilter === 'frontend' ?
               'selected' : '' %>>Frontend</option>
-            <option value="Backend" <%=skillCategoryFilter === 'Backend' ?
+            <option value="backend" <%=skillCategoryFilter === 'backend' ?
               'selected' : '' %>>Backend</option>
-            <option value="Database" <%=skillCategoryFilter === 'Database' ?
+            <option value="database" <%=skillCategoryFilter === 'database' ?
               'selected' : '' %>>Database</option>
-            <option value="DevOps" <%=skillCategoryFilter === 'DevOps' ?
+            <option value="devops" <%=skillCategoryFilter === 'devops' ?
               'selected' : '' %>>DevOps</option>
-            <option value="Mobile" <%=skillCategoryFilter === 'Mobile' ?
+            <option value="mobile" <%=skillCategoryFilter === 'mobile' ?
               'selected' : '' %>>Mobile</option>
-            <option value="Other" <%=skillCategoryFilter === 'Other' ?
+            <option value="other" <%=skillCategoryFilter === 'other' ?
               'selected' : '' %>>Other</option>
           </select>
 

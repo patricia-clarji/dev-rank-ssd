@@ -270,7 +270,7 @@ exports.adminSkills = async (req, res) => {
   try {
     const skillService = require("../services/skillService");
     const q = String(req.query.q || "").trim().toLowerCase();
-    const category = String(req.query.category || "").trim();
+    const category = String(req.query.category || "").trim().toLowerCase();
     const page = parseInt(req.query.page) || 1;
     const limit = 20; // Skills per page
     const skip = (page - 1) * limit;

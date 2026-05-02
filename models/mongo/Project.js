@@ -9,7 +9,7 @@ const projectSchema = new mongoose.Schema({
   techStack: [{ type: String }],
   status: {
     type: String,
-    enum: ["seeking-review", "under-review", "reviewed", "archived"],
+    enum: ["seeking-review", "reviewed", "draft"],
     default: "seeking-review",
   },
   aggregateRating: { type: Number, default: 0 },
