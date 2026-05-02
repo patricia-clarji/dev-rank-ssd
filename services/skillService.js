@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Skill = require("../models/mongo/Skill");
 const User = require("../models/mongo/User");
 const AppError = require("../utils/AppError");
@@ -33,8 +34,18 @@ exports.getAllSkills = async ({ category, preset }) => {
   }));
 };
 
-exports.getSkill = async (skillId) => {
-  const skill = await Skill.findById(skillId).populate("users", "name username avatarUrl profileScore");
+exports.getSkill = async (skillIdOrName) => {
+  let skill = null;
+  if (mongoose.Types.ObjectId.isValid(skillIdOrName)) {
+    skill = await Skill.findById(skillIdOrName).populate("users", "name username avatarUrl profileScore");
+  }
+
+  if (!skill) {
+    skill = await Skill.findOne({
+      name: { $regex: `^${String(skillIdOrName || "").trim()}$`, $options: "i" }
+    }).populate("users", "name username avatarUrl profileScore");
+  }
+
   if (!skill) {
     throw new AppError("Skill not found.", 404, ERROR_CODES.NOT_FOUND);
   }

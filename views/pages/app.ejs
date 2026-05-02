@@ -126,7 +126,7 @@ String(req.status || "").toLowerCase() === "pending").length;
                     <div class="project-stack">
                       <% (project.techStack || []).slice(0, 3).forEach((tech) =>
                       { %>
-                      <span class="tag"><%= tech %></span>
+                      <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
                       <% }) %>
                       <% if ((project.techStack || []).length > 3) { %>
                       <span class="text-muted">+<%= (project.techStack ||
@@ -373,7 +373,7 @@ String(req.status || "").toLowerCase() === "pending").length;
               <h3>Skills</h3>
               <div class="skills-list">
                 <% normalizedSkills.forEach((skillItem) => { %>
-                <a href="/skills" class="tag"><%= skillItem.name %></a>
+                <a href="/skills/<%= encodeURIComponent(skillItem.name) %>" class="tag"><%= skillItem.name %></a>
                 <% }) %>
               </div>
             </div>
@@ -424,7 +424,7 @@ String(req.status || "").toLowerCase() === "pending").length;
                   <div class="project-card-stack">
                     <% (project.techStack || []).slice(0, 3).forEach((tech) => {
                     %>
-                    <span class="tag"><%= tech %></span>
+                    <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
                     <% }) %>
                   </div>
                   <div class="project-card-footer">
@@ -683,7 +683,7 @@ String(req.status || "").toLowerCase() === "pending").length;
               <div class="project-list-meta">
                 <div class="project-list-stack">
                   <% (project.techStack || []).forEach((tech) => { %>
-                  <span class="tag"><%= tech %></span>
+                  <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
                   <% }) %>
                 </div>
 
@@ -804,7 +804,7 @@ String(req.status || "").toLowerCase() === "pending").length;
               <h2>Tech Stack</h2>
               <div class="project-tech-stack">
                 <% (project.techStack || []).forEach((tech) => { %>
-                <a href="/skills" class="tag"><%= tech %></a>
+                <a href="/skills/<%= encodeURIComponent(tech) %>" class="tag"><%= tech %></a>
                 <% }) %>
               </div>
             </div>
@@ -1120,7 +1120,7 @@ String(req.status || "").toLowerCase() === "pending").length;
             %></p>
           <div class="review-project-stack">
             <% ((project && project.techStack) || []).forEach((tech) => { %>
-            <span class="tag"><%= tech %></span>
+            <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
             <% }) %>
           </div>
         </div>
@@ -2007,7 +2007,7 @@ String(req.status || "").toLowerCase() === "pending").length;
             <div class="explore-card-tags">
               <% (projectItem.techStack || []).slice(0, 3).forEach((tech) => {
               %>
-              <span class="tag"><%= tech %></span>
+              <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
               <% }) %>
               <% if ((projectItem.techStack || []).length > 3) { %>
               <span class="tag">+<%= (projectItem.techStack || []).length - 3

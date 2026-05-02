@@ -117,8 +117,7 @@ const initials = (user.name || "User")
                   const skillId = typeof skill === 'string' ? ('skill-' + idx) :
                   skill._id;
                   %>
-                  <span class="tag" data-skill-id="<%= skillId %>"><%= skillName
-                    %></span>
+                  <a href="/skills/<%= encodeURIComponent(skillName) %>" class="tag"><%= skillName %></a>
                   <% }) %>
                 </div>
               </div>
@@ -172,7 +171,7 @@ const initials = (user.name || "User")
                     <div class="project-card-stack">
                       <% (project.techStack || []).slice(0, 3).forEach((tech) =>
                       { %>
-                      <span class="tag"><%= tech %></span>
+                      <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
                       <% }) %>
                     </div>
                     <div class="project-card-footer">
@@ -321,8 +320,7 @@ const initials = (user.name || "User")
               const skillId = typeof skill === 'string' ? ('skill-' + idx) :
               skill._id;
               %>
-              <span class="tag" data-skill-id="<%= skillId %>"><%= skillName
-                %></span>
+              <a href="/skills/<%= encodeURIComponent(skillName) %>" class="tag"><%= skillName %></a>
               <% }) %>
             </div>
           </div>
@@ -375,7 +373,7 @@ const initials = (user.name || "User")
                 <div class="project-card-stack">
                   <% (project.techStack || []).slice(0, 3).forEach((tech) => {
                   %>
-                  <span class="tag"><%= tech %></span>
+                  <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
                   <% }) %>
                 </div>
                 <div class="project-card-footer">
