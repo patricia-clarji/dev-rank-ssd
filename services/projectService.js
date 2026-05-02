@@ -4,6 +4,14 @@ const User = require("../models/mongo/User");
 const projectLogger = require("../loggers/projectLogger");
 const AppError = require("../utils/AppError");
 const ERROR_CODES = require("../utils/errorCodes");
+const { PROJECT_STATUSES } = require("../constants/statusConstants");
+
+const sanitizeProjectStatus = (status, currentStatus = PROJECT_STATUSES.SEEKING_REVIEW) => {
+    if (status === PROJECT_STATUSES.DRAFT) return PROJECT_STATUSES.DRAFT;
+    if (status === PROJECT_STATUSES.SEEKING_REVIEW) return PROJECT_STATUSES.SEEKING_REVIEW;
+    if (currentStatus === PROJECT_STATUSES.REVIEWED) return PROJECT_STATUSES.REVIEWED;
+    return currentStatus;
+};
 
 const recalculateUserProfileScore = async (userId) => {
     const ownedProjects = await Project.find({ user: userId });
@@ -46,7 +54,7 @@ exports.createProject = async ({ userId, title, description, repoUrl, liveUrl, t
         repoUrl,
         liveUrl,
         techStack,
-        status,
+        status: sanitizeProjectStatus(status),
     });
 
     projectLogger.logProjectCreated(ownerUser._id.toString(), project._id.toString(), project.title, project.status);
@@ -95,6 +103,11 @@ exports.getProject = async (projectId) => {
 };
 
 exports.updateProject = async (projectId, { title, description, repoUrl, liveUrl, techStack, status }) => {
+    const existingProject = await Project.findById(projectId);
+    if (!existingProject) {
+        throw new AppError("Project not found.", 404, ERROR_CODES.NOT_FOUND);
+    }
+
     const project = await Project.findByIdAndUpdate(
         projectId,
         {
@@ -103,7 +116,7 @@ exports.updateProject = async (projectId, { title, description, repoUrl, liveUrl
             repoUrl,
             liveUrl,
             techStack,
-            status,
+            status: sanitizeProjectStatus(status, existingProject.status),
         },
         { returnDocument: "after", runValidators: true }
     ).populate("user", "name email role githubUrl");

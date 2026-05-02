@@ -106,6 +106,17 @@ describe('projectService', () => {
     expect(byStatus.length).toBeGreaterThan(0);
   });
 
+  it('should sanitize reviewed status on create to seeking-review', async () => {
+    const project = await projectService.createProject({ userId: user._id.toString(), title: 'T', description: '', repoUrl: '', techStack: [], status: 'reviewed' });
+    expect(project.status).toBe('seeking-review');
+  });
+
+  it('should not allow updating a non-reviewed project to reviewed', async () => {
+    const project = await projectService.createProject({ userId: user._id.toString(), title: 'T', description: '', repoUrl: '', techStack: [], status: 'seeking-review' });
+    const updatedProject = await projectService.updateProject(project._id.toString(), { status: 'reviewed' });
+    expect(updatedProject.status).toBe('seeking-review');
+  });
+
   it('should throw if deleting a project that does not exist', async () => {
     await expect(projectService.deleteProject('000000000000000000000000')).rejects.toThrow('Project not found');
   });

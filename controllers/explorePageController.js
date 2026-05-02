@@ -5,7 +5,7 @@ const { getUserFlags, renderApp } = require("../utils/viewRenderer");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
 const certificationService = require("../services/certificationService");
 const exploreViewModel = require("../utils/viewModels/exploreViewModel");
-const { REVIEW_STATUSES } = require("../constants/statusConstants");
+const { REVIEW_STATUSES, PROJECT_STATUSES } = require("../constants/statusConstants");
 
 function matchesQuery(values, query) {
   if (!query) return true;
@@ -35,6 +35,10 @@ exports.explore = async (req, res) => {
       status: status !== "all" ? status : undefined,
     });
 
+    const visibleProjects = projects.filter(
+      (project) => project.status !== PROJECT_STATUSES.DRAFT
+    );
+
     const exploreUsers = await userService.getAllUsers();
 
     const filteredExploreUsers = exploreUsers.filter((user) => {
@@ -42,7 +46,7 @@ exports.explore = async (req, res) => {
       return String(user._id) !== String(sessionUser._id);
     });
 
-    const filteredProjects = projects.filter((project) => {
+    const filteredProjects = visibleProjects.filter((project) => {
       const owner = project.user || {};
 
       return matchesQuery(

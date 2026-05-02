@@ -1077,15 +1077,17 @@ String(req.status || "").toLowerCase() === "pending").length;
 
               <div class="form-group">
                 <label class="form-label">Status</label>
+                <% if (project && project.status === 'reviewed') { %>
+                <input type="hidden" name="status" value="reviewed" />
+                <div class="status-display">
+                  <span class="text-muted">Reviewed</span>
+                </div>
+                <% } else { %>
                 <select name="status" class="form-select">
-                  <option value="seeking-review" <%=project && project.status
-                    === 'seeking-review' ? 'selected' : '' %>>Seeking
-                    Review</option>
-                  <option value="reviewed" <%=project && project.status ===
-                    'reviewed' ? 'selected' : '' %>>Reviewed</option>
-                  <option value="draft" <%=project && project.status ===
-                    'draft' ? 'selected' : '' %>>Draft</option>
+                  <option value="seeking-review" <%= project && project.status === 'seeking-review' ? 'selected' : '' %>>Seeking Review</option>
+                  <option value="draft" <%= project && project.status === 'draft' ? 'selected' : '' %>>Draft</option>
                 </select>
+                <% } %>
               </div>
             </div>
 
