@@ -911,9 +911,10 @@ String(req.status || "").toLowerCase() === "pending").length;
               <div class="empty-state">
                 <i data-lucide="message-square" class="empty-state-icon"></i>
                 <h3 class="empty-state-title">No reviews yet</h3>
-                <p class="empty-state-description">Be the first to review this
-                  project</p>
-                <% if (isReviewer && project._id) { %>
+                <% if (projectDetailVM.isOwner) { %>
+                <p class="empty-state-description">Your project hasn’t been reviewed yet</p>
+                <% } else if (isReviewer && project._id) { %>
+                <p class="empty-state-description">Be the first to review this project</p>
                 <a href="/projects/<%= project._id %>/review"
                   class="btn btn-primary">Write Review</a>
                 <% } %>
