@@ -10,19 +10,19 @@ const { clearMongoCollection } = require('../helpers/db');
 
 describe('projectService', () => {
 
-    it('should throw if getAllProjects is called with non-existent userId', async () => {
-      await expect(projectService.getAllProjects({ userId: '000000000000000000000000' })).rejects.toThrow('User not found');
-    });
+  it('should throw if getAllProjects is called with non-existent userId', async () => {
+    await expect(projectService.getAllProjects({ userId: '000000000000000000000000' })).rejects.toThrow('User not found');
+  });
 
-    it('should call recalculateUserProfileScore when deleting a project with a valid user', async () => {
-      const project = await projectService.createProject({ userId: user._id.toString(), title: 'T2', description: '', repoUrl: '', techStack: [], status: 'seeking-review' });
-      // Add a review to ensure project is scored
-      await createReview(user._id.toString(), project._id.toString(), { status: 'published', overallRating: 5 });
-      // Delete project and check profileScore is recalculated
-      await projectService.deleteProject(project._id.toString());
-      const updatedUser = await User.findById(user._id);
-      expect(updatedUser.profileScore).toBe(0);
-    });
+  it('should call recalculateUserProfileScore when deleting a project with a valid user', async () => {
+    const project = await projectService.createProject({ userId: user._id.toString(), title: 'T2', description: '', repoUrl: '', techStack: [], status: 'seeking-review' });
+    // Add a review to ensure project is scored
+    await createReview(user._id.toString(), project._id.toString(), { status: 'published', overallRating: 5 });
+    // Delete project and check profileScore is recalculated
+    await projectService.deleteProject(project._id.toString());
+    const updatedUser = await User.findById(user._id);
+    expect(updatedUser.profileScore).toBe(0);
+  });
   let user;
   beforeEach(async () => {
     await clearMongoCollection(Project);
@@ -84,7 +84,6 @@ describe('projectService', () => {
   it('should throw if user not found on getProjectsByUser', async () => {
     await expect(projectService.getProjectsByUser('000000000000000000000000')).rejects.toThrow('User not found');
   });
-   
   it('should set profileScore to 0 if user has no projects', async () => {
     await projectService.recalculateUserProfileScore(user._id);
     const updatedUser = await User.findById(user._id);

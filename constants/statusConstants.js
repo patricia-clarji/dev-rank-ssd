@@ -2,9 +2,7 @@
 const PROJECT_STATUSES = Object.freeze({
   DRAFT: "draft",
   SEEKING_REVIEW: "seeking-review",
-  UNDER_REVIEW: "under-review",
   REVIEWED: "reviewed",
-  ARCHIVED: "archived",
   PUBLISHED: "published",
 });
 
