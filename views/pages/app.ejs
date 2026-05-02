@@ -292,7 +292,7 @@ String(req.status || "").toLowerCase() === "pending").length;
             <div class="profile-name-section">
               <h1><%= currentUserName %></h1>
               <p class="profile-username">@<%= currentUser.username ||
-                'developer' %></p>
+                currentUser._id %></p>
               <% if (isReviewer) { %>
               <span class="badge badge-success">
                 <i data-lucide="check-circle" width="12" height="12"></i>
@@ -732,7 +732,7 @@ String(req.status || "").toLowerCase() === "pending").length;
 
           <div class="project-detail-meta">
             <a
-              href="/user/<%= projectDetailVM.projectOwner.username || 'developer' %>">@<%=
+              href="/user/<%= projectDetailVM.projectOwner.username || projectDetailVM.projectOwner._id %>">@<%=
               projectDetailVM.projectOwner.username || 'developer' %></a>
             <span>•</span>
             <span>Created <%= project.createdAt ? new
@@ -953,7 +953,7 @@ String(req.status || "").toLowerCase() === "pending").length;
             <div class="sidebar-section">
               <h3>Project Owner</h3>
               <a
-                href="/user/<%= projectDetailVM.projectOwner.username || 'developer' %>"
+                href="/user/<%= projectDetailVM.projectOwner.username || projectDetailVM.projectOwner._id %>"
                 class="review-author">
                 <div class="avatar avatar-sm"><%=
                   (projectDetailVM.projectOwner.name ||
@@ -1287,7 +1287,7 @@ String(req.status || "").toLowerCase() === "pending").length;
           const reviewerName = (reviewItem.reviewer && reviewItem.reviewer.name)
           || "Reviewer";
           const reviewerUsername = (reviewItem.reviewer &&
-          reviewItem.reviewer.username) || "reviewer";
+          reviewItem.reviewer.username) || reviewItem.reviewer?._id;
           %>
           <div class="review-list-item">
             <div class="review-list-header">
@@ -1353,7 +1353,7 @@ String(req.status || "").toLowerCase() === "pending").length;
           && reviewItem.project.title) || "Project");
           const projectOwner = (reviewItem.project && reviewItem.project.owner)
           || {};
-          const ownerUsername = projectOwner.username || "developer";
+          const ownerUsername = projectOwner.username || projectOwner._id;
           %>
           <div class="review-list-item">
             <div class="review-list-header">
@@ -1573,7 +1573,8 @@ String(req.status || "").toLowerCase() === "pending").length;
                 <td><%= developer.projects != null ? developer.projects : '0' %>
                   projects</td>
                 <td>
-                  <a href="/user/<%= developer.username %>"
+                  <a
+                    href="<%= developer.profileUrl || ('/user/' + developer._id) %>"
                     class="btn btn-secondary btn-sm">View Profile</a>
                 </td>
               </tr>
@@ -1604,8 +1605,7 @@ String(req.status || "").toLowerCase() === "pending").length;
                 <span class="skill-card-stat">
                   <i data-lucide="star" width="14" height="14"></i>
                   <%= Number(projectItem.averageRating || 0).toFixed(1) %> · by
-                  @<%= projectItem.owner && projectItem.owner.username ?
-                  projectItem.owner.username : 'developer' %>
+                  @<%= projectItem.owner ? (projectItem.owner.username || projectItem.owner._id) : 'Unknown' %>
                 </span>
               </div>
             </a>
@@ -1953,7 +1953,7 @@ String(req.status || "").toLowerCase() === "pending").length;
           <% if ((exploreUsers || []).length > 0) { %>
           <div class="projects-grid">
             <% (exploreUsers || []).forEach((developer) => { %>
-            <a href="/user/<%= developer.username || 'developer' %>"
+            <a href="<%= developer.profileUrl || ('/user/' + developer._id) %>"
               class="project-card">
               <div class="project-card-header">
                 <div class="avatar avatar-sm"><%= (developer.name ||
@@ -2006,8 +2006,7 @@ String(req.status || "").toLowerCase() === "pending").length;
 
             <div class="explore-card-footer">
               <span class="explore-card-owner">by @<%= projectItem.owner &&
-                projectItem.owner.username ? projectItem.owner.username :
-                'developer' %></span>
+                projectItem.owner.username || projectItem.owner.id || 'unknown' %></span>:
               <span class="explore-card-rating">
                 <i data-lucide="star" class="filled" width="14" height="14"></i>
                 <%= Number(projectItem.averageRating || 0).toFixed(1) %>
@@ -2357,8 +2356,9 @@ String(req.status || "").toLowerCase() === "pending").length;
               <div class="avatar"><%= (requestItem.name || 'U').charAt(0)
                 %></div>
               <div>
-                <a href="/user/<%= requestItem.username %>"><%= requestItem.name
-                  %></a>
+                <a
+                  href="<%= requestItem.profileUrl || ('/user/' + requestItem.username) %>"><%=
+                  requestItem.name %></a>
                 <div class="text-muted">@<%= requestItem.username %></div>
               </div>
             </div>
@@ -2443,7 +2443,8 @@ String(req.status || "").toLowerCase() === "pending").length;
                 Reject
               </button>
             </form>
-            <a href="/user/<%= requestItem.username %>"
+            <a
+              href="<%= requestItem.profileUrl || ('/user/' + requestItem.username) %>"
               class="btn btn-secondary" style="margin-left: auto">
               <i data-lucide="user" width="16" height="16"></i>
               View Profile

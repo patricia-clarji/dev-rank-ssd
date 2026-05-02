@@ -1,5 +1,6 @@
 const User = require("../models/mongo/User");
 const Review = require("../models/mongo/Review");
+const mongoose = require("mongoose");
 const reviewService = require("../services/reviewService");
 const certificationService = require("../services/certificationService");
 const projectService = require("../services/projectService");
@@ -25,16 +26,22 @@ exports.notFound = (req, res) => {
 
 exports.publicProfile = async (req, res) => {
   try {
-    const username = String(req.params.username || "").toLowerCase();
+    const profileKey = String(req.params.username || "").trim().toLowerCase();
 
-    let user = await User.findOne({ username }).populate("skills");
-
-    if (!user) {
-      user = await User.findOne({ email: new RegExp(`^${username}@`, "i") }).populate("skills");
+    if (profileKey === "me" && req.currentUser) {
+      return res.redirect(`/user/${req.currentUser.username || req.currentUser._id}`);
     }
 
+    let user = await User.findOne({ username: profileKey }).populate("skills");
+
     if (!user) {
-      user = await User.findById(req.params.username).populate("skills");
+      user = await User.findOne({
+        email: new RegExp(`^${profileKey}@`, "i"),
+      }).populate("skills");
+    }
+
+    if (!user && mongoose.Types.ObjectId.isValid(profileKey)) {
+      user = await User.findById(profileKey).populate("skills");
     }
 
     if (!user) {

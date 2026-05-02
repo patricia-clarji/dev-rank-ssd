@@ -11,6 +11,7 @@ const initials = (user.name || "User")
 
 <% if (isLoggedIn) { %>
 <% const currentUserIsAdmin = currentUser && currentUser.role === 'admin'; %>
+<% const currentUserIsSuperAdmin = currentUser && currentUser.role === 'superadmin'; %>
 <% const currentUserIsReviewer = currentUser && (currentUser.role === 'reviewer'
 || currentUser.role === 'admin'); %>
 <!-- Logged in: Show as part of the website -->
@@ -18,9 +19,11 @@ const initials = (user.name || "User")
   <%- include('../partials/header', { user: currentUser, isAdmin:
   currentUserIsAdmin }) %>
   <div class="layout-body">
-    <%- include('../partials/sidebar', { activeNav: 'explore', isAdmin:
-    currentUserIsAdmin, isReviewer: currentUserIsReviewer, page:
-    'public-profile' }) %>
+    <%- include('../partials/sidebar', {
+    activeNav: 'explore', isAdmin: currentUserIsAdmin,isSuperAdmin:
+    currentUserIsSuperAdmin, isReviewer: currentUserIsReviewer, page:
+    'public-profile'
+    }) %>
     <main class="layout-main">
       <div class="profile-page">
         <div class="container">

@@ -24,10 +24,13 @@ function mapCertificationRequestCard(certDoc, projects = [], sessionUser = null,
 
   const applicantAvgRating = Number(applicantUser.profileScore || 0);
   const applicantSkillsCount = (applicantUser.skills || []).length || 0;
+  const applicantProfileKey = applicantUser.username || applicantUser._id;
 
   return {
     ...normalized,
     applicantUser,
+    username: applicantProfileKey,
+    profileUrl: `/user/${applicantProfileKey}`,
     applicantProjectsCount,
     applicantAvgRating: Number(applicantAvgRating.toFixed ? applicantAvgRating.toFixed(1) : applicantAvgRating),
     applicantSkillsCount,

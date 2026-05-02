@@ -31,7 +31,8 @@ exports.mapExploreDevelopers = (developers) => {
 
   return developers.map((developer) => ({
     _id: developer._id,
-    username: developer.username || "developer",
+    username: developer.username || String(developer._id),
+    profileUrl: `/user/${developer.username || developer._id}`,
     name: developer.name || "Developer",
     bio: developer.bio || "Developer profile",
     profileScore: developer.profileScore || 0,

@@ -15,7 +15,22 @@ exports.getAllSkills = async ({ category, preset }) => {
   const filter = {};
   if (category) filter.category = { $in: Array.isArray(category) ? category : [category] };
   if (preset !== undefined) filter.isPreset = preset === "true";
-  return await Skill.find(filter).sort({ isPreset: -1, name: 1 });
+
+  const skills = await Skill.find(filter).sort({ isPreset: -1, name: 1 });
+
+  const counts = await User.aggregate([
+    { $unwind: "$skills" },
+    { $group: { _id: "$skills", userCount: { $sum: 1 } } },
+  ]);
+
+  const countMap = Object.fromEntries(
+    counts.map((item) => [item._id.toString(), item.userCount])
+  );
+
+  return skills.map((skill) => ({
+    ...skill.toObject(),
+    userCount: countMap[skill._id.toString()] || 0,
+  }));
 };
 
 exports.getSkill = async (skillId) => {
@@ -83,7 +98,7 @@ exports.deleteSkill = async (skillId) => {
 exports.updateSkillByName = async (name, { name: newName, category, isPreset }) => {
   if (newName) {
     const existing = await Skill.findOne({
-      name: { $regex: `^${newName}$`, $options: "i", $ne: name}
+      name: { $regex: `^${newName}$`, $options: "i", $ne: name }
     });
     if (existing) {
       throw new AppError("A skill with this name already exists.", 409, ERROR_CODES.DUPLICATE);

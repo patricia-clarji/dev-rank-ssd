@@ -87,6 +87,7 @@ exports.mapSkillDetailPage = (skill, projects) => {
       _id: dev._id,
       name: dev.name,
       username: dev.username,
+      profileUrl: `/user/${dev.username || dev._id}`,
       avatarUrl: dev.avatarUrl,
       profileScore: dev.profileScore,
       projects: devProjectCount,
