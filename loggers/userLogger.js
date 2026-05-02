@@ -32,13 +32,7 @@ const logUserSkillsRemoved = (userId, skillsRemoved, count) => {
   log(userId, LOG_ACTIONS.REMOVE_USER_SKILLS, LOG_ENTITIES.USER, userId, { skillsRemoved, count });
 };
 
-const logUserFollowed = (followerId, targetId) => {
-  log(followerId, LOG_ACTIONS.FOLLOW_USER, LOG_ENTITIES.USER, targetId, { followerId, targetId });
-};
 
-const logUserUnfollowed = (followerId, targetId) => {
-  log(followerId, LOG_ACTIONS.UNFOLLOW_USER, LOG_ENTITIES.USER, targetId, { followerId, targetId });
-};
 
 module.exports = {
   logUserRegistered,
@@ -48,6 +42,4 @@ module.exports = {
   logUserSkillsAdded,
   logUserSkillRemoved,
   logUserSkillsRemoved,
-  logUserFollowed,
-  logUserUnfollowed,
 };

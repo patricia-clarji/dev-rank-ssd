@@ -59,41 +59,7 @@ describe('userService', () => {
   });
 
   // --- Additional negative/edge-case tests for full coverage ---
-
-  it('should throw if trying to follow yourself', async () => {
-    const user = await createUser({ name: 'Self', email: 'self@test.com' });
-    await expect(userService.followUser(user._id.toString(), user._id.toString())).rejects.toThrow('Cannot follow yourself.');
-  });
-
-  it('should throw if user or target not found on follow', async () => {
-    const user = await createUser({ name: 'A', email: 'a@test.com' });
-    await expect(userService.followUser(user._id.toString(), '000000000000000000000000')).rejects.toThrow('User not found');
-    await expect(userService.followUser('000000000000000000000000', user._id.toString())).rejects.toThrow('User not found');
-  });
-
-  it('should throw if already following user', async () => {
-    const user = await createUser({ name: 'A', email: 'a2@test.com' });
-    const target = await createUser({ name: 'B', email: 'b2@test.com' });
-    await userService.followUser(user._id.toString(), target._id.toString());
-    await expect(userService.followUser(user._id.toString(), target._id.toString())).rejects.toThrow('Already following this user.');
-  });
-
-  it('should throw if trying to unfollow yourself', async () => {
-    const user = await createUser({ name: 'Self2', email: 'self2@test.com' });
-    await expect(userService.unfollowUser(user._id.toString(), user._id.toString())).rejects.toThrow('Cannot unfollow yourself.');
-  });
-
-  it('should throw if user or target not found on unfollow', async () => {
-    const user = await createUser({ name: 'A', email: 'a3@test.com' });
-    await expect(userService.unfollowUser(user._id.toString(), '000000000000000000000000')).rejects.toThrow('User not found');
-    await expect(userService.unfollowUser('000000000000000000000000', user._id.toString())).rejects.toThrow('User not found');
-  });
-
-  it('should throw if user not found on getFollowers/getFollowing', async () => {
-    await expect(userService.getFollowers('000000000000000000000000')).rejects.toThrow('User not found');
-    await expect(userService.getFollowing('000000000000000000000000')).rejects.toThrow('User not found');
-  });
-
+  
   it('should throw if user not found on removeSkills', async () => {
     await expect(userService.removeSkills('000000000000000000000000', ['000000000000000000000000'])).rejects.toThrow('User not found');
   });

@@ -102,15 +102,7 @@ async function cleanupUserData(user) {
   );
 
   await CertificationRequest.deleteMany({ user: user._id });
-  // Remove from followers/following relationships
-  await User.updateMany(
-    { followers: user._id },
-    { $pull: { followers: user._id } }
-  );
-  await User.updateMany(
-    { following: user._id },
-    { $pull: { following: user._id } }
-  );
+  
 }
 
 exports.deleteUser = async (id) => {
@@ -227,65 +219,6 @@ exports.removeSkills = async (userId, skills) => {
   return { user, count: removableIds.length };
 };
 
-exports.followUser = async (userId, targetId) => {
-  if (userId === targetId) {
-    throw new AppError('Cannot follow yourself.', 400, ERROR_CODES.FORBIDDEN);
-  }
-  const user = await User.findById(userId);
-  const target = await User.findById(targetId);
-
-  if (!user || !target) {
-    throw new AppError('User not found.', 404, ERROR_CODES.NOT_FOUND);
-  }
-
-  if (user.following.includes(targetId)) {
-    throw new AppError('Already following this user.', 409, ERROR_CODES.DUPLICATE);
-  }
-  
-  user.following.push(targetId);
-  target.followers.push(userId);
-
-  await user.save();
-  await target.save();
-
-  userLogger.logUserFollowed(userId, targetId);
-  return user;
-};
-
-exports.unfollowUser = async (userId, targetId) => {
-  if (userId === targetId) {
-    throw new AppError('Cannot unfollow yourself.', 400, ERROR_CODES.FORBIDDEN);
-  }
-  const user = await User.findById(userId);
-  const target = await User.findById(targetId);
-  if (!user || !target) {
-    throw new AppError('User not found.', 404, ERROR_CODES.NOT_FOUND);
-  }
-  user.following = user.following.filter(id => id.toString() !== targetId);
-  target.followers = target.followers.filter(id => id.toString() !== userId);
-  
-  await user.save();
-  await target.save();
-
-  userLogger.logUserUnfollowed(userId, targetId);
-  return user;
-};
-
-exports.getFollowers = async (userId) => {
-  const user = await User.findById(userId).populate('followers', 'name email avatarUrl githubUrl');
-  if (!user) {
-    throw new AppError('User not found.', 404, ERROR_CODES.NOT_FOUND);
-  }
-  return user.followers;
-};
-
-exports.getFollowing = async (userId) => {
-  const user = await User.findById(userId).populate('following', 'name email avatarUrl githubUrl');
-  if (!user) {
-    throw new AppError('User not found.', 404, ERROR_CODES.NOT_FOUND);
-  }
-  return user.following;
-};
 
 exports.getUserSkills = async (userId) => {
   const user = await User.findById(userId).populate('skills', 'name category');
