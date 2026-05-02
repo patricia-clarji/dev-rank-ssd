@@ -44,8 +44,8 @@ function mapProjectDetailPage(project, currentUser, isAdmin, isReviewer) {
   const projectOwner = currentProject.owner || {};
   const isOwner = Boolean(
     currentUser._id &&
-      projectOwner._id &&
-      String(currentUser._id) === String(projectOwner._id)
+    projectOwner._id &&
+    String(currentUser._id) === String(projectOwner._id)
   );
   const canModify = isOwner || isAdmin;
 
@@ -129,11 +129,13 @@ function mapProjectsListItems(projects, allProjects) {
 
 function mapProjectsFilterCounts(projects, statusFilter) {
   const allCount = (projects || []).length;
+  const draftCount = (projects || []).filter((p) => (p.status || "draft") === "draft").length;
   const reviewedCount = (projects || []).filter((p) => (p.status || "draft") === "reviewed").length;
   const seekingReviewCount = (projects || []).filter((p) => (p.status || "draft") === "seeking-review").length;
 
   return [
     { value: "all", label: "All", count: allCount, isActive: (statusFilter || "all") === "all" },
+    { value: "draft", label: "Draft", count: draftCount, isActive: statusFilter === "draft" },
     { value: "reviewed", label: "Reviewed", count: reviewedCount, isActive: statusFilter === "reviewed" },
     { value: "seeking-review", label: "Seeking Review", count: seekingReviewCount, isActive: statusFilter === "seeking-review" },
   ];
