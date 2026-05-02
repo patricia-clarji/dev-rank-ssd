@@ -49,6 +49,7 @@ exports.publicProfile = async (req, res) => {
     }
 
     const projects = await projectService.getAllProjects({ userId: user._id });
+    const mappedProjects = projects.map(mapperService.mapProject);
     const reviews = await reviewService.getAllReviews({ reviewerId: user._id });
 
     const projectIds = projects.map((project) => project._id);
@@ -76,7 +77,7 @@ exports.publicProfile = async (req, res) => {
       currentUser: req.currentUser || null,
       isLoggedIn: Boolean(req.currentUser),
 
-      projects,
+      projects: mappedProjects,
       reviews,
       reviewsCount,
       pendingCertificationsCount,

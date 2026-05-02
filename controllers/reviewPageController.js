@@ -12,8 +12,7 @@ const {
   handleControllerError,
   isProjectOwner,
   canEditReview,
-  canDeleteReview,
-  buildSidebarCounts
+  canDeleteReview
 } = require("../utils/controllerUtils");
 const { REVIEW_STATUSES } = require("../constants/statusConstants");
 
@@ -57,11 +56,6 @@ exports.reviewProject = async (req, res) => {
     const userFlags = getUserFlags(sessionUser);
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
 
-    const sidebarCounts = buildSidebarCounts({
-      reviews: userReviews,
-      certifications,
-    });
-
     return renderApp(res, "review-form", {
       pageTitle: `Review ${project.title}`,
       activeNav: "reviews",
@@ -75,7 +69,6 @@ exports.reviewProject = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
-      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/projects", "Review project form render failed:");
@@ -119,11 +112,6 @@ exports.editReview = async (req, res) => {
     const certifications = await certificationService.getAllRequests();
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
 
-    const sidebarCounts = buildSidebarCounts({
-      reviews: userReviews,
-      certifications,
-    });
-
     return renderApp(res, "review-form", {
       pageTitle: `Edit Review for ${project.title}`,
       activeNav: "reviews",
@@ -136,7 +124,6 @@ exports.editReview = async (req, res) => {
       projects: userProjects,
       reviews: userReviews,
       ...profileVM,
-      ...sidebarCounts,
       certificationRequests: certifications,
 
     });
@@ -198,11 +185,6 @@ exports.reviews = async (req, res) => {
     const receivedReviewsList = reviewsListViewModel.mapReceivedReviews(mappedReceivedReviews);
     const givenReviewsList = reviewsListViewModel.mapGivenReviews(mappedGivenReviews);
 
-    const sidebarCounts = buildSidebarCounts({
-      reviews: receivedReviews,
-      certifications,
-    });
-
     return renderApp(res, "reviews", {
       pageTitle: "Reviews",
       activeNav: "reviews",
@@ -214,7 +196,6 @@ exports.reviews = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
-      ...sidebarCounts,
       certificationRequests: certifications,
     });
   } catch (error) {

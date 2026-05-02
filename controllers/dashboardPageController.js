@@ -5,8 +5,7 @@ const profileViewModel = require("../utils/viewModels/profileViewModel");
 const dashboardViewModel = require("../utils/viewModels/dashboardViewModel");
 const {
   fetchUserData,
-  handleControllerError,
-  buildSidebarCounts
+  handleControllerError
 } = require("../utils/controllerUtils");
 
 exports.dashboard = async (req, res) => {
@@ -22,11 +21,6 @@ exports.dashboard = async (req, res) => {
     const dashboardProjects = dashboardViewModel.mapDashboardProjects(projects);
     const dashboardReviews = dashboardViewModel.mapDashboardReviews(reviews);
 
-    const sidebarCounts = buildSidebarCounts({
-      reviews,
-      certifications,
-    });
-
     return renderApp(res, "dashboard", {
       pageTitle: "Dashboard",
       activeNav: "dashboard",
@@ -38,7 +32,6 @@ exports.dashboard = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
-      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/login", "Dashboard render failed:");

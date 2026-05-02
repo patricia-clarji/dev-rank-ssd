@@ -31,9 +31,9 @@ exports.mapDashboardProjects = (projects) => {
       status: projectStatus,
       statusClass,
       statusLabel,
-      reviewCount: project.reviewCount || 0,
-      averageRating: project.averageRating || 0,
-      hasReviews: (project.reviewCount || 0) > 0,
+      reviewCount: project.totalReviews || 0,
+      averageRating: project.aggregateRating || 0,
+      hasReviews: (project.totalReviews || 0) > 0,
     };
   });
 };

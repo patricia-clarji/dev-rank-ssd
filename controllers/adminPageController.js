@@ -14,11 +14,12 @@ const certificationViewModel = require("../utils/viewModels/certificationViewMod
 const profileViewModel = require("../utils/viewModels/profileViewModel");
 const adminDashboardViewModel = require("../utils/viewModels/adminDashboardViewModel");
 const { CERTIFICATION_STATUSES, FILTER_STATUSES } = require("../constants/statusConstants");
-const { handleControllerError, buildSidebarCounts } = require("../utils/controllerUtils");
+const { handleControllerError } = require("../utils/controllerUtils");
 
 exports.adminUsers = async (req, res) => {
   try {
-    const q = String(req.query.q || "").trim().toLowerCase();
+    const qRaw = String(req.query.q || "").trim();
+    const q = qRaw.toLowerCase();
     const roleFilter = String(req.query.role || "all").trim().toLowerCase();
 
     const users = await User.find().select("-passwordHash").populate("skills");
@@ -33,11 +34,11 @@ exports.adminUsers = async (req, res) => {
     });
 
     const roleStats = {
-      total: users.length,
-      developers: users.filter((userItem) => userItem.role === "developer").length,
-      reviewers: users.filter((userItem) => userItem.role === "reviewer").length,
-      admins: users.filter((userItem) => userItem.role === "admin").length,
-      superAdmins: users.filter((userItem) => userItem.isSuperAdmin).length,
+      total: filteredUsers.length,
+      developers: filteredUsers.filter((userItem) => userItem.role === "developer").length,
+      reviewers: filteredUsers.filter((userItem) => userItem.role === "reviewer").length,
+      admins: filteredUsers.filter((userItem) => userItem.role === "admin").length,
+      superAdmins: filteredUsers.filter((userItem) => userItem.isSuperAdmin).length,
     };
 
     const userFlags = getUserFlags(req.currentUser);
@@ -46,17 +47,12 @@ exports.adminUsers = async (req, res) => {
     const profileVM = profileViewModel.mapUserProfileView(req.currentUser, [], [], [], userFlags.isReviewer);
 
 
-    const sidebarCounts = buildSidebarCounts({
-      reviews,
-      certifications,
-    });
-
     return renderApp(res, "admin-users", {
       pageTitle: "Manage users",
       activeNav: "admin-users",
       user: req.currentUser,
       users: filteredUsers.map((userItem) => mapperService.mapUser(userItem)),
-      roleSearchQuery: q,
+      roleSearchQuery: qRaw,
       roleFilter,
       roleStats,
       projects: [],
@@ -66,7 +62,6 @@ exports.adminUsers = async (req, res) => {
       isReviewer: true,
       isSuperAdmin: true,
       ...profileVM,
-      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/admin", "Admin users render failed:");
@@ -107,11 +102,6 @@ exports.adminDashboard = async (req, res) => {
     const recentActivity = adminDashboardViewModel.mapActivityEntries(activityLogs).slice(0, 5);
     const pendingCerts = adminDashboardViewModel.mapPendingCertifications(certifications);
 
-    const sidebarCounts = buildSidebarCounts({
-      reviews,
-      certifications,
-    });
-
     return renderApp(res, "admin-dashboard", {
       pageTitle: "Admin dashboard",
       activeNav: "admin-dashboard",
@@ -128,7 +118,6 @@ exports.adminDashboard = async (req, res) => {
       isAdmin: true,
       isReviewer: true,
       ...profileVM,
-      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/dashboard", "Admin dashboard render failed:");
@@ -163,11 +152,6 @@ exports.adminCertifications = async (req, res) => {
     };
     const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], certifications, userFlags.isReviewer);
 
-    const sidebarCounts = buildSidebarCounts({
-      reviews: [],
-      certifications,
-    });
-
     return renderApp(res, "admin-certifications", {
       pageTitle: "Certification requests",
       activeNav: "admin",
@@ -180,7 +164,6 @@ exports.adminCertifications = async (req, res) => {
       isAdmin: true,
       isReviewer: true,
       ...profileVM,
-      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/admin", "Admin certifications render failed:");
@@ -207,7 +190,8 @@ exports.rejectCertification = async (req, res) => {
 
 exports.adminLogs = async (req, res) => {
   try {
-    const q = String(req.query.q || "").trim().toLowerCase();
+    const qRaw = String(req.query.q || "").trim();
+    const q = qRaw.toLowerCase();
     const action = String(req.query.action || "").trim();
     const entity = String(req.query.entity || "").trim();
 
@@ -239,17 +223,12 @@ exports.adminLogs = async (req, res) => {
     const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], [], userFlags.isReviewer);
 
     const certifications = await certificationService.getAllRequests();
-    const sidebarCounts = buildSidebarCounts({
-      reviews: [],
-      certifications,
-    });
-
     return renderApp(res, "admin-logs", {
       pageTitle: "Activity logs",
       activeNav: "admin",
       user: req.currentUser,
       activityLogs: logs,
-      logsSearchQuery: q,
+      logsSearchQuery: qRaw,
       logsActionFilter: action,
       logsEntityFilter: entity,
       isAdmin: true,
@@ -258,7 +237,6 @@ exports.adminLogs = async (req, res) => {
       reviews: [],
       certificationRequests: certifications,
       ...profileVM,
-      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/admin", "Admin logs render failed:");
@@ -269,7 +247,8 @@ exports.adminLogs = async (req, res) => {
 exports.adminSkills = async (req, res) => {
   try {
     const skillService = require("../services/skillService");
-    const q = String(req.query.q || "").trim().toLowerCase();
+    const qRaw = String(req.query.q || "").trim();
+    const q = qRaw.toLowerCase();
     const category = String(req.query.category || "").trim().toLowerCase();
     const page = parseInt(req.query.page) || 1;
     const limit = 20; // Skills per page
@@ -300,17 +279,12 @@ exports.adminSkills = async (req, res) => {
     const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], [], userFlags.isReviewer);
 
     const certifications = await certificationService.getAllRequests();
-    const sidebarCounts = buildSidebarCounts({
-      reviews: [],
-      certifications,
-    });
-
     return renderApp(res, "admin-skills", {
       pageTitle: "Manage Skills",
       activeNav: "admin",
       user: req.currentUser,
       skills: paginatedSkills,
-      skillSearchQuery: q,
+      skillSearchQuery: qRaw,
       skillCategoryFilter: category,
       currentPage: page,
       totalPages,
@@ -323,7 +297,6 @@ exports.adminSkills = async (req, res) => {
       reviews: [],
       certificationRequests: certifications,
       ...profileVM,
-      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/admin", "Admin skills render failed:");
@@ -337,11 +310,6 @@ exports.newSkillForm = async (req, res) => {
     const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], [], userFlags.isReviewer);
 
     const certifications = await certificationService.getAllRequests();
-    const sidebarCounts = buildSidebarCounts({
-      reviews: [],
-      certifications,
-    });
-
     return renderApp(res, "admin-skill-new", {
       pageTitle: "Add New Skill",
       activeNav: "admin",
@@ -352,7 +320,6 @@ exports.newSkillForm = async (req, res) => {
       reviews: [],
       certificationRequests: certifications,
       ...profileVM,
-      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/admin/skills", "New skill form render failed:");
@@ -393,11 +360,6 @@ exports.editSkillForm = async (req, res) => {
     const profileVM = profileViewModel.mapUserProfileView(req.currentUser, projects, [], [], userFlags.isReviewer);
 
     const certifications = await certificationService.getAllRequests();
-    const sidebarCounts = buildSidebarCounts({
-      reviews: [],
-      certifications,
-    });
-
     return renderApp(res, "admin-skill-edit", {
       pageTitle: "Edit Skill",
       activeNav: "admin",
@@ -409,7 +371,6 @@ exports.editSkillForm = async (req, res) => {
       reviews: [],
       certificationRequests: certifications,
       ...profileVM,
-      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/admin/skills", "Edit skill form render failed:");

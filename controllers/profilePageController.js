@@ -6,8 +6,7 @@ const { renderApp, getUserFlags } = require("../utils/viewRenderer");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
 const {
   fetchUserData,
-  handleControllerError,
-  buildSidebarCounts
+  handleControllerError
 } = require("../utils/controllerUtils");
 
 async function renderProfileForm(req, res, { pageTitle, activeNav, actionPath, submitLabel, cancelPath, profileMode, errorRedirectPath, errorPrefix }) {
@@ -22,11 +21,6 @@ async function renderProfileForm(req, res, { pageTitle, activeNav, actionPath, s
     certifications,
     userFlags.isReviewer
   );
-
-  const sidebarCounts = buildSidebarCounts({
-    reviews,
-    certifications,
-  });
 
   return renderApp(res, "profile-edit", {
     pageTitle,
@@ -43,7 +37,6 @@ async function renderProfileForm(req, res, { pageTitle, activeNav, actionPath, s
     profileSubmitLabel: submitLabel,
     profileCancelPath: cancelPath,
     ...profileVM,
-    ...sidebarCounts,
   });
 }
 
@@ -53,11 +46,6 @@ exports.profile = async (req, res) => {
     const { projects, reviews,certifications } = await fetchUserData(sessionUser);
     const userFlags = getUserFlags(sessionUser);
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, projects, reviews, certifications, userFlags.isReviewer);
-
-    const sidebarCounts = buildSidebarCounts({
-      reviews,
-      certifications,
-    });
 
     return renderApp(res, "profile", {
       pageTitle: "Your profile",
@@ -69,7 +57,6 @@ exports.profile = async (req, res) => {
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
-      ...sidebarCounts,
     });
   } catch (error) {
     return handleControllerError(error, res, "/dashboard", "Profile render failed:");

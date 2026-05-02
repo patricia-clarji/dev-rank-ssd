@@ -293,7 +293,17 @@ String(req.status || "").toLowerCase() === "pending").length;
               <h1><%= currentUserName %></h1>
               <p class="profile-username">@<%= currentUser.username ||
                 currentUser._id %></p>
-              <% if (isReviewer) { %>
+              <% if (currentUser.isSuperAdmin) { %>
+              <span class="badge badge-success">
+                <i data-lucide="shield" width="12" height="12"></i>
+                Super Admin
+              </span>
+              <% } else if (currentUser.role === 'admin') { %>
+              <span class="badge badge-success">
+                <i data-lucide="shield" width="12" height="12"></i>
+                Admin
+              </span>
+              <% } else if (isReviewer) { %>
               <span class="badge badge-success">
                 <i data-lucide="check-circle" width="12" height="12"></i>
                 Certified Reviewer
@@ -1531,8 +1541,7 @@ String(req.status || "").toLowerCase() === "pending").length;
             <div class="stat-label">Projects</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value"><%= Number(currentUser.profileScore ||
-              0.0).toFixed(1) %></div>
+            <div class="stat-value"><%= Number(averageRating || 0).toFixed(1) %></div>
             <div class="stat-label">Avg Rating</div>
           </div>
         </div>
@@ -1932,6 +1941,8 @@ String(req.status || "").toLowerCase() === "pending").length;
               'selected' : '' %>>Developers</option>
             <option value="reviewer" <%=exploreRoleFilter === 'reviewer' ?
               'selected' : '' %>>Reviewers</option>
+            <option value="admin" <%=exploreRoleFilter === 'admin' ?
+              'selected' : '' %>>Admins</option>
           </select>
           <% } else { %>
           <select class="form-select" name="status"
@@ -2006,7 +2017,7 @@ String(req.status || "").toLowerCase() === "pending").length;
 
             <div class="explore-card-footer">
               <span class="explore-card-owner">by @<%= projectItem.owner &&
-                projectItem.owner.username || projectItem.owner.id || 'unknown' %></span>:
+                projectItem.owner.username || projectItem.owner.id || 'unknown' %></span>
               <span class="explore-card-rating">
                 <i data-lucide="star" class="filled" width="14" height="14"></i>
                 <%= Number(projectItem.averageRating || 0).toFixed(1) %>

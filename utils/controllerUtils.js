@@ -25,7 +25,7 @@ async function fetchUserData(user, includeCertifications = true) {
       project: { $in: projectIds },
       status: REVIEW_STATUSES.PUBLISHED
     })
-      .populate("project", "title status")
+      .populate("project", "title status totalReviews")
       .populate("reviewer", "name email role githubUrl username")
       .sort({ createdAt: -1 });
   }

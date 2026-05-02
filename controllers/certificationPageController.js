@@ -6,7 +6,7 @@ const profileViewModel = require("../utils/viewModels/profileViewModel");
 const certificationViewModel = require("../utils/viewModels/certificationViewModel");
 const mapperService = require("../services/mapperService");
 const ERROR_CODES = require("../utils/errorCodes");
-const { buildSidebarCounts, fetchUserData } = require("../utils/controllerUtils");
+const { fetchUserData } = require("../utils/controllerUtils");
 const CERTIFICATION_ERROR_MESSAGES = {
   [ERROR_CODES.VALIDATION]: "Please complete all required certification fields with valid information.",
   [ERROR_CODES.DUPLICATE]: "You already have a certification request or an approved certification.",
@@ -56,11 +56,6 @@ exports.applyCertification = async (req, res) => {
     userFlags.isReviewer
   );
 
-  const sidebarCounts = buildSidebarCounts({
-    reviews: [],
-    certifications,
-  });
-
   return renderApp(res, "certification-apply", {
     pageTitle: "Apply for certification",
     activeNav: "certifications",
@@ -70,7 +65,6 @@ exports.applyCertification = async (req, res) => {
     projects,
     reviews: [],
     ...profileVM,
-    ...sidebarCounts,
     ownCertification,
     certificationRequests: certifications,
     certificationErrorMessage: CERTIFICATION_ERROR_MESSAGES[req.query.error] || null,
@@ -144,11 +138,6 @@ exports.certifications = async (req, res) => {
     );
     const certBenefits = certificationViewModel.mapCertificationBenefits();
 
-    const sidebarCounts = buildSidebarCounts({
-      reviews: receivedReviews,
-      certifications: allRequests,
-    });
-
     return renderApp(res, "certifications", {
       pageTitle: "Certifications",
       activeNav: "certifications",
@@ -161,7 +150,6 @@ exports.certifications = async (req, res) => {
       projects,
       reviews: givenReviews,
       ...profileVM,
-      ...sidebarCounts,
       certificationRequests: allRequests,
       reviewsGiven,
       avgRatingGiven,

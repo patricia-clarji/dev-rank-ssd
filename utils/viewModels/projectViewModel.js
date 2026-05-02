@@ -26,7 +26,7 @@ function mapProjectDetailReviewCard(reviewDoc, sessionUser, isAdmin) {
     feedbackText: review.feedback || review.note || "No written feedback provided.",
     suggestionsList: Array.isArray(review.suggestions) && review.suggestions.length
       ? review.suggestions
-      : ["Add more integration tests", "Document architecture decisions in the README"],
+      : [],
     displayDate: review.createdAt ? new Date(review.createdAt).toLocaleDateString() : "N/A",
     canEdit,
     editUrl: `/reviews/${review._id}/edit`,

@@ -3,6 +3,8 @@
  * Computes UI state for skills listing and detail pages
  */
 
+const mapperService = require("../../services/mapperService");
+
 exports.formatCategoryTitle = (value) => {
   const text = String(value || "").trim();
   if (!text) return "General";
@@ -77,7 +79,12 @@ exports.mapSkillsGroupedWithCounts = (skills) => {
 
 exports.mapSkillDetailPage = (skill, projects) => {
   const currentSkill = skill || {};
-  const recentProjects = (projects || []).slice(0, 3);
+    const recentProjects = (projects || [])
+      .map((project) => mapperService.mapProject(project))
+    .filter(Boolean);
+  const mappedProjects = (projects || []).map((p) => mapperService.mapProject(p)).filter(Boolean);
+  const ratingValues = mappedProjects.map((p) => Number(p.averageRating || 0)).filter((r) => r > 0);
+  const averageRating = ratingValues.length ? ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length : 0;
   const totalDevelopers = Array.isArray(skill.users) ? skill.users.length : 0;
   const topDevelopers = (Array.isArray(skill.users) ? skill.users : []).slice(0, 5).map((dev) => {
     const devProjectCount = (projects || []).filter((project) => {
@@ -97,6 +104,7 @@ exports.mapSkillDetailPage = (skill, projects) => {
   return {
     currentSkill,
     recentProjects,
+    averageRating,
     totalDevelopers,
     topDevelopers,
   };

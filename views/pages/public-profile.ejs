@@ -22,7 +22,7 @@ const initials = (user.name || "User")
     <%- include('../partials/sidebar', {
     activeNav: 'explore', isAdmin: currentUserIsAdmin,isSuperAdmin:
     currentUserIsSuperAdmin, isReviewer: currentUserIsReviewer, page:
-    'public-profile'
+    'public-profile', reviewsCount: 0, pendingCertificationsCount: 0
     }) %>
     <main class="layout-main">
       <div class="profile-page">
@@ -41,7 +41,17 @@ const initials = (user.name || "User")
               <div class="profile-name-section">
                 <h1><%= user.name %></h1>
                 <p class="profile-username">@<%= user.username %></p>
-                <% if (user.role === 'admin' || user.isVerifiedReviewer) { %>
+                <% if (user.isSuperAdmin) { %>
+                <span class="badge badge-success">
+                  <i data-lucide="shield" width="12" height="12"></i>
+                  Super Admin
+                </span>
+                <% } else if (user.role === 'admin') { %>
+                <span class="badge badge-success">
+                  <i data-lucide="shield" width="12" height="12"></i>
+                  Admin
+                </span>
+                <% } else if (user.isVerifiedReviewer) { %>
                 <span class="badge badge-success">
                   <i data-lucide="check-circle" width="12" height="12"></i>
                   Certified Reviewer
@@ -236,7 +246,17 @@ const initials = (user.name || "User")
           <div class="profile-name-section">
             <h1><%= user.name %></h1>
             <p class="profile-username">@<%= user.username %></p>
-            <% if (user.role === 'admin' || user.isVerifiedReviewer) { %>
+            <% if (user.isSuperAdmin) { %>
+            <span class="badge badge-success">
+              <i data-lucide="shield" width="12" height="12"></i>
+              Super Admin
+            </span>
+            <% } else if (user.role === 'admin') { %>
+            <span class="badge badge-success">
+              <i data-lucide="shield" width="12" height="12"></i>
+              Admin
+            </span>
+            <% } else if (user.isVerifiedReviewer) { %>
             <span class="badge badge-success">
               <i data-lucide="check-circle" width="12" height="12"></i>
               Certified Reviewer

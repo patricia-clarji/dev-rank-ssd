@@ -22,7 +22,8 @@ exports.explore = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
 
-    const query = String(req.query.q || "").trim().toLowerCase();
+    const queryRaw = String(req.query.q || "").trim();
+    const query = queryRaw.toLowerCase();
     const status = String(req.query.status || "all").trim();
     const role = String(req.query.role || "all").trim();
     const includeDevelopers =
@@ -57,6 +58,8 @@ exports.explore = async (req, res) => {
         roleMatch = user.role === "developer";
       } else if (role === "reviewer") {
         roleMatch = user.role === "reviewer";
+      } else if (role === "admin") {
+        roleMatch = user.role === "admin";
       } else if (role === "both") {
         roleMatch = user.role === "developer" || user.role === "reviewer";
       }
@@ -98,7 +101,7 @@ exports.explore = async (req, res) => {
       exploreUsers: exploreDevelopers,
       exploreUsersTotal: matchingUsers.length,
       exploreProjectsTotal: filteredProjects.length,
-      exploreSearchQuery: query,
+      exploreSearchQuery: queryRaw,
       exploreStatusFilter: status,
       exploreRoleFilter: role,
       exploreIncludeDevelopers: includeDevelopers,

@@ -7,7 +7,6 @@ const profileViewModel = require("../utils/viewModels/profileViewModel");
 const certificationService = require("../services/certificationService");
 const skillsViewModel = require("../utils/viewModels/skillsViewModel");
 const { REVIEW_STATUSES } = require("../constants/statusConstants");
-const { buildSidebarCounts } = require("../utils/controllerUtils");
 
 function normalizeCategory(value) {
   if (Array.isArray(value)) {
@@ -38,7 +37,8 @@ function canonicalizeCategory(value) {
 exports.skills = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
-    const query = String(req.query.q || "").trim().toLowerCase();
+    const queryRaw = String(req.query.q || "").trim();
+    const query = queryRaw.toLowerCase();
     const selectedCategory = String(req.query.category || "").trim();
     const selectedCategoryKey = selectedCategory && selectedCategory !== "All"
       ? String(selectedCategory).trim().toLowerCase()
@@ -90,11 +90,6 @@ exports.skills = async (req, res) => {
       : groupedSkillsWithCounts;
     const categoryPills = skillsViewModel.mapCategoryPills(allSkillCategories, selectedCategory ? canonicalizeCategory(selectedCategory)[0] : "All", query);
 
-    const sidebarCounts = buildSidebarCounts({
-      reviews: userReviews,
-      certifications,
-    });
-
     return renderApp(res, "skills", {
       pageTitle: "Skills",
       activeNav: "skills",
@@ -104,14 +99,13 @@ exports.skills = async (req, res) => {
       allSkillCategories,
       categoryPills,
       selectedSkillCategory: selectedCategory ? canonicalizeCategory(selectedCategory)[0] : "All",
-      skillSearchQuery: query,
+      skillSearchQuery: queryRaw,
       isShowingAll: selectedCategoryKey === "all",
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       projects: userProjects,
       reviews: userReviews,
       ...profileVM,
-      ...sidebarCounts,
       certificationRequests: certifications,
     });
   } catch (error) {
@@ -136,11 +130,6 @@ exports.skillDetail = async (req, res) => {
     const profileVM = profileViewModel.mapUserProfileView(sessionUser, userProjects, userReviews, certifications, userFlags.isReviewer);
     const skillDetailVM = skillsViewModel.mapSkillDetailPage(skill, projects);
 
-    const sidebarCounts = buildSidebarCounts({
-      reviews: userReviews,
-      certifications,
-    });
-
     return renderApp(res, "skill-detail", {
       pageTitle: skill.name,
       activeNav: "skills",
@@ -151,10 +140,10 @@ exports.skillDetail = async (req, res) => {
       topDevelopers: skillDetailVM.topDevelopers,
       totalDevelopers: skillDetailVM.totalDevelopers,
       totalProjects: projects.length,
+      averageRating: skillDetailVM.averageRating,
       isReviewer: userFlags.isReviewer,
       isAdmin: userFlags.isAdmin,
       ...profileVM,
-      ...sidebarCounts,
       certificationRequests: certifications,
       reviews: userReviews,
     });

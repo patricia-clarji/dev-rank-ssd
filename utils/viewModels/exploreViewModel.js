@@ -48,6 +48,7 @@ exports.mapExploreFilters = (includeDevs, statusFilter, roleFilter) => {
         { value: "all", label: "All Users", selected: (roleFilter || "all") === "all" },
         { value: "developer", label: "Developers", selected: roleFilter === "developer" },
         { value: "reviewer", label: "Reviewers", selected: roleFilter === "reviewer" },
+        { value: "admin", label: "Admins", selected: roleFilter === "admin" },
       ],
     };
   } else {
