@@ -99,10 +99,10 @@ describe('projectService', () => {
 
   it('should filter projects by techStack and status', async () => {
     await Project.create({ user: user._id, title: 'P1', description: '', repoUrl: '', techStack: ['Node.js'], status: 'seeking-review' });
-    await Project.create({ user: user._id, title: 'P2', description: '', repoUrl: '', techStack: ['React'], status: 'archived' });
+    await Project.create({ user: user._id, title: 'P2', description: '', repoUrl: '', techStack: ['React'], status: 'draft' });
     const byTech = await projectService.getAllProjects({ techStack: 'Node.js' });
     expect(byTech.length).toBeGreaterThan(0);
-    const byStatus = await projectService.getAllProjects({ status: 'archived' });
+    const byStatus = await projectService.getAllProjects({ status: 'draft' });
     expect(byStatus.length).toBeGreaterThan(0);
   });
 
