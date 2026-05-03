@@ -21,7 +21,6 @@ registerEventListeners();
 // Attach current user to all requests
 app.use(attachCurrentUser);
 
-// Mount app routes (SSR app)
 app.use("/", appRoutes);
 
 app.use((req, res, next) => {
@@ -31,7 +30,7 @@ app.use((req, res, next) => {
   });
 });
 
-// Global error handler (render-based)
+// Global error handler
 app.use((err, req, res, next) => {
   console.error("[Unhandled Error]", err.stack);
 

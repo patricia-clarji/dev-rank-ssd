@@ -12,7 +12,6 @@ exports.createSkill = async ({ name, category, isPreset, userId }) => {
   }
   const skill = await Skill.create({ name, category, isPreset: isPreset || false });
 
-  // Log skill creation
   skillLogger.logSkillCreated(userId.toString(), skill._id.toString(), skill.name, skill.category);
 
   return skill;
@@ -92,7 +91,6 @@ exports.updateSkill = async (skillId, { name, category, isPreset, userId }) => {
     throw new AppError("Skill not found.", 404, ERROR_CODES.NOT_FOUND);
   }
 
-  // Log skill update
   skillLogger.logSkillUpdated(userId.toString(), skill._id.toString(), skill.name, skill.category);
 
   return skill;
@@ -113,7 +111,6 @@ exports.deleteSkill = async (skillId, userId) => {
   }
   await cleanupSkillData(skill._id);
 
-  // Log skill deletion
   skillLogger.logSkillDeleted(userId.toString(), skill._id.toString(), skill.name, skill.category);
 };
 

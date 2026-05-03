@@ -243,7 +243,6 @@ exports.adminLogs = async (req, res) => {
   }
 };
 
-// Skills management functions
 exports.adminSkills = async (req, res) => {
   try {
     const skillService = require("../services/skillService");
@@ -251,7 +250,7 @@ exports.adminSkills = async (req, res) => {
     const q = qRaw.toLowerCase();
     const category = String(req.query.category || "").trim().toLowerCase();
     const page = parseInt(req.query.page) || 1;
-    const limit = 20; // Skills per page
+    const limit = 20;
     const skip = (page - 1) * limit;
 
     const allSkills = await skillService.getAllSkills({
@@ -331,7 +330,6 @@ exports.createSkill = async (req, res) => {
     const skillService = require("../services/skillService");
     const { name, category, isPreset } = req.body;
 
-    // Handle multiple categories from checkboxes
     const categories = Array.isArray(category) ? category : [category].filter(Boolean);
 
     await skillService.createSkill({
@@ -383,7 +381,6 @@ exports.updateSkill = async (req, res) => {
     const skillService = require("../services/skillService");
     const { name, category, isPreset } = req.body;
 
-    // Handle multiple categories from checkboxes
     const categories = Array.isArray(category) ? category : [category].filter(Boolean);
 
     await skillService.updateSkill(req.params.id, {

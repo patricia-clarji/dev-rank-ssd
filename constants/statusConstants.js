@@ -1,4 +1,3 @@
-// Status constants to replace magic strings throughout the application
 const PROJECT_STATUSES = Object.freeze({
   DRAFT: "draft",
   SEEKING_REVIEW: "seeking-review",
