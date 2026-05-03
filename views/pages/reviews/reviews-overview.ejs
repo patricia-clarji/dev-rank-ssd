@@ -37,14 +37,10 @@
     data-reviews-content>
     <% if (receivedReviews.length > 0) { %>
     <% receivedReviews.forEach((reviewItem) => {
-    const projectId = reviewItem.projectId || ((reviewItem.project &&
-    reviewItem.project._id) || "");
-    const projectTitle = reviewItem.projectTitle || ((reviewItem.project
-    && reviewItem.project.title) || "Project");
-    const reviewerName = (reviewItem.reviewer && reviewItem.reviewer.name)
-    || "Reviewer";
-    const reviewerUsername = (reviewItem.reviewer &&
-    reviewItem.reviewer.username) || reviewItem.reviewer?._id;
+    const projectId = reviewItem.projectId || "";
+    const projectTitle = reviewItem.projectTitle || "Project";
+    const reviewerName = reviewItem.reviewerName || "Reviewer";
+    const reviewerProfileUrl = reviewItem.reviewerProfileUrl || `/user/${reviewItem.reviewerUsername || ''}`;
     %>
     <div class="review-list-item">
       <div class="review-list-header">
@@ -63,7 +59,7 @@
 
       <div class="review-list-meta">
         <span class="text-secondary">Reviewed by</span>
-        <a href="/user/<%= reviewerUsername %>"><%= reviewerName %></a>
+        <a href="<%= reviewerProfileUrl %>"><%= reviewerName %></a>
       </div>
 
       <p class="review-list-feedback"><%= reviewItem.feedback ||
@@ -104,13 +100,10 @@
     data-reviews-content>
     <% if (givenReviews.length > 0) { %>
     <% givenReviews.forEach((reviewItem) => {
-    const projectId = reviewItem.projectId || ((reviewItem.project &&
-    reviewItem.project._id) || "");
-    const projectTitle = reviewItem.projectTitle || ((reviewItem.project
-    && reviewItem.project.title) || "Project");
-    const projectOwner = (reviewItem.project && reviewItem.project.owner)
-    || {};
-    const ownerUsername = projectOwner.username || projectOwner._id;
+    const projectId = reviewItem.projectId || "";
+    const projectTitle = reviewItem.projectTitle || "Project";
+    const ownerName = reviewItem.ownerName || "Developer";
+    const ownerProfileUrl = reviewItem.ownerProfileUrl || `/user/${reviewItem.ownerUsername || ''}`;
     %>
     <div class="review-list-item">
       <div class="review-list-header">
@@ -129,8 +122,7 @@
 
       <div class="review-list-meta">
         <span class="text-secondary">Project by</span>
-        <a href="/user/<%= ownerUsername %>"><%= projectOwner.name ||
-          "Developer" %></a>
+        <a href="<%= ownerProfileUrl %>"><%= ownerName %></a>
       </div>
 
       <p class="review-list-feedback"><%= reviewItem.feedback ||
