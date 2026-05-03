@@ -24,6 +24,11 @@ const PASSWORD_REQUIREMENTS = Object.freeze([
 ]);
 
 const PASSWORD_REQUIREMENTS_MESSAGE = "Password must be at least 8 characters and include a number and special character.";
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateEmail(email) {
+  return EMAIL_REGEX.test(String(email || "").trim().toLowerCase());
+}
 
 function validatePassword(password) {
   const candidatePassword = String(password || "");
@@ -46,6 +51,7 @@ function validatePassword(password) {
 const AUTH_ERROR_CODES = Object.freeze({
   INVALID_CREDENTIALS: "AUTH_INVALID_CREDENTIALS",
   MISSING_FIELDS: "AUTH_MISSING_FIELDS",
+  INVALID_EMAIL: "AUTH_INVALID_EMAIL",
   PASSWORD_MISMATCH: "AUTH_PASSWORD_MISMATCH",
   PASSWORD_WEAK: "AUTH_PASSWORD_WEAK",
   EMAIL_EXISTS: "AUTH_EMAIL_EXISTS",
@@ -62,7 +68,7 @@ async function loginWithCredentials({ email, password }) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
   const candidatePassword = String(password || "");
 
-  if (!normalizedEmail || !candidatePassword) {
+  if (!normalizedEmail || !candidatePassword || !validateEmail(normalizedEmail)) {
     throw createAuthError("Invalid email or password", 401, AUTH_ERROR_CODES.INVALID_CREDENTIALS);
   }
 
@@ -87,6 +93,10 @@ async function registerWithCredentials({ username, name, email, password, confir
 
   if (!normalizedName || !normalizedEmail || !candidatePassword || !confirmedPassword) {
     throw createAuthError("Please fill in all required fields", 400, AUTH_ERROR_CODES.MISSING_FIELDS);
+  }
+
+  if (!validateEmail(normalizedEmail)) {
+    throw createAuthError("Please enter a valid email address", 400, AUTH_ERROR_CODES.INVALID_EMAIL);
   }
 
   if (candidatePassword !== confirmedPassword) {
@@ -203,6 +213,7 @@ const errorMessages = {
   password_weak: PASSWORD_REQUIREMENTS_MESSAGE,
   password_mismatch: "Passwords do not match",
   missing_fields: "Please fill in all required fields",
+  invalid_email: "Please enter a valid email address",
   email_exists: "This email is already registered",
   server_error: "An error occurred. Please try again",
   user_exists: "Username already taken",
@@ -215,6 +226,8 @@ function getAuthErrorCode(error, fallbackCode = "server_error") {
       return "invalid_credentials";
     case AUTH_ERROR_CODES.MISSING_FIELDS:
       return "missing_fields";
+    case AUTH_ERROR_CODES.INVALID_EMAIL:
+      return "invalid_email";
     case AUTH_ERROR_CODES.PASSWORD_MISMATCH:
       return "password_mismatch";
     case AUTH_ERROR_CODES.PASSWORD_WEAK:
