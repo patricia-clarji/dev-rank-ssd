@@ -1,0 +1,134 @@
+<div class="explore-page">
+  <div class="page-header">
+    <h1>Explore</h1>
+    <p class="text-secondary">Discover projects and developers</p>
+  </div>
+
+  <form action="/explore" method="get" class="explore-search">
+    <i data-lucide="search" width="20" height="20"
+      class="search-icon"></i>
+    <input type="text" name="q" value="<%= exploreSearchQuery || '' %>"
+      placeholder="Search projects, technologies..." />
+  </form>
+
+  <div class="tabs">
+    <a
+      href="/explore?q=<%= encodeURIComponent(exploreSearchQuery || '') %>&status=<%= encodeURIComponent(exploreStatusFilter || 'all') %>&developers=0"
+      class="tab <%= exploreIncludeDevelopers ? '' : 'active' %>">
+      <i data-lucide="folder-git-2" width="16" height="16"></i>
+      Projects
+      <span class="tab-count"><%= typeof exploreProjectsTotal === 'number'
+        ? exploreProjectsTotal : (projects || []).length %></span>
+    </a>
+    <a
+      href="/explore?q=<%= encodeURIComponent(exploreSearchQuery || '') %>&status=<%= encodeURIComponent(exploreStatusFilter || 'all') %>&developers=1"
+      class="tab <%= exploreIncludeDevelopers ? 'active' : '' %>">
+      <i data-lucide="users" width="16" height="16"></i>
+      Developers
+      <span class="tab-count"><%= typeof exploreUsersTotal === 'number' ?
+        exploreUsersTotal : (exploreUsers || []).length %></span>
+    </a>
+  </div>
+
+  <form action="/explore" method="get" class="explore-filters">
+    <input type="hidden" name="q"
+      value="<%= exploreSearchQuery || '' %>" />
+    <input type="hidden" name="developers"
+      value="<%= exploreIncludeDevelopers ? '1' : '0' %>" />
+    <% if (exploreIncludeDevelopers) { %>
+    <select class="form-select" name="role" onchange="this.form.submit()">
+      <option value="all" <%=(exploreRoleFilter || 'all') === 'all' ?
+        'selected' : '' %>>All Users</option>
+      <option value="developer" <%=exploreRoleFilter === 'developer' ?
+        'selected' : '' %>>Developers</option>
+      <option value="reviewer" <%=exploreRoleFilter === 'reviewer' ?
+        'selected' : '' %>>Reviewers</option>
+      <option value="admin" <%=exploreRoleFilter === 'admin' ?
+        'selected' : '' %>>Admins</option>
+    </select>
+    <% } else { %>
+    <select class="form-select" name="status"
+      onchange="this.form.submit()">
+      <option value="all" <%=(exploreStatusFilter || 'all') === 'all' ?
+        'selected' : '' %>>All Status</option>
+      <option value="reviewed" <%=exploreStatusFilter === 'reviewed' ?
+        'selected' : '' %>>Reviewed</option>
+      <option value="seeking-review" <%=exploreStatusFilter ===
+        'seeking-review' ? 'selected' : '' %>>Seeking Review</option>
+    </select>
+    <% } %>
+  </form>
+
+  <% if (exploreActiveTab === 'developers') { %>
+  <div class="developers-table-section">
+    <% if ((exploreUsers || []).length > 0) { %>
+    <div class="projects-grid">
+      <% (exploreUsers || []).forEach((developer) => { %>
+      <a href="<%= developer.profileUrl || ('/user/' + developer._id) %>"
+        class="project-card">
+        <div class="project-card-header">
+          <div class="avatar avatar-sm"><%= (developer.name ||
+            'D').split(' ').map((part) => part[0]).join('').slice(0,
+            2).toUpperCase() %></div>
+          <span class="project-card-title"><%= developer.name %></span>
+        </div>
+        <p class="project-card-desc"><%= developer.bio ||
+          'Developer profile' %></p>
+        <div class="project-card-footer">
+          <span class="text-muted">@<%= developer.username || 'developer'
+            %></span>
+          <span class="text-muted"><%= (developer.skills || []).length %>
+            skills</span>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="empty-state">
+      <i data-lucide="search" class="empty-state-icon"></i>
+      <p class="empty-state-title">No developers found</p>
+      <p class="empty-state-description">Try a different skill, role, or
+        keyword to discover developers matching your search.</p>
+    </div>
+    <% } %>
+  </div>
+  <% } else { %>
+  <div class="explore-grid">
+    <% (projects || []).forEach((projectItem) => { %>
+    <a href="/projects/<%= projectItem._id %>" class="explore-card">
+      <div class="explore-card-header">
+        <i data-lucide="folder-git-2" width="20" height="20"
+          class="text-accent"></i>
+        <h3><%= projectItem.title %></h3>
+      </div>
+
+      <p class="explore-card-desc"><%= projectItem.description %></p>
+
+      <div class="explore-card-tags">
+        <% (projectItem.techStack || []).slice(0, 3).forEach((tech) => {
+        %>
+        <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
+        <% }) %>
+        <% if ((projectItem.techStack || []).length > 3) { %>
+        <span class="tag">+<%= (projectItem.techStack || []).length - 3
+          %></span>
+        <% } %>
+      </div>
+
+      <div class="explore-card-footer">
+        <span class="explore-card-owner">by @<%= projectItem.owner &&
+          projectItem.owner.username || projectItem.owner.id || 'unknown' %></span>
+        <span class="explore-card-rating">
+          <i data-lucide="star" class="filled" width="14" height="14"></i>
+          <%= Number(projectItem.averageRating || 0).toFixed(1) %>
+        </span>
+      </div>
+
+      <% if (projectItem.status === 'seeking-review') { %>
+      <span class="explore-card-badge">Needs Review</span>
+      <% } %>
+    </a>
+    <% }) %>
+  </div>
+  <% } %>
+</div>

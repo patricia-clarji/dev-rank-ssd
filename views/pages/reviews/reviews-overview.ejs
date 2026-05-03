@@ -1,0 +1,168 @@
+<div class="reviews-page">
+  <div class="page-header">
+    <div>
+      <h1>Reviews</h1>
+      <p class="text-secondary"><%= isReviewer ?
+        "View reviews you've received and given" :
+        "View reviews for your projects" %></p>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button
+      class="tab active"
+      type="button"
+      role="tab"
+      aria-selected="true"
+      data-tab-trigger="received"
+      data-reviews-tab>
+      Received
+      <span class="tab-count"><%= receivedReviews.length %></span>
+    </button>
+    <% if (isReviewer) { %>
+    <button
+      class="tab"
+      type="button"
+      role="tab"
+      aria-selected="false"
+      data-tab-trigger="given"
+      data-reviews-tab>
+      Given
+      <span class="tab-count"><%= givenReviews.length %></span>
+    </button>
+    <% } %>
+  </div>
+
+  <div class="reviews-list" data-tab-content="received"
+    data-reviews-content>
+    <% if (receivedReviews.length > 0) { %>
+    <% receivedReviews.forEach((reviewItem) => {
+    const projectId = reviewItem.projectId || ((reviewItem.project &&
+    reviewItem.project._id) || "");
+    const projectTitle = reviewItem.projectTitle || ((reviewItem.project
+    && reviewItem.project.title) || "Project");
+    const reviewerName = (reviewItem.reviewer && reviewItem.reviewer.name)
+    || "Reviewer";
+    const reviewerUsername = (reviewItem.reviewer &&
+    reviewItem.reviewer.username) || reviewItem.reviewer?._id;
+    %>
+    <div class="review-list-item">
+      <div class="review-list-header">
+        <div class="review-project-link">
+          <i data-lucide="folder-git-2" width="16" height="16"
+            class="text-secondary"></i>
+          <a href="/projects/<%= projectId %>"><%= projectTitle %></a>
+        </div>
+        <div class="review-list-rating">
+          <i data-lucide="star" class="star filled" width="16"
+            height="16"></i>
+          <span><%= Number(reviewItem.overallRating || 0).toFixed(1)
+            %></span>
+        </div>
+      </div>
+
+      <div class="review-list-meta">
+        <span class="text-secondary">Reviewed by</span>
+        <a href="/user/<%= reviewerUsername %>"><%= reviewerName %></a>
+      </div>
+
+      <p class="review-list-feedback"><%= reviewItem.feedback ||
+        reviewItem.note || "No detailed feedback provided." %></p>
+
+      <div class="review-list-footer">
+        <span class="review-list-date">
+          <i data-lucide="clock" width="12" height="12"></i>
+          <%= new Date(reviewItem.createdAt).toLocaleDateString() %>
+        </span>
+        <% if (reviewItem.wouldHire) { %>
+        <span class="hire-badge positive">
+          <i data-lucide="check-circle" width="12" height="12"></i>
+          Would Hire
+        </span>
+        <% } else { %>
+        <span class="hire-badge negative">
+          <i data-lucide="x-circle" width="12" height="12"></i>
+          Would Not Hire
+        </span>
+        <% } %>
+      </div>
+    </div>
+    <% }) %>
+    <% } else { %>
+    <div class="empty-state">
+      <i data-lucide="message-square" class="empty-state-icon"></i>
+      <h3 class="empty-state-title">No reviews yet</h3>
+      <p class="empty-state-description">Submit projects to get reviewed
+        by certified peers</p>
+      <a href="/projects/new" class="btn btn-primary">Create Project</a>
+    </div>
+    <% } %>
+  </div>
+
+  <% if (isReviewer) { %>
+  <div class="reviews-list hidden" data-tab-content="given"
+    data-reviews-content>
+    <% if (givenReviews.length > 0) { %>
+    <% givenReviews.forEach((reviewItem) => {
+    const projectId = reviewItem.projectId || ((reviewItem.project &&
+    reviewItem.project._id) || "");
+    const projectTitle = reviewItem.projectTitle || ((reviewItem.project
+    && reviewItem.project.title) || "Project");
+    const projectOwner = (reviewItem.project && reviewItem.project.owner)
+    || {};
+    const ownerUsername = projectOwner.username || projectOwner._id;
+    %>
+    <div class="review-list-item">
+      <div class="review-list-header">
+        <div class="review-project-link">
+          <i data-lucide="folder-git-2" width="16" height="16"
+            class="text-secondary"></i>
+          <a href="/projects/<%= projectId %>"><%= projectTitle %></a>
+        </div>
+        <div class="review-list-rating">
+          <i data-lucide="star" class="star filled" width="16"
+            height="16"></i>
+          <span><%= Number(reviewItem.overallRating || 0).toFixed(1)
+            %></span>
+        </div>
+      </div>
+
+      <div class="review-list-meta">
+        <span class="text-secondary">Project by</span>
+        <a href="/user/<%= ownerUsername %>"><%= projectOwner.name ||
+          "Developer" %></a>
+      </div>
+
+      <p class="review-list-feedback"><%= reviewItem.feedback ||
+        reviewItem.note || "No detailed feedback provided." %></p>
+
+      <div class="review-list-footer">
+        <span class="review-list-date">
+          <i data-lucide="clock" width="12" height="12"></i>
+          <%= new Date(reviewItem.createdAt).toLocaleDateString() %>
+        </span>
+        <% if (reviewItem.wouldHire) { %>
+        <span class="hire-badge positive">
+          <i data-lucide="check-circle" width="12" height="12"></i>
+          Would Hire
+        </span>
+        <% } else { %>
+        <span class="hire-badge negative">
+          <i data-lucide="x-circle" width="12" height="12"></i>
+          Would Not Hire
+        </span>
+        <% } %>
+      </div>
+    </div>
+    <% }) %>
+    <% } else { %>
+    <div class="empty-state">
+      <i data-lucide="message-square" class="empty-state-icon"></i>
+      <h3 class="empty-state-title">No reviews given</h3>
+      <p class="empty-state-description">Reviews you write will appear
+        here</p>
+    </div>
+    <% } %>
+  </div>
+  <% } %>
+</div>

@@ -1,0 +1,179 @@
+<div class="admin-dashboard">
+  <div class="page-header">
+    <h1>Admin Dashboard</h1>
+    <p class="text-secondary">Overview of DevRank platform activity</p>
+  </div>
+
+  <div class="admin-stats-grid">
+    <div class="admin-stat-card">
+      <div class="admin-stat-icon users"><i data-lucide="users" width="24"
+          height="24"></i></div>
+      <div class="admin-stat-content">
+        <div class="admin-stat-value"><%=
+          adminStats.totalUsers.toLocaleString() %></div>
+        <div class="admin-stat-label">Total Users</div>
+      </div>
+      <div class="admin-stat-trend positive">
+        <i data-lucide="trending-up" width="14" height="14"></i>
+        +<%= adminStats.newUsersToday %> today
+      </div>
+    </div>
+
+    <div class="admin-stat-card">
+      <div class="admin-stat-icon projects"><i data-lucide="folder-git-2"
+          width="24" height="24"></i></div>
+      <div class="admin-stat-content">
+        <div class="admin-stat-value"><%=
+          adminStats.totalProjects.toLocaleString() %></div>
+        <div class="admin-stat-label">Total Projects</div>
+      </div>
+    </div>
+
+    <div class="admin-stat-card">
+      <div class="admin-stat-icon reviews"><i data-lucide="message-square"
+          width="24" height="24"></i></div>
+      <div class="admin-stat-content">
+        <div class="admin-stat-value"><%=
+          adminStats.totalReviews.toLocaleString() %></div>
+        <div class="admin-stat-label">Total Reviews</div>
+      </div>
+      <div class="admin-stat-trend positive">
+        <i data-lucide="trending-up" width="14" height="14"></i>
+        +<%= adminStats.reviewsToday %> today
+      </div>
+    </div>
+
+    <div class="admin-stat-card">
+      <div class="admin-stat-icon certs"><i data-lucide="award" width="24"
+          height="24"></i></div>
+      <div class="admin-stat-content">
+        <div class="admin-stat-value"><%= adminStats.pendingCerts %></div>
+        <div class="admin-stat-label">Pending Certifications</div>
+      </div>
+      <a href="/admin/certifications" class="admin-stat-link">Review →</a>
+    </div>
+  </div>
+
+  <div class="admin-grid">
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <h2>
+          <i data-lucide="activity" width="18" height="18"></i>
+          Recent Activity
+        </h2>
+        <a href="/admin/logs" class="btn btn-secondary btn-sm">View
+          All</a>
+      </div>
+
+      <div class="activity-list">
+        <% recentActivity.forEach((activityItem) => { %>
+        <div class="activity-item">
+          <div class="activity-icon <%= activityItem.activityType %>">
+            <% if (activityItem.activityType === 'user') { %>
+            <i data-lucide="users" width="14" height="14"></i>
+            <% } else if (activityItem.activityType === 'project') { %>
+            <i data-lucide="folder-git-2" width="14" height="14"></i>
+            <% } else if (activityItem.activityType === 'cert') { %>
+            <i data-lucide="award" width="14" height="14"></i>
+            <% } else { %>
+            <i data-lucide="message-square" width="14" height="14"></i>
+            <% } %>
+          </div>
+          <div class="activity-content">
+            <p><strong><%= activityItem.actorName %></strong> · <%=
+              activityItem.actionLabel %> · <%= activityItem.targetLabel
+              %></p>
+            <span class="activity-time">
+              <i data-lucide="clock" width="12" height="12"></i>
+              <%= activityItem.timestamp %>
+            </span>
+          </div>
+        </div>
+        <% }) %>
+
+        <% if (!recentActivity || recentActivity.length === 0) { %>
+        <div class="empty-state-small">
+          <p>No recent activity</p>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <h2>
+          <i data-lucide="award" width="18" height="18"></i>
+          Pending Certifications
+        </h2>
+        <a href="/admin/certifications"
+          class="btn btn-secondary btn-sm">View All</a>
+      </div>
+
+      <% if (pendingCerts.length > 0) { %>
+      <div class="pending-certs-list">
+        <% pendingCerts.forEach((requestItem) => { %>
+        <div class="pending-cert-item">
+          <div class="pending-cert-user">
+            <div class="avatar avatar-sm"><%= (requestItem.name ||
+              'U').charAt(0) %></div>
+            <div>
+              <div class="pending-cert-name"><%= requestItem.name %></div>
+              <div class="text-muted">@<%= requestItem.username %></div>
+            </div>
+          </div>
+          <div class="pending-cert-actions">
+            <span class="pending-cert-date">Applied <%=
+              requestItem.submittedAt %></span>
+            <form
+              action="/admin/certifications/<%= requestItem._id %>/approve"
+              method="post" style="display:inline">
+              <button class="btn btn-success btn-sm" type="submit">
+                <i data-lucide="check-circle" width="14" height="14"></i>
+              </button>
+            </form>
+            <form
+              action="/admin/certifications/<%= requestItem._id %>/reject"
+              method="post" style="display:inline">
+              <button class="btn btn-danger btn-sm" type="submit">
+                <i data-lucide="alert-circle" width="14" height="14"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } else { %>
+      <div class="empty-state-small"><p>No pending
+          certifications</p></div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <div class="admin-card-header"><h2>Quick Actions</h2></div>
+    <div class="quick-actions">
+      <a href="/admin/certifications" class="quick-action">
+        <i data-lucide="award" width="20" height="20"></i>
+        <span>Manage Certifications</span>
+      </a>
+      <% if (isSuperAdmin) { %>
+      <a href="/admin/users" class="quick-action">
+        <i data-lucide="user-cog" width="20" height="20"></i>
+        <span>Manage Users</span>
+      </a>
+      <% } %>
+      <a href="/admin/logs" class="quick-action">
+        <i data-lucide="activity" width="20" height="20"></i>
+        <span>View Activity Logs</span>
+      </a>
+      <a href="/admin/skills" class="quick-action">
+        <i data-lucide="settings" width="20" height="20"></i>
+        <span>Manage Skills</span>
+      </a>
+      <a href="/explore?q=&status=all&developers=1" class="quick-action">
+        <i data-lucide="users" width="20" height="20"></i>
+        <span>Browse Users</span>
+      </a>
+    </div>
+  </div>
+</div>

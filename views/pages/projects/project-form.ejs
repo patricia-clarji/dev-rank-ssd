@@ -1,0 +1,118 @@
+<%
+const isEditMode = formMode === "edit";
+const selectedTechStack = (project && project.techStack) || [];
+%>
+<div class="create-project-page">
+  <div class="container-narrow">
+    <div class="page-header">
+      <h1><%= isEditMode ? 'Edit Project' : 'Create New Project' %></h1>
+      <p class="text-secondary"><%= isEditMode ?
+        'Update your project details' : '' %></p>
+    </div>
+
+    <form
+      action="<%= isEditMode ? ('/projects/' + project._id + '/edit') : '/projects' %>"
+      method="post">
+      <div class="form-section">
+        <div class="form-group">
+          <label class="form-label">Project Title *</label>
+          <input type="text" name="title" class="form-input"
+            value="<%= project ? project.title : '' %>" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description *</label>
+          <textarea name="description" class="form-textarea" rows="6"
+            required><%= project ? project.description : '' %></textarea>
+          <span class="form-hint">Provide a detailed description to help
+            reviewers understand your project</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Repository URL</label>
+          <input type="url" name="repoUrl" class="form-input"
+            value="<%= project && project.repoUrl ? project.repoUrl : '' %>"
+            placeholder="https://github.com/username/project" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Live Demo URL</label>
+          <input type="url" name="liveUrl" class="form-input"
+            value="<%= project && project.liveUrl ? project.liveUrl : '' %>"
+            placeholder="https://your-project.com" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tech Stack </label>
+          <div class="tech-stack-editor">
+            <div class="current-skills" data-skill-chip-group>
+              <% selectedTechStack.forEach((tech) => { %>
+              <span class="skill-tag" data-skill-chip>
+                <%= tech %>
+                <button type="button" class="skill-remove"
+                  data-skill-remove title="Remove tech">
+                  <i data-lucide="x" width="12" height="12"></i>
+                </button>
+              </span>
+              <% }) %>
+
+              <button type="button" class="btn btn-sm btn-outline"
+                data-skill-picker-toggle>
+                <i data-lucide="plus" width="14" height="14"></i>
+                Add tech
+              </button>
+            </div>
+
+            <input type="hidden" name="techStackCsv"
+              value="<%= selectedTechStack.join(', ') %>"
+              data-skill-input />
+
+            <div class="skill-picker hidden" data-skill-picker-panel>
+              <div class="skill-picker-header">
+                <span>Select tech</span>
+                <button type="button" class="btn btn-link"
+                  data-skill-picker-close>
+                  <i data-lucide="x" width="16" height="16"></i>
+                </button>
+              </div>
+              <div class="skill-picker-list">
+                <% (skills || []).forEach((skillOption) => { %>
+                <button type="button" class="skill-option"
+                  data-skill-option
+                  data-skill-value="<%= skillOption.name %>">
+                  <span><%= skillOption.name %></span>
+                  <span class="text-muted text-sm"><%=
+                    skillOption.category || 'General' %></span>
+                </button>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <% if (project && project.status === 'reviewed') { %>
+          <input type="hidden" name="status" value="reviewed" />
+          <div class="status-display">
+            <span class="text-muted">Reviewed</span>
+          </div>
+          <% } else { %>
+          <select name="status" class="form-select">
+            <option value="seeking-review" <%= project && project.status === 'seeking-review' ? 'selected' : '' %>>Seeking Review</option>
+            <option value="draft" <%= project && project.status === 'draft' ? 'selected' : '' %>>Draft</option>
+          </select>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="/projects" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          <i data-lucide="save" width="16" height="16"></i>
+          <%= isEditMode ? 'Save Changes' : 'Create Project' %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

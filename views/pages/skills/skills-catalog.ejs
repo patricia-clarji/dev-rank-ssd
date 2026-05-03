@@ -1,0 +1,85 @@
+<div class="skills-page">
+  <div class="page-header">
+    <h1>Skills</h1>
+    <p class="text-secondary">Browse skills and find developers</p>
+  </div>
+
+  <form class="skills-toolbar" action="/skills" method="get">
+    <div class="search-box">
+      <i data-lucide="search" width="18" height="18"
+        class="search-icon"></i>
+      <input type="text" name="q" value="<%= skillSearchQuery || '' %>"
+        placeholder="Search skills..." />
+    </div>
+    <div class="category-pills">
+      <% (categoryPills || []).forEach((pill) => { %>
+      <a href="<%= pill.href %>"
+        class="category-pill <%= pill.isActive ? 'active' : '' %>"><%=
+        pill.label %></a>
+      <% }) %>
+    </div>
+  </form>
+
+  <% if (isShowingAll) { %>
+  <% if (Object.keys(groupedSkills || {}).length > 0) { %>
+  <% Object.keys(groupedSkills).forEach((categoryName) => { %>
+  <div class="skill-group">
+    <h2 class="skill-group-title"><%= categoryName %></h2>
+    <div class="skills-grid">
+      <% groupedSkills[categoryName].forEach((skillItem) => { %>
+      <a href="/skills/<%= skillItem._id %>" class="skill-card">
+        <div class="skill-card-icon">
+          <i data-lucide="code" width="24" height="24"></i>
+        </div>
+        <div class="skill-card-content">
+          <h3><%= skillItem.name %></h3>
+          <span class="skill-card-stat">
+            <i data-lucide="users" width="14" height="14"></i>
+            <%= skillItem.developerCount.toLocaleString() %> developers
+          </span>
+        </div>
+        <i data-lucide="chevron-right" width="16" height="16"
+          class="skill-card-arrow"></i>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+  <% }) %>
+  <% } else { %>
+  <div class="empty-state">
+    <i data-lucide="search" class="empty-state-icon"></i>
+    <p class="empty-state-title">No skills match your search</p>
+    <p class="empty-state-description">Try a different keyword or category
+      to find relevant skills and developers.</p>
+  </div>
+  <% } %>
+  <% } else { %>
+  <% if ((skills || []).length > 0) { %>
+  <div class="skills-grid">
+    <% skills.forEach((skillItem) => { %>
+    <a href="/skills/<%= skillItem._id %>" class="skill-card">
+      <div class="skill-card-icon">
+        <i data-lucide="code" width="24" height="24"></i>
+      </div>
+      <div class="skill-card-content">
+        <h3><%= skillItem.name %></h3>
+        <span class="skill-card-stat">
+          <i data-lucide="users" width="14" height="14"></i>
+          <%= skillItem.developerCount.toLocaleString() %> developers
+        </span>
+      </div>
+      <i data-lucide="chevron-right" width="16" height="16"
+        class="skill-card-arrow"></i>
+    </a>
+    <% }) %>
+  </div>
+  <% } else { %>
+  <div class="empty-state">
+    <i data-lucide="search" class="empty-state-icon"></i>
+    <p class="empty-state-title">No skills found in this category</p>
+    <p class="empty-state-description">Try selecting a different category
+      or search for specific skills.</p>
+  </div>
+  <% } %>
+  <% } %>
+</div>

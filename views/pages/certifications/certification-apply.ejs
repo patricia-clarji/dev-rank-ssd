@@ -1,0 +1,106 @@
+<div class="apply-certification-page">
+  <a href="/certifications" class="btn btn-secondary btn-sm mb-4">
+    <i data-lucide="arrow-left" width="16" height="16"></i>
+    Back to Certifications
+  </a>
+
+  <div class="page-header">
+    <h1>Apply for Certification</h1>
+  </div>
+
+  <% if (certificationErrorMessage) { %>
+  <div class="toast toast-error" style="margin-bottom: var(--spacing-4);">
+    <i data-lucide="alert-circle" width="16" height="16"></i>
+    <span><%= certificationErrorMessage %></span>
+  </div>
+  <% } %>
+
+  <div class="apply-info">
+    <h2>
+      <i data-lucide="award" width="20" height="20"></i>
+      Before You Apply
+    </h2>
+    <p>
+      Make sure you meet all the requirements. Your application will be
+      reviewed by our admins
+      within 3-5 business days. You'll receive an email notification once
+      a decision is made.
+    </p>
+  </div>
+
+  <form action="/certifications/apply" method="post">
+    <div class="form-group">
+      <label class="form-label">
+        <i data-lucide="briefcase" width="16" height="16"
+          style="margin-right: 8px"></i>
+        Years of Experience *
+      </label>
+
+      <select name="experience" class="form-select" required>
+        <option value>Select your experience level</option>
+        <option value="1-2" <%=ownCertification &&
+          ownCertification.experience === '1-2' ? 'selected' : '' %>>1-2
+          years</option>
+        <option value="3-5" <%=ownCertification &&
+          ownCertification.experience === '3-5' ? 'selected' : '' %>>3-5
+          years</option>
+        <option value="5-10" <%=ownCertification &&
+          ownCertification.experience === '5-10' ? 'selected' : '' %>>5-10
+          years</option>
+        <option value="10+" <%=ownCertification &&
+          ownCertification.experience === '10+' ? 'selected' : '' %>>10+
+          years</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">
+        <i data-lucide="code" width="16" height="16"
+          style="margin-right: 8px"></i>
+        Areas of Expertise *
+      </label>
+      <input
+        type="text"
+        name="techExpertiseCsv"
+        class="form-input"
+        placeholder="e.g., React, Node.js, System Design, Testing"
+        value="<%= ownCertification && ownCertification.techExpertise ? ownCertification.techExpertise.join(', ') : '' %>"
+        required />
+      <span class="form-hint">List the technologies and areas you can
+        review confidently</span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">
+        <i data-lucide="file-text" width="16" height="16"
+          style="margin-right: 8px"></i>
+        Why do you want to become a reviewer? *
+      </label>
+      <textarea name="motivation" class="form-textarea" rows="5"
+        placeholder="Tell us about your motivation for becoming a certified reviewer..."
+        required><%= ownCertification && ownCertification.motivation ? ownCertification.motivation : '' %></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Portfolio URL (optional)</label>
+      <input type="url" name="cvUrl" class="form-input"
+        placeholder="https://your-portfolio.com"
+        value="<%= ownCertification && ownCertification.cvUrl ? ownCertification.cvUrl : '' %>" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">LinkedIn Profile (optional)</label>
+      <input type="url" name="linkedinProfile" class="form-input"
+        placeholder="https://linkedin.com/in/yourprofile"
+        value="<%= ownCertification && ownCertification.linkedinProfile ? ownCertification.linkedinProfile : '' %>" />
+    </div>
+
+    <div class="form-actions">
+      <a href="/certifications" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        <i data-lucide="send" width="16" height="16"></i>
+        Submit Application
+      </button>
+    </div>
+  </form>
+</div>

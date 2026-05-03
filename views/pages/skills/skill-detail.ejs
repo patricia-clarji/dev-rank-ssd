@@ -1,0 +1,122 @@
+<div class="skill-detail-page">
+  <a href="/skills" class="btn btn-secondary btn-sm mb-4">
+    <i data-lucide="arrow-left" width="16" height="16"></i>
+    Back to Skills
+  </a>
+
+  <div class="skill-detail-header">
+    <div class="skill-icon-large">
+      <i data-lucide="code" width="40" height="40"></i>
+    </div>
+    <div class="skill-detail-info">
+      <h1><%= skill.name %></h1>
+      <div class="tag-list">
+        <% (Array.isArray(skill.category) ? skill.category :
+        [skill.category || 'General']).forEach((category) => { %>
+        <span class="tag"><%= String(category || 'General').toUpperCase()
+          %></span>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+  <div class="skill-stats-row">
+    <div class="stat-card">
+      <div class="stat-value"><%= totalDevelopers.toLocaleString()
+        %></div>
+      <div class="stat-label">Developers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><%= totalProjects.toLocaleString() %></div>
+      <div class="stat-label">Projects</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><%= Number(averageRating || 0).toFixed(1) %></div>
+      <div class="stat-label">Avg Rating</div>
+    </div>
+  </div>
+
+  <div class="developers-table-section">
+    <h2>Top Developers</h2>
+    <% if ((topDevelopers || []).length > 0) { %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Developer</th>
+          <th>Rating</th>
+          <th>Projects</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% topDevelopers.forEach((developer) => { %>
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <div class="avatar avatar-sm"><%= developer.name.charAt(0)
+                %></div>
+              <div>
+                <div><%= developer.name %></div>
+                <div class="text-muted" style="font-size: 0.75rem">@<%=
+                  developer.username %></div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 4px">
+              <i data-lucide="star" width="14" height="14" class="filled"
+                style="color: var(--color-warning-fg)"></i>
+              <%= Number(developer.profileScore || 0).toFixed(1) %>
+            </div>
+          </td>
+          <td><%= developer.projects != null ? developer.projects : '0' %>
+            projects</td>
+          <td>
+            <a
+              href="<%= developer.profileUrl || ('/user/' + developer._id) %>"
+              class="btn btn-secondary btn-sm">View Profile</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } else { %>
+    <div class="empty-state">
+      <i data-lucide="users" class="empty-state-icon"></i>
+      <p class="empty-state-title">No developers found for this skill</p>
+      <p class="empty-state-description">Try another skill or explore the
+        full developer directory.</p>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="developers-table-section">
+    <h2>Recent Projects</h2>
+    <% if ((recentProjects || []).length > 0) { %>
+    <div class="skills-grid">
+      <% recentProjects.forEach((projectItem) => { %>
+      <a href="/projects/<%= projectItem._id %>" class="skill-card">
+        <div class="skill-card-icon">
+          <i data-lucide="folder-git-2" width="24" height="24"></i>
+        </div>
+        <div class="skill-card-content">
+          <h3><%= projectItem.title %></h3>
+          <span class="skill-card-stat">
+            <i data-lucide="star" width="14" height="14"></i>
+            <%= Number(projectItem.averageRating || 0).toFixed(1) %> · by
+            @<%= projectItem.owner ? (projectItem.owner.username || projectItem.owner._id) : 'Unknown' %>
+          </span>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="empty-state">
+      <i data-lucide="folder-git-2" class="empty-state-icon"></i>
+      <p class="empty-state-title">No recent projects</p>
+      <p class="empty-state-description">Projects using this skill will
+        appear here.</p>
+    </div>
+    <% } %>
+  </div>
+</div>

@@ -1,0 +1,230 @@
+<div class="dashboard">
+  <div class="dashboard-welcome">
+    <div class="welcome-text">
+      <h1>Welcome back, <%= firstName %>!</h1>
+      <p class="text-secondary">Here's what's happening with your
+        portfolio</p>
+    </div>
+    <div class="welcome-actions">
+      <a href="/projects/new" class="btn btn-primary">
+        <i data-lucide="plus" width="16" height="16"></i>
+        New Project
+      </a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon"
+        style="background-color: var(--color-accent-subtle); color: var(--color-accent-fg)">
+        <i data-lucide="folder-git-2" width="24" height="24"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value"><%= (projects || []).length %></span>
+        <span class="stat-label">Projects</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"
+        style="background-color: var(--color-success-subtle); color: var(--color-success-fg)">
+        <i data-lucide="message-square" width="24" height="24"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value"><%= (reviews || []).length %></span>
+        <span class="stat-label">Reviews Received</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"
+        style="background-color: var(--color-warning-subtle); color: var(--color-warning-fg)">
+        <i data-lucide="star" width="24" height="24"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value"><%= Number(currentUser.profileScore ||
+          0).toFixed(1) %></span>
+        <span class="stat-label">Profile Score</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"
+        style="background-color: color-mix(in srgb, var(--color-scale-purple-5) 20%, transparent);">
+        <i data-lucide="trending-up" width="24" height="24"
+          style="color: var(--color-scale-purple-5)"></i>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value"><%= hireRate %>%</span>
+        <span class="stat-label">Would Hire Rate</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="dashboard-section">
+      <div class="section-header">
+        <h2>Your Projects</h2>
+        <a href="/projects" class="btn btn-link">
+          View all
+          <i data-lucide="arrow-right" width="14" height="14"></i>
+        </a>
+      </div>
+      <div class="box">
+        <% (projects || []).forEach((project) => { %>
+        <a href="/projects/<%= project._id %>" class="project-row">
+          <div class="project-info">
+            <div class="project-title">
+              <i data-lucide="folder-git-2" width="16" height="16"
+                class="text-secondary"></i>
+              <span><%= project.title %></span>
+              <span class="<%= project.statusClass %>"><%=
+                project.statusLabel %></span>
+            </div>
+            <p class="project-desc"><%= project.description %></p>
+            <div class="project-meta">
+              <div class="project-stack">
+                <% (project.techStack || []).slice(0, 3).forEach((tech) =>
+                { %>
+                <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
+                <% }) %>
+                <% if ((project.techStack || []).length > 3) { %>
+                <span class="text-muted">+<%= (project.techStack ||
+                  []).length - 3 %></span>
+                <% } %>
+              </div>
+            </div>
+          </div>
+          <div class="project-stats">
+            <% if (project.hasReviews) { %>
+            <div class="project-rating">
+              <i data-lucide="star" width="14" height="14"
+                class="star filled"></i>
+              <span><%= Number(project.averageRating).toFixed(1) %></span>
+            </div>
+            <span class="text-muted text-sm"><%= project.reviewCount %>
+              reviews</span>
+            <% } else { %>
+            <span class="text-muted text-sm">No reviews yet</span>
+            <% } %>
+          </div>
+        </a>
+        <% }) %>
+
+        <% if (!(projects || []).length) { %>
+        <div class="empty-state">
+          <i data-lucide="folder-git-2" class="empty-state-icon"></i>
+          <h3 class="empty-state-title">No projects yet</h3>
+          <p class="empty-state-description">Create your first project to
+            showcase your work and collect reviews.</p>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="dashboard-section">
+      <div class="section-header">
+        <h2>Recent Reviews</h2>
+        <a href="/reviews" class="btn btn-link">
+          View all
+          <i data-lucide="arrow-right" width="14" height="14"></i>
+        </a>
+      </div>
+      <div class="box">
+        <% if ((reviews || []).length > 0) { %>
+        <% (reviews || []).forEach((review) => { %>
+        <div class="review-row">
+          <div class="review-header">
+            <div class="avatar avatar-sm"><%= review.reviewerInitials
+              %></div>
+            <div class="review-meta">
+              <span class="review-reviewer"><%= review.reviewerName
+                %></span>
+              <span class="text-muted">reviewed</span>
+              <span class="review-project"><%= review.projectLabel
+                %></span>
+            </div>
+            <div class="review-rating">
+              <i data-lucide="star" width="14" height="14"
+                class="star filled"></i>
+              <span><%= Number(review.overallRating).toFixed(1) %></span>
+            </div>
+          </div>
+          <div class="review-footer">
+            <span class="text-muted text-sm">
+              <i data-lucide="clock" width="12" height="12"></i>
+              <%= review.formattedDate %>
+            </span>
+            <% if (review.wouldHire) { %>
+            <span class="hire-badge positive">
+              <i data-lucide="check-circle" width="12" height="12"></i>
+              Would Hire
+            </span>
+            <% } else { %>
+            <span class="hire-badge negative">
+              <i data-lucide="x-circle" width="12" height="12"></i>
+              Would Not Hire
+            </span>
+            <% } %>
+          </div>
+        </div>
+        <% }) %>
+        <% } else { %>
+        <div class="empty-state">
+          <i data-lucide="message-square" class="empty-state-icon"></i>
+          <h3 class="empty-state-title">No reviews yet</h3>
+          <p class="empty-state-description">Submit projects to get
+            reviewed by certified peers</p>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <% if (isReviewer) { %>
+  <div class="dashboard-section reviewer-section">
+    <div class="section-header">
+      <h2>Projects Seeking Review</h2>
+      <a href="/explore?status=seeking-review" class="btn btn-link">
+        Find more
+        <i data-lucide="arrow-right" width="14" height="14"></i>
+      </a>
+    </div>
+    <div class="box">
+      <div class="reviewer-cta">
+        <div class="reviewer-cta-content">
+          <i data-lucide="eye" width="32" height="32"
+            class="text-accent"></i>
+          <div>
+            <h3><%= numOfProjectsSeekingReview %> projects awaiting
+              review</h3>
+            <p class="text-secondary">As a certified reviewer, you can
+              help other developers improve their code</p>
+          </div>
+        </div>
+        <a href="/explore?status=seeking-review"
+          class="btn btn-secondary">Browse Projects</a>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="dashboard-quick-actions">
+    <h2>Quick Actions</h2>
+    <div class="quick-actions-grid">
+      <a href="/projects/new" class="quick-action-card">
+        <i data-lucide="plus" width="24" height="24"></i>
+        <span>New Project</span>
+      </a>
+      <a href="/profile/edit" class="quick-action-card">
+        <i data-lucide="trending-up" width="24" height="24"></i>
+        <span>Update Profile</span>
+      </a>
+      <a href="/skills" class="quick-action-card">
+        <i data-lucide="star" width="24" height="24"></i>
+        <span>Manage Skills</span>
+      </a>
+      <a href="/explore" class="quick-action-card">
+        <i data-lucide="eye" width="24" height="24"></i>
+        <span>Explore</span>
+      </a>
+    </div>
+  </div>
+</div>

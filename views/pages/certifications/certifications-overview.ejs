@@ -1,0 +1,154 @@
+<div class="certifications-page">
+  <div class="page-header">
+    <h1>Reviewer Certification</h1>
+    <p class="text-secondary">Become a certified code reviewer on
+      DevRank</p>
+  </div>
+
+  <div class="certification-status">
+    <div class="certification-status-header">
+      <i data-lucide="award" width="24" height="24"
+        class="text-accent"></i>
+      <h2>Your Status</h2>
+    </div>
+    <p>
+      <% if (certStatus === 'certified' || certStatus === 'approved') { %>
+      Congratulations! You are a certified reviewer and can review
+      projects on DevRank.
+      <% } else if (certStatus === 'pending') { %>
+      Your certification request is pending review. We will notify you
+      once it has been processed.
+      <% } else if (certStatus === 'rejected') { %>
+      Your latest request was rejected. You can improve your profile and
+      apply again.
+      <% } else { %>
+      You haven't applied for reviewer certification yet.
+      <% } %>
+    </p>
+
+    <% if (certStatus === 'certified' || certStatus === 'approved') { %>
+    <span class="status-badge-large certified">
+      <i data-lucide="check-circle" width="16" height="16"></i>
+      Certified Reviewer
+    </span>
+    <% } else if (certStatus === 'pending') { %>
+    <span class="status-badge-large pending">
+      <i data-lucide="clock" width="16" height="16"></i>
+      Pending Review
+    </span>
+    <% } else if (certStatus === 'rejected') { %>
+    <span class="status-badge-large rejected">
+      <i data-lucide="x-circle" width="16" height="16"></i>
+      Rejected
+    </span>
+    <% } else { %>
+    <span class="status-badge-large not-applied">
+      <i data-lucide="shield" width="16" height="16"></i>
+      Not Applied
+    </span>
+    <% } %>
+
+    <% if (ownCertification) { %>
+    <div class="cert-request-section"
+      style="margin-top: var(--spacing-4);">
+      <h4>Current Application</h4>
+      <p><strong>Submitted:</strong> <%= ownCertification.submittedAt ||
+        'N/A' %></p>
+      <p><strong>Experience:</strong> <%= ownCertification.experience ||
+        'N/A' %></p>
+      <p><strong>Expertise:</strong> <%= (ownCertification.techExpertise
+        || []).join(', ') || 'N/A' %></p>
+      <% if (ownCertification.adminNotes) { %>
+      <p><strong>Admin Notes:</strong> <%= ownCertification.adminNotes
+        %></p>
+      <% } %>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="certification-benefits">
+    <h2>Benefits of Certification</h2>
+    <div class="benefits-grid">
+      <% certBenefits.forEach((benefit) => { %>
+      <div class="benefit-card">
+        <div class="benefit-icon">
+          <i data-lucide="<%= benefit.icon %>" width="20" height="20"></i>
+        </div>
+        <div class="benefit-content">
+          <h3><%= benefit.title %></h3>
+          <p><%= benefit.description %></p>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <% if (certStatus !== 'certified' && certStatus !== 'approved') { %>
+  <div class="certification-requirements">
+    <h2>Requirements</h2>
+    <div class="requirements-list">
+      <% certificationRequirements.forEach((requirement) => { %>
+      <div class="requirement-item">
+        <% if (requirement.met) { %>
+        <i data-lucide="check-circle" width="18" height="18"
+          class="requirement-check"></i>
+        <% } else { %>
+        <i data-lucide="x-circle" width="18" height="18"
+          class="requirement-x"></i>
+        <% } %>
+        <span class="requirement-text"><%= requirement.text %></span>
+      </div>
+      <% }) %>
+    </div>
+
+    <div style="margin-top: var(--spacing-4)">
+      <% if (certStatus === 'pending') { %>
+      <button class="btn btn-secondary" type="button" disabled>
+        <i data-lucide="clock" width="16" height="16"></i>
+        Application Pending Review
+      </button>
+      <% } else if (allRequirementsMet || certStatus === 'rejected' ||
+      certStatus === 'not-applied') { %>
+      <a href="/certifications/apply" class="btn btn-primary">
+        <i data-lucide="award" width="16" height="16"></i>
+        <%= certStatus === 'rejected' ? 'Apply Again' :
+        'Apply for Certification' %>
+      </a>
+      <% } else { %>
+      <a href="/certifications/apply" class="btn btn-primary">
+        <i data-lucide="award" width="16" height="16"></i>
+        Apply for Certification
+      </a>
+      <% } %>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (certStatus === 'certified') { %>
+  <div class="certification-benefits">
+    <h2>Your Review Activity</h2>
+    <div class="skill-stats-row">
+      <div class="stat-card">
+        <div class="stat-value"><%= reviewsGiven %></div>
+        <div class="stat-label">Reviews Given</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value stat-value-inline">
+          <i data-lucide="star" width="20" height="20"
+            class="stat-value-icon"></i>
+          <span><%= avgRatingGiven %></span>
+        </div>
+        <div class="stat-label">Avg Rating Given</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= wouldHireCount %></div>
+        <div class="stat-label">Would Hire</div>
+      </div>
+    </div>
+    <a href="/reviews" class="btn btn-secondary mt-3">
+      <i data-lucide="message-square" width="16" height="16"></i>
+      View My Reviews
+    </a>
+  </div>
+  <% } %>
+</div>

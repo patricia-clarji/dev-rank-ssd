@@ -1,0 +1,218 @@
+<div class="profile-page">
+  <div class="profile-container">
+    <aside class="profile-sidebar">
+      <div class="profile-avatar-section">
+        <div class="avatar avatar-xl">
+          <%= currentUserName.split(' ').map((part) =>
+          part[0]).join('').slice(0, 2).toUpperCase() %>
+        </div>
+        <div class="profile-score">
+          <i data-lucide="star" class="star filled" width="16"
+            height="16"></i>
+          <span><%= Number(currentUser.profileScore || 0).toFixed(1)
+            %></span>
+        </div>
+      </div>
+
+      <div class="profile-name-section">
+        <h1><%= currentUserName %></h1>
+        <p class="profile-username">@<%= currentUser.username ||
+          currentUser._id %></p>
+        <% if (currentUser.isSuperAdmin) { %>
+        <span class="badge badge-success">
+          <i data-lucide="shield" width="12" height="12"></i>
+          Super Admin
+        </span>
+        <% } else if (currentUser.role === 'admin') { %>
+        <span class="badge badge-success">
+          <i data-lucide="shield" width="12" height="12"></i>
+          Admin
+        </span>
+        <% } else if (isReviewer) { %>
+        <span class="badge badge-success">
+          <i data-lucide="check-circle" width="12" height="12"></i>
+          Certified Reviewer
+        </span>
+        <% } %>
+      </div>
+
+      <% if (currentUser.bio) { %>
+      <p class="profile-bio"><%= currentUser.bio %></p>
+      <% } %>
+
+      <a href="/profile/edit" class="btn btn-secondary btn-block">
+        <i data-lucide="edit" width="16" height="16"></i>
+        Edit profile
+      </a>
+
+      <div class="profile-details">
+        <% if (currentUser.company) { %>
+        <div class="profile-detail">
+          <i data-lucide="building" width="16" height="16"></i>
+          <span><%= currentUser.company %></span>
+        </div>
+        <% } %>
+        <% if (currentUser.location) { %>
+        <div class="profile-detail">
+          <i data-lucide="map-pin" width="16" height="16"></i>
+          <span><%= currentUser.location %></span>
+        </div>
+        <% } %>
+        <% if (currentUser.github) { %>
+        <div class="profile-detail">
+          <i data-lucide="github" width="16" height="16"></i>
+          <a href="<%= currentUser.github %>" target="_blank"
+            rel="noopener noreferrer"><%=
+            currentUser.github.replace('https://github.com/', '') %></a>
+        </div>
+        <% } %>
+        <% if (currentUser.linkedin) { %>
+        <div class="profile-detail">
+          <i data-lucide="linkedin" width="16" height="16"></i>
+          <a href="<%= currentUser.linkedin %>" target="_blank"
+            rel="noopener noreferrer">LinkedIn</a>
+        </div>
+        <% } %>
+        <% if (currentUser.website) { %>
+        <div class="profile-detail">
+          <i data-lucide="link" width="16" height="16"></i>
+          <a href="<%= currentUser.website %>" target="_blank"
+            rel="noopener noreferrer"><%=
+            currentUser.website.replace('https://', '') %></a>
+        </div>
+        <% } %>
+        <div class="profile-detail">
+          <i data-lucide="calendar" width="16" height="16"></i>
+          <span>
+            Joined
+            <%= currentUser.createdAt
+            ? new Date(currentUser.createdAt).toLocaleDateString('en-US',
+            { month: 'short', year: 'numeric' })
+            : 'N/A' %>
+          </span>
+        </div>
+      </div>
+
+      <% if (normalizedSkills.length > 0) { %>
+      <div class="profile-skills">
+        <h3>Skills</h3>
+        <div class="skills-list">
+          <% normalizedSkills.forEach((skillItem) => { %>
+          <a href="/skills/<%= encodeURIComponent(skillItem.name) %>" class="tag"><%= skillItem.name %></a>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+    </aside>
+
+    <main class="profile-main">
+      <div class="profile-stats-row">
+        <div class="profile-stat">
+          <i data-lucide="folder-git-2" width="20" height="20"></i>
+          <span class="stat-value"><%= (projects || []).length %></span>
+          <span class="stat-label">Projects</span>
+        </div>
+        <div class="profile-stat">
+          <i data-lucide="message-square" width="20" height="20"></i>
+          <span class="stat-value"><%= (reviews || []).length %></span>
+          <span class="stat-label">Reviews</span>
+        </div>
+        <div class="profile-stat">
+          <i data-lucide="star" width="20" height="20"></i>
+          <span class="stat-value"><%= Number(currentUser.profileScore ||
+            0).toFixed(1) %></span>
+          <span class="stat-label">Avg Rating</span>
+        </div>
+        <div class="profile-stat">
+          <i data-lucide="check-circle" width="20" height="20"></i>
+          <span class="stat-value"><%= hireRate %>%</span>
+          <span class="stat-label">Would Hire</span>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <div class="section-header">
+          <h2>Projects</h2>
+          <a href="/projects/new" class="btn btn-sm btn-secondary">New
+            project</a>
+        </div>
+
+        <div class="projects-grid">
+          <% (projects || []).forEach((project) => { %>
+          <a href="/projects/<%= project._id %>" class="project-card">
+            <div class="project-card-header">
+              <i data-lucide="folder-git-2" width="16" height="16"
+                class="text-secondary"></i>
+              <span class="project-card-title"><%= project.title %></span>
+            </div>
+            <p class="project-card-desc"><%= project.description %></p>
+            <div class="project-card-stack">
+              <% (project.techStack || []).slice(0, 3).forEach((tech) => {
+              %>
+              <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
+              <% }) %>
+            </div>
+            <div class="project-card-footer">
+              <% if ((project.reviewCount || 0) > 0) { %>
+              <span class="project-card-rating">
+                <i data-lucide="star" class="star filled" width="14"
+                  height="14"></i>
+                <%= Number(project.averageRating || 0).toFixed(1) %>
+              </span>
+              <span class="text-muted">•</span>
+              <span class="text-muted"><%= project.reviewCount %>
+                reviews</span>
+              <% } else { %>
+              <span class="text-muted">No reviews yet</span>
+              <% } %>
+            </div>
+          </a>
+          <% }) %>
+        </div>
+
+        <% if (!(projects || []).length) { %>
+        <div class="empty-state">
+          <i data-lucide="folder-git-2" class="empty-state-icon"></i>
+          <p class="empty-state-title">No projects yet</p>
+          <p class="empty-state-description">Create your first project to
+            showcase your work and collect reviews.</p>
+          <a href="/projects/new" class="btn btn-secondary">Create a
+            project</a>
+        </div>
+        <% } %>
+      </div>
+
+      <div class="profile-share">
+        <h3>Share your profile</h3>
+        <div class="share-url">
+          <input type="text" readonly value="<%= publicProfileUrl %>"
+            id="profileUrl" class="form-input" />
+          <button class="btn btn-secondary" type="button"
+            id="copyBtn">Copy</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script>
+const copyBtn = document.getElementById("copyBtn");
+const profileUrl = document.getElementById("profileUrl");
+
+copyBtn.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(profileUrl.value);
+
+    copyBtn.innerText = "Copied!";
+    setTimeout(() => {
+      copyBtn.innerText = "Copy";
+    }, 1500);
+
+  } catch (err) {
+    console.error("Copy failed:", err);
+
+    // fallback for older browsers
+    profileUrl.select();
+    document.execCommand("copy");
+  }
+});
+</script>

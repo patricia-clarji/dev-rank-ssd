@@ -1,0 +1,89 @@
+<div class="projects-page">
+  <div class="page-header">
+    <div>
+      <h1>Your Projects</h1>
+      <p class="text-secondary">Manage and track reviews for your
+        projects</p>
+    </div>
+    <a href="/projects/new" class="btn btn-primary">
+      <i data-lucide="plus" width="16" height="16"></i>
+      New project
+    </a>
+  </div>
+
+  <form action="/projects" method="get" class="projects-search">
+    <i data-lucide="search" width="20" height="20"
+      class="search-icon"></i>
+    <input type="text" name="q" value="<%= projectsSearchQuery || '' %>"
+      placeholder="Search projects..." />
+  </form>
+
+  <div class="projects-filters">
+    <% (filterCounts || []).forEach((filter) => { %>
+    <a
+      href="/projects?status=<%= filter.value %>&q=<%= encodeURIComponent(projectsSearchQuery || '') %>"
+      class="filter-tab <%= filter.isActive ? 'active' : '' %>"><%=
+      filter.label %> <span class="tab-count"><%= filter.count
+        %></span></a>
+    <% }) %>
+  </div>
+
+  <div class="projects-list">
+    <% (projects || []).forEach((project) => { %>
+    <a href="/projects/<%= project._id %>" class="project-list-item">
+      <div class="project-list-main">
+        <div class="project-list-header">
+          <i data-lucide="folder-git-2" width="16" height="16"
+            class="text-secondary"></i>
+          <h3 class="project-list-title"><%= project.title %></h3>
+          <span class="<%= project.statusClass %>">
+            <% if (project.status === 'reviewed') { %>
+            <i data-lucide="check-circle" width="12" height="12"></i>
+            <% } else if (project.status === 'seeking-review') { %>
+            <i data-lucide="eye" width="12" height="12"></i>
+            <% } %>
+            <%= project.statusLabel %>
+          </span>
+        </div>
+        <p class="project-list-desc"><%= project.description %></p>
+        <div class="project-list-meta">
+          <div class="project-list-stack">
+            <% (project.techStack || []).forEach((tech) => { %>
+            <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
+            <% }) %>
+          </div>
+
+        </div>
+      </div>
+      <div class="project-list-stats">
+        <% if ((project.reviewCount || 0) > 0) { %>
+        <div class="project-rating">
+          <i data-lucide="star" class="star filled" width="16"
+            height="16"></i>
+          <span><%= Number(project.averageRating || 0).toFixed(1)
+            %></span>
+        </div>
+        <span class="text-muted text-sm"><%= project.reviewCount %>
+          reviews</span>
+        <% } else { %>
+        <span class="text-muted text-sm">No reviews</span>
+        <% } %>
+        <span class="project-list-date">
+          <i data-lucide="clock" width="12" height="12"></i>
+          <%= project.formattedDate %>
+        </span>
+      </div>
+    </a>
+    <% }) %>
+
+    <% if (!(projects || []).length) { %>
+    <div class="empty-state">
+      <i data-lucide="folder-git-2" class="empty-state-icon"></i>
+      <p class="empty-state-title">No projects yet</p>
+      <p class="empty-state-description">Create your first project to
+        start collecting reviews and showcasing your work.</p>
+      <a href="/projects/new" class="btn btn-secondary">Add a project</a>
+    </div>
+    <% } %>
+  </div>
+</div>
