@@ -7,8 +7,10 @@ const { createUser } = require('../factories/userFactory');
 const { clearMongoCollection } = require('../helpers/db');
 
 describe('skillService', () => {
+    const testUserId = '507f1f77bcf86cd799439011'; // Dummy ObjectId for testing
+
     it('should create a skill successfully', async () => {
-      const skill = await skillService.createSkill({ name: 'NewSkill', category: ['frontend'], isPreset: true });
+      const skill = await skillService.createSkill({ name: 'NewSkill', category: ['frontend'], isPreset: true, userId: testUserId });
       expect(skill).toBeDefined();
       expect(skill.name).toBe('NewSkill');
       expect(skill.category).toContain('frontend');
@@ -16,8 +18,8 @@ describe('skillService', () => {
     });
 
     it('should get all skills with and without filters', async () => {
-      await skillService.createSkill({ name: 'SkillA', category: ['backend'], isPreset: true });
-      await skillService.createSkill({ name: 'SkillB', category: ['frontend'], isPreset: false });
+      await skillService.createSkill({ name: 'SkillA', category: ['backend'], isPreset: true, userId: testUserId });
+      await skillService.createSkill({ name: 'SkillB', category: ['frontend'], isPreset: false, userId: testUserId });
       const all = await skillService.getAllSkills({});
       expect(all.length).toBeGreaterThanOrEqual(2);
       const filtered = await skillService.getAllSkills({ category: 'backend' });
@@ -27,7 +29,7 @@ describe('skillService', () => {
     });
 
     it('should get a skill by id and throw if not found', async () => {
-      const skill = await skillService.createSkill({ name: 'SkillGet', category: ['backend'] });
+      const skill = await skillService.createSkill({ name: 'SkillGet', category: ['backend'], userId: testUserId });
       const found = await skillService.getSkill(skill._id.toString());
       expect(found).toBeDefined();
       expect(found.name).toBe('SkillGet');
@@ -35,7 +37,7 @@ describe('skillService', () => {
     });
 
     it('should get a skill by name and throw if not found', async () => {
-      await skillService.createSkill({ name: 'SkillByName', category: ['backend'] });
+      await skillService.createSkill({ name: 'SkillByName', category: ['backend'], userId: testUserId });
       const found = await skillService.getSkillByName('SkillByName');
       expect(found).toBeDefined();
       expect(found.name).toBe('SkillByName');
@@ -43,22 +45,22 @@ describe('skillService', () => {
     });
 
     it('should update a skill and handle duplicate name and not found', async () => {
-      const skill1 = await skillService.createSkill({ name: 'SkillUp1', category: ['backend'] });
-      const skill2 = await skillService.createSkill({ name: 'SkillUp2', category: ['frontend'] });
-      const updated = await skillService.updateSkill(skill1._id.toString(), { name: 'SkillUp1New', category: ['backend'], isPreset: false });
+      const skill1 = await skillService.createSkill({ name: 'SkillUp1', category: ['backend'], userId: testUserId });
+      const skill2 = await skillService.createSkill({ name: 'SkillUp2', category: ['frontend'], userId: testUserId });
+      const updated = await skillService.updateSkill(skill1._id.toString(), { name: 'SkillUp1New', category: ['backend'], isPreset: false, userId: testUserId });
       expect(updated.name).toBe('SkillUp1New');
-      await expect(skillService.updateSkill(skill2._id.toString(), { name: 'SkillUp1New' })).rejects.toThrow(AppError);
-      await expect(skillService.updateSkill('000000000000000000000000', { name: 'NoSkill' })).rejects.toThrow('Skill not found');
+      await expect(skillService.updateSkill(skill2._id.toString(), { name: 'SkillUp1New', userId: testUserId })).rejects.toThrow(AppError);
+      await expect(skillService.updateSkill('000000000000000000000000', { name: 'NoSkill', userId: testUserId })).rejects.toThrow('Skill not found');
     });
 
     it('should delete a skill and throw if not found', async () => {
-      const skill = await skillService.createSkill({ name: 'SkillDel2', category: ['backend'] });
-      await expect(skillService.deleteSkill(skill._id.toString())).resolves.toBeUndefined();
-      await expect(skillService.deleteSkill('000000000000000000000000')).rejects.toThrow('Skill not found');
+      const skill = await skillService.createSkill({ name: 'SkillDel2', category: ['backend'], userId: testUserId });
+      await expect(skillService.deleteSkill(skill._id.toString(), testUserId)).resolves.toBeUndefined();
+      await expect(skillService.deleteSkill('000000000000000000000000', testUserId)).rejects.toThrow('Skill not found');
     });
 
     it('should update skill by name successfully', async () => {
-      await skillService.createSkill({ name: 'SkillByNameUp', category: ['backend'] });
+      await skillService.createSkill({ name: 'SkillByNameUp', category: ['backend'], userId: testUserId });
       const updated = await skillService.updateSkillByName('SkillByNameUp', { name: 'SkillByNameUpNew', category: ['backend'], isPreset: true });
       expect(updated.name).toBe('SkillByNameUpNew');
       expect(updated.isPreset).toBe(true);
@@ -70,7 +72,7 @@ describe('skillService', () => {
 
   it('should not allow duplicate skill creation', async () => {
     await createSkill({ name: 'UniqueSkill', category: ['backend'] });
-    await expect(skillService.createSkill({ name: 'UniqueSkill', category: ['backend'] })).rejects.toThrow(AppError);
+    await expect(skillService.createSkill({ name: 'UniqueSkill', category: ['backend'], userId: testUserId })).rejects.toThrow(AppError);
   });
 
   it('should update skill by name and handle duplicate name', async () => {

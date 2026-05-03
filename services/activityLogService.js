@@ -6,6 +6,7 @@ const User = require("../models/mongo/User");
 const Project = require("../models/mongo/Project");
 const Review = require("../models/mongo/Review");
 const CertificationRequest = require("../models/mongo/CertificationRequest");
+const Skill = require("../models/mongo/Skill");
 const { isObjectId, toActionLabel } = require("../utils/stringUtils");
 
 
@@ -96,6 +97,7 @@ exports.buildFriendlyActivityLogs = async (logs) => {
   const projectIds = new Set();
   const reviewIds = new Set();
   const certificationIds = new Set();
+  const skillIds = new Set();
 
   logs.forEach((log) => {
     if (isObjectId(log.userId)) userIds.add(String(log.userId));
@@ -104,6 +106,7 @@ exports.buildFriendlyActivityLogs = async (logs) => {
     if (entity === "project" && isObjectId(log.entityId)) projectIds.add(String(log.entityId));
     if (entity === "review" && isObjectId(log.entityId)) reviewIds.add(String(log.entityId));
     if (entity === "certificationrequest" && isObjectId(log.entityId)) certificationIds.add(String(log.entityId));
+    if (entity === "skill" && isObjectId(log.entityId)) skillIds.add(String(log.entityId));
     if (entity === "user" && isObjectId(log.entityId)) userIds.add(String(log.entityId));
 
     const metadata = log.metadata || {};
@@ -112,7 +115,7 @@ exports.buildFriendlyActivityLogs = async (logs) => {
     if (isObjectId(metadata.targetId)) userIds.add(String(metadata.targetId));
   });
 
-  const [users, projects, reviews, certifications] = await Promise.all([
+  const [users, projects, reviews, certifications, skills] = await Promise.all([
     userIds.size > 0
       ? User.find({ _id: { $in: Array.from(userIds) } }).select("name username")
       : [],
@@ -127,12 +130,16 @@ exports.buildFriendlyActivityLogs = async (logs) => {
     certificationIds.size > 0
       ? CertificationRequest.find({ _id: { $in: Array.from(certificationIds) } }).populate("user", "name username")
       : [],
+    skillIds.size > 0
+      ? Skill.find({ _id: { $in: Array.from(skillIds) } }).select("name category")
+      : [],
   ]);
 
   const userMap = new Map(users.map((user) => [String(user._id), user]));
   const projectMap = new Map(projects.map((project) => [String(project._id), project]));
   const reviewMap = new Map(reviews.map((review) => [String(review._id), review]));
   const certMap = new Map(certifications.map((request) => [String(request._id), request]));
+  const skillMap = new Map(skills.map((skill) => [String(skill._id), skill]));
 
   return logs.map((log) => {
     const metadata = log.metadata || {};
@@ -162,6 +169,11 @@ exports.buildFriendlyActivityLogs = async (logs) => {
     if (!targetLabel && entity === "user") {
       const targetUser = userMap.get(String(log.entityId || metadata.targetId || ""));
       targetLabel = targetUser ? (targetUser.name || targetUser.username) : "User";
+    }
+
+    if (!targetLabel && entity === "skill") {
+      const skill = skillMap.get(String(log.entityId || ""));
+      targetLabel = skill ? skill.name : "Skill";
     }
 
     const entityLabel = entity === "certificationrequest" 

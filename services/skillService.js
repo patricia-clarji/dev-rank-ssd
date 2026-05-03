@@ -3,13 +3,19 @@ const Skill = require("../models/mongo/Skill");
 const User = require("../models/mongo/User");
 const AppError = require("../utils/AppError");
 const ERROR_CODES = require("../utils/errorCodes");
+const skillLogger = require("../loggers/skillLogger");
 
-exports.createSkill = async ({ name, category, isPreset }) => {
+exports.createSkill = async ({ name, category, isPreset, userId }) => {
   const existing = await Skill.findOne({ name: { $regex: `^${name}$`, $options: "i" } });
   if (existing) {
     throw new AppError("A skill with this name already exists.", 409, ERROR_CODES.DUPLICATE);
   }
-  return await Skill.create({ name, category, isPreset: isPreset || false });
+  const skill = await Skill.create({ name, category, isPreset: isPreset || false });
+
+  // Log skill creation
+  skillLogger.logSkillCreated(userId.toString(), skill._id.toString(), skill.name, skill.category);
+
+  return skill;
 };
 
 exports.getAllSkills = async ({ category, preset }) => {
@@ -64,7 +70,7 @@ exports.getSkillByName = async (name) => {
   return skill;
 };
 
-exports.updateSkill = async (skillId, { name, category, isPreset }) => {
+exports.updateSkill = async (skillId, { name, category, isPreset, userId }) => {
   if (name) {
     const existing = await Skill.findOne({
       name: { $regex: `^${name}$`, $options: "i" },
@@ -86,6 +92,9 @@ exports.updateSkill = async (skillId, { name, category, isPreset }) => {
     throw new AppError("Skill not found.", 404, ERROR_CODES.NOT_FOUND);
   }
 
+  // Log skill update
+  skillLogger.logSkillUpdated(userId.toString(), skill._id.toString(), skill.name, skill.category);
+
   return skill;
 };
 
@@ -97,12 +106,15 @@ async function cleanupSkillData(skillId) {
   );
 }
 
-exports.deleteSkill = async (skillId) => {
+exports.deleteSkill = async (skillId, userId) => {
   const skill = await Skill.findByIdAndDelete(skillId);
   if (!skill) {
     throw new AppError("Skill not found.", 404, ERROR_CODES.NOT_FOUND);
   }
   await cleanupSkillData(skill._id);
+
+  // Log skill deletion
+  skillLogger.logSkillDeleted(userId.toString(), skill._id.toString(), skill.name, skill.category);
 };
 
 

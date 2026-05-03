@@ -338,6 +338,7 @@ exports.createSkill = async (req, res) => {
       name: String(name || "").trim(),
       category: categories,
       isPreset: isPreset === "on" || isPreset === true,
+      userId: req.currentUser._id,
     });
 
     return res.redirect("/admin/skills");
@@ -389,6 +390,7 @@ exports.updateSkill = async (req, res) => {
       name: String(name || "").trim(),
       category: categories,
       isPreset: isPreset === "on" || isPreset === true,
+      userId: req.currentUser._id,
     });
 
     return res.redirect("/admin/skills");
@@ -400,7 +402,7 @@ exports.updateSkill = async (req, res) => {
 exports.deleteSkill = async (req, res) => {
   try {
     const skillService = require("../services/skillService");
-    await skillService.deleteSkill(req.params.id);
+    await skillService.deleteSkill(req.params.id, req.currentUser._id);
     return res.redirect("/admin/skills");
   } catch (error) {
     return handleControllerError(error, res, "/admin/skills", "Delete skill failed:");
