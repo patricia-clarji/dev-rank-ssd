@@ -6,7 +6,7 @@ const mapperService = require("../services/mapperService");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
 const certificationService = require("../services/certificationService");
 const reviewsListViewModel = require("../utils/viewModels/reviewsListViewModel");
-const { parseCsv } = require("../utils/stringUtils");
+const { parseCsv, sanitizeText } = require("../utils/stringUtils");
 const {
   fetchUserData,
   handleControllerError,
@@ -28,7 +28,7 @@ function getReviewPayload(body) {
     creativityScore,
     cleanCodeScore,
     wouldHire: body.wouldHire === "yes",
-    generalFeedback: body.generalFeedback,
+    generalFeedback: sanitizeText(body.generalFeedback),
     suggestions: parseCsv(body.suggestionsCsv),
     status: REVIEW_STATUSES.PUBLISHED,
   };

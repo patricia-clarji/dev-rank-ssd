@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const User = require("../models/mongo/User");
 const userService = require("../services/userService");
 const AppError = require("../utils/AppError");
+const { normalizeUsername, isValidUsername } = require("../utils/stringUtils");
 
 const PASSWORD_REQUIREMENTS = Object.freeze([
   {
@@ -55,6 +56,7 @@ const AUTH_ERROR_CODES = Object.freeze({
   PASSWORD_MISMATCH: "AUTH_PASSWORD_MISMATCH",
   PASSWORD_WEAK: "AUTH_PASSWORD_WEAK",
   EMAIL_EXISTS: "AUTH_EMAIL_EXISTS",
+  INVALID_USERNAME: "AUTH_INVALID_USERNAME",
   INVALID_TOKEN: "AUTH_INVALID_TOKEN",
 });
 
@@ -107,9 +109,18 @@ async function registerWithCredentials({ username, name, email, password, confir
     throw createAuthError(PASSWORD_REQUIREMENTS_MESSAGE, 400, AUTH_ERROR_CODES.PASSWORD_WEAK);
   }
 
+  const normalizedUsername = normalizeUsername(username);
+  if (username && !isValidUsername(normalizedUsername)) {
+    throw createAuthError(
+      "Username may only contain letters, numbers, underscores, and hyphens, and must be 3-30 characters long.",
+      400,
+      AUTH_ERROR_CODES.INVALID_USERNAME
+    );
+  }
+
   try {
     return await userService.registerUser({
-      username,
+      username: normalizedUsername || undefined,
       name: normalizedName,
       email: normalizedEmail,
       password: candidatePassword,
@@ -217,6 +228,7 @@ const errorMessages = {
   email_exists: "This email is already registered",
   server_error: "An error occurred. Please try again",
   user_exists: "Username already taken",
+  invalid_username: "Username may only contain letters, numbers, underscores, and hyphens, and must be 3-30 characters long.",
   invalid_token: "Invalid or expired reset token",
 };
 

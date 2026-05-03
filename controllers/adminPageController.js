@@ -333,8 +333,8 @@ exports.createSkill = async (req, res) => {
     const categories = Array.isArray(category) ? category : [category].filter(Boolean);
 
     await skillService.createSkill({
-      name: String(name || "").trim(),
-      category: categories,
+      name: sanitizeText(name),
+      category: categories.map((item) => sanitizeText(item)).filter(Boolean),
       isPreset: isPreset === "on" || isPreset === true,
       userId: req.currentUser._id,
     });
@@ -384,8 +384,8 @@ exports.updateSkill = async (req, res) => {
     const categories = Array.isArray(category) ? category : [category].filter(Boolean);
 
     await skillService.updateSkill(req.params.id, {
-      name: String(name || "").trim(),
-      category: categories,
+      name: sanitizeText(name),
+      category: categories.map((item) => sanitizeText(item)).filter(Boolean),
       isPreset: isPreset === "on" || isPreset === true,
       userId: req.currentUser._id,
     });

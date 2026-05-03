@@ -4,6 +4,7 @@ const skillService = require("../services/skillService");
 const userService = require("../services/userService");
 const { renderApp, getUserFlags } = require("../utils/viewRenderer");
 const profileViewModel = require("../utils/viewModels/profileViewModel");
+const { sanitizeText, sanitizeUrl, parseCsv } = require("../utils/stringUtils");
 const {
   fetchUserData,
   handleControllerError
@@ -96,19 +97,16 @@ exports.completeProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const sessionUser = req.currentUser;
-    const skillInputs = String(req.body.skillsCsv || "")
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
+    const skillInputs = parseCsv(req.body.skillsCsv);
 
     await userService.updateUser(sessionUser._id, {
-      name: req.body.name,
-      bio: req.body.bio,
-      company: req.body.company,
-      location: req.body.location,
-      githubUrl: req.body.github,
-      linkedin: req.body.linkedin,
-      website: req.body.website,
+      name: sanitizeText(req.body.name),
+      bio: sanitizeText(req.body.bio),
+      company: sanitizeText(req.body.company),
+      location: sanitizeText(req.body.location),
+      githubUrl: sanitizeUrl(req.body.github),
+      linkedin: sanitizeUrl(req.body.linkedin),
+      website: sanitizeUrl(req.body.website),
     });
 
     if (skillInputs.length > 0) {

@@ -7,19 +7,13 @@ const certificationViewModel = require("../utils/viewModels/certificationViewMod
 const mapperService = require("../services/mapperService");
 const ERROR_CODES = require("../utils/errorCodes");
 const { fetchUserData } = require("../utils/controllerUtils");
+const { sanitizeText, sanitizeUrl, parseCsv } = require("../utils/stringUtils");
 const CERTIFICATION_ERROR_MESSAGES = {
   [ERROR_CODES.VALIDATION]: "Please complete all required certification fields with valid information.",
   [ERROR_CODES.DUPLICATE]: "You already have a certification request or an approved certification.",
   [ERROR_CODES.NOT_FOUND]: "We couldn't find your user account.",
   default: "We couldn't submit your certification request. Please try again.",
 };
-
-function parseCsv(csvValue) {
-  return String(csvValue || "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 
 exports.applyCertification = async (req, res) => {
   const sessionUser = req.currentUser;
@@ -82,10 +76,10 @@ exports.submitCertification = async (req, res) => {
 
     await certificationService.apply({
       userId: sessionUser._id,
-      cvUrl: req.body.cvUrl,
-      linkedinProfile: req.body.linkedinProfile,
-      experience: req.body.experience,
-      motivation: req.body.motivation,
+      cvUrl: sanitizeUrl(req.body.cvUrl),
+      linkedinProfile: sanitizeUrl(req.body.linkedinProfile),
+      experience: sanitizeText(req.body.experience),
+      motivation: sanitizeText(req.body.motivation),
       techExpertise: parseCsv(req.body.techExpertiseCsv),
     });
 

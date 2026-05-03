@@ -4,6 +4,7 @@ const Skill = require("../models/mongo/Skill");
 const userLogger = require("../loggers/userLogger");
 const AppError = require("../utils/AppError");
 const ERROR_CODES = require("../utils/errorCodes");
+const { normalizeUsername, isValidUsername } = require("../utils/stringUtils");
 
 const Project = require("../models/mongo/Project");
 const Review = require("../models/mongo/Review");
@@ -16,8 +17,17 @@ exports.registerUser = async ({ username, name, email, password, role, bio, gith
   if (existing) {
     throw new AppError("A user with this email address already exists.", 409, ERROR_CODES.DUPLICATE);
   }
-  if (username) {
-    const existingUsername = await User.findOne({ username: username.toLowerCase() });
+  const normalizedUsername = username ? normalizeUsername(username) : undefined;
+  if (normalizedUsername) {
+    if (!isValidUsername(normalizedUsername)) {
+      throw new AppError(
+        "A valid username may only contain letters, numbers, underscores, and hyphens, and must be 3-30 characters long.",
+        400,
+        ERROR_CODES.VALIDATION
+      );
+    }
+
+    const existingUsername = await User.findOne({ username: normalizedUsername });
     if (existingUsername) {
       throw new AppError("A user with this username already exists.", 409, ERROR_CODES.DUPLICATE);
     }
@@ -25,7 +35,7 @@ exports.registerUser = async ({ username, name, email, password, role, bio, gith
   const passwordHash = await bcrypt.hash(password, 10);
 
   const user = await User.create({
-    username: username ? username.toLowerCase() : undefined,
+    username: normalizedUsername || undefined,
     name,
     email,
     passwordHash,

@@ -3,7 +3,7 @@ const skillService = require("../services/skillService");
 const Review = require("../models/mongo/Review");
 const { renderApp } = require("../utils/viewRenderer");
 const mapperService = require("../services/mapperService");
-const { parseCsv } = require("../utils/stringUtils");
+const { sanitizeText, sanitizeUrl, parseCsv } = require("../utils/stringUtils");
 const { mapProjectDetailReviewCard } = require("../utils/viewModels/projectViewModel");
 const projectViewModel = require("../utils/viewModels/projectViewModel");
 const { getUserFlags } = require("../utils/viewRenderer");
@@ -95,12 +95,12 @@ exports.createProject = async (req, res) => {
 
     await projectService.createProject({
       userId: sessionUser._id,
-      title: req.body.title,
-      description: req.body.description,
-      repoUrl: req.body.repoUrl,
-      liveUrl: req.body.liveUrl,
+      title: sanitizeText(req.body.title),
+      description: sanitizeText(req.body.description),
+      repoUrl: sanitizeUrl(req.body.repoUrl),
+      liveUrl: sanitizeUrl(req.body.liveUrl),
       techStack,
-      status: req.body.status || PROJECT_STATUSES.SEEKING_REVIEW,
+      status: sanitizeText(req.body.status) || PROJECT_STATUSES.SEEKING_REVIEW,
     });
 
     return res.redirect("/projects");
@@ -188,12 +188,12 @@ exports.updateProject = async (req, res) => {
 
     const techStack = parseCsv(req.body.techStackCsv);
     await projectService.updateProject(req.params.id, {
-      title: req.body.title,
-      description: req.body.description,
-      repoUrl: req.body.repoUrl,
-      liveUrl: req.body.liveUrl,
+      title: sanitizeText(req.body.title),
+      description: sanitizeText(req.body.description),
+      repoUrl: sanitizeUrl(req.body.repoUrl),
+      liveUrl: sanitizeUrl(req.body.liveUrl),
       techStack,
-      status: req.body.status,
+      status: sanitizeText(req.body.status),
     });
 
     return res.redirect(`/projects/${req.params.id}`);
