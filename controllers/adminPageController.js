@@ -82,6 +82,19 @@ exports.updateUserRole = async (req, res) => {
   }
 };
 
+exports.deleteUser = async (req, res) => {
+  try {
+    await userService.deleteUser({
+      actorId: req.currentUser._id,
+      targetUserId: req.params.id,
+    });
+
+    return res.redirect("/admin/users");
+  } catch (error) {
+    return res.redirect("/admin/users");
+  }
+};
+
 exports.adminDashboard = async (req, res) => {
   try {
     const [users, projects, reviews, certifications, rawActivityLogs] = await Promise.all([

@@ -7,6 +7,7 @@ const { clearSQLTable } = require('../helpers/db');
 
 describe('activityLogService', () => {
   beforeEach(async () => {
+    await ActivityLog.sync();
     await clearSQLTable(ActivityLog);
   });
 

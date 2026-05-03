@@ -126,7 +126,9 @@ String(req.status || "").toLowerCase() === "pending").length;
                     <div class="project-stack">
                       <% (project.techStack || []).slice(0, 3).forEach((tech) =>
                       { %>
-                      <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
+                      <span class="tag"
+                        onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'"
+                        style="cursor:pointer;"><%= tech %></span>
                       <% }) %>
                       <% if ((project.techStack || []).length > 3) { %>
                       <span class="text-muted">+<%= (project.techStack ||
@@ -373,7 +375,8 @@ String(req.status || "").toLowerCase() === "pending").length;
               <h3>Skills</h3>
               <div class="skills-list">
                 <% normalizedSkills.forEach((skillItem) => { %>
-                <a href="/skills/<%= encodeURIComponent(skillItem.name) %>" class="tag"><%= skillItem.name %></a>
+                <a href="/skills/<%= encodeURIComponent(skillItem.name) %>"
+                  class="tag"><%= skillItem.name %></a>
                 <% }) %>
               </div>
             </div>
@@ -424,7 +427,9 @@ String(req.status || "").toLowerCase() === "pending").length;
                   <div class="project-card-stack">
                     <% (project.techStack || []).slice(0, 3).forEach((tech) => {
                     %>
-                    <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
+                    <span class="tag"
+                      onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'"
+                      style="cursor:pointer;"><%= tech %></span>
                     <% }) %>
                   </div>
                   <div class="project-card-footer">
@@ -683,7 +688,9 @@ String(req.status || "").toLowerCase() === "pending").length;
               <div class="project-list-meta">
                 <div class="project-list-stack">
                   <% (project.techStack || []).forEach((tech) => { %>
-                  <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
+                  <span class="tag"
+                    onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'"
+                    style="cursor:pointer;"><%= tech %></span>
                   <% }) %>
                 </div>
 
@@ -804,7 +811,8 @@ String(req.status || "").toLowerCase() === "pending").length;
               <h2>Tech Stack</h2>
               <div class="project-tech-stack">
                 <% (project.techStack || []).forEach((tech) => { %>
-                <a href="/skills/<%= encodeURIComponent(tech) %>" class="tag"><%= tech %></a>
+                <a href="/skills/<%= encodeURIComponent(tech) %>"
+                  class="tag"><%= tech %></a>
                 <% }) %>
               </div>
             </div>
@@ -912,9 +920,11 @@ String(req.status || "").toLowerCase() === "pending").length;
                 <i data-lucide="message-square" class="empty-state-icon"></i>
                 <h3 class="empty-state-title">No reviews yet</h3>
                 <% if (projectDetailVM.isOwner) { %>
-                <p class="empty-state-description">Your project hasn’t been reviewed yet</p>
+                <p class="empty-state-description">Your project hasn’t been
+                  reviewed yet</p>
                 <% } else if (isReviewer && project._id) { %>
-                <p class="empty-state-description">Be the first to review this project</p>
+                <p class="empty-state-description">Be the first to review this
+                  project</p>
                 <a href="/projects/<%= project._id %>/review"
                   class="btn btn-primary">Write Review</a>
                 <% } %>
@@ -1085,8 +1095,11 @@ String(req.status || "").toLowerCase() === "pending").length;
                 </div>
                 <% } else { %>
                 <select name="status" class="form-select">
-                  <option value="seeking-review" <%= project && project.status === 'seeking-review' ? 'selected' : '' %>>Seeking Review</option>
-                  <option value="draft" <%= project && project.status === 'draft' ? 'selected' : '' %>>Draft</option>
+                  <option value="seeking-review" <%=project && project.status
+                    === 'seeking-review' ? 'selected' : '' %>>Seeking
+                    Review</option>
+                  <option value="draft" <%=project && project.status === 'draft'
+                    ? 'selected' : '' %>>Draft</option>
                 </select>
                 <% } %>
               </div>
@@ -1123,7 +1136,9 @@ String(req.status || "").toLowerCase() === "pending").length;
             %></p>
           <div class="review-project-stack">
             <% ((project && project.techStack) || []).forEach((tech) => { %>
-            <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
+            <span class="tag"
+              onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'"
+              style="cursor:pointer;"><%= tech %></span>
             <% }) %>
           </div>
         </div>
@@ -1544,7 +1559,8 @@ String(req.status || "").toLowerCase() === "pending").length;
             <div class="stat-label">Projects</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value"><%= Number(averageRating || 0).toFixed(1) %></div>
+            <div class="stat-value"><%= Number(averageRating || 0).toFixed(1)
+              %></div>
             <div class="stat-label">Avg Rating</div>
           </div>
         </div>
@@ -1617,7 +1633,8 @@ String(req.status || "").toLowerCase() === "pending").length;
                 <span class="skill-card-stat">
                   <i data-lucide="star" width="14" height="14"></i>
                   <%= Number(projectItem.averageRating || 0).toFixed(1) %> · by
-                  @<%= projectItem.owner ? (projectItem.owner.username || projectItem.owner._id) : 'Unknown' %>
+                  @<%= projectItem.owner ? (projectItem.owner.username ||
+                  projectItem.owner._id) : 'Unknown' %>
                 </span>
               </div>
             </a>
@@ -2008,7 +2025,9 @@ String(req.status || "").toLowerCase() === "pending").length;
             <div class="explore-card-tags">
               <% (projectItem.techStack || []).slice(0, 3).forEach((tech) => {
               %>
-              <span class="tag" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'" style="cursor:pointer;"><%= tech %></span>
+              <span class="tag"
+                onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/skills/<%= encodeURIComponent(tech) %>'"
+                style="cursor:pointer;"><%= tech %></span>
               <% }) %>
               <% if ((projectItem.techStack || []).length > 3) { %>
               <span class="tag">+<%= (projectItem.techStack || []).length - 3
@@ -2018,7 +2037,8 @@ String(req.status || "").toLowerCase() === "pending").length;
 
             <div class="explore-card-footer">
               <span class="explore-card-owner">by @<%= projectItem.owner &&
-                projectItem.owner.username || projectItem.owner.id || 'unknown' %></span>
+                projectItem.owner.username || projectItem.owner.id || 'unknown'
+                %></span>
               <span class="explore-card-rating">
                 <i data-lucide="star" class="filled" width="14" height="14"></i>
                 <%= Number(projectItem.averageRating || 0).toFixed(1) %>
@@ -2226,6 +2246,8 @@ String(req.status || "").toLowerCase() === "pending").length;
           <h1>Manage Users</h1>
           <p class="text-secondary">Change roles from the super-admin
             account</p>
+          <p class="text-muted">Deleting a user removes their account, projects,
+            reviews, certification requests, and skill links.</p>
           <p class="text-muted">
             <%= safeRoleStats.total %> total ·
             <%= safeRoleStats.developers %> developers ·
@@ -2273,6 +2295,7 @@ String(req.status || "").toLowerCase() === "pending").length;
                 <th>Role</th>
                 <th>Joined</th>
                 <th>Change Role</th>
+                <th>Delete User</th>
               </tr>
             </thead>
             <tbody>
@@ -2322,6 +2345,28 @@ String(req.status || "").toLowerCase() === "pending").length;
                   </form>
                   <% } %>
                 </td>
+
+                <td>
+                  <% if (userItem.isSuperAdmin || String(userItem._id) ===
+                  String(currentUser._id)) { %>
+                  <span class="text-muted">Locked</span>
+                  <% } else { %>
+                  <% const deleteMessage = `Delete ${userItem.name ||
+                  "this user"}? This also removes their projects, reviews,
+                  certification requests, and skill links.`; %>
+                  <form
+                    action="/admin/users/<%= userItem._id %>/delete"
+                    method="post"
+                    data-confirm="<%= deleteMessage %>"
+                    onsubmit="return confirm(this.dataset.confirm);">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                      <i data-lucide="trash-2" width="14" height="14"></i>
+                      Delete
+                    </button>
+                  </form>
+                  <% } %>
+                </td>
+
               </tr>
               <% }) %>
             </tbody>
@@ -2505,6 +2550,8 @@ String(req.status || "").toLowerCase() === "pending").length;
               'UPDATE_REVIEW' ? 'selected' : '' %>>Update Review</option>
             <option value="REGISTER_USER" <%=logsActionFilter ===
               'REGISTER_USER' ? 'selected' : '' %>>Register User</option>
+            <option value="DELETE_USER" <%=logsActionFilter ===
+              'DELETE_USER' ? 'selected' : '' %>>Delete User</option>
           </select>
 
           <select class="form-select" style="width: auto" name="entity">

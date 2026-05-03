@@ -16,8 +16,8 @@ const logUserRoleChanged = (actorId, targetUserId, oldRole, newRole) => {
   });
 };
 
-const logUserDeleted = (userId, name) => {
-  log(userId, LOG_ACTIONS.DELETE_USER, LOG_ENTITIES.USER, userId, { name });
+const logUserDeleted = (actorId, targetUserId, name) => {
+  log(actorId, LOG_ACTIONS.DELETE_USER, LOG_ENTITIES.USER, targetUserId, { name });
 };
 
 const logUserSkillsAdded = (userId, skillsAdded, count) => {

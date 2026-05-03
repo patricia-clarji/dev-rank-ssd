@@ -81,40 +81,99 @@ exports.updateUser = async (id, { name, bio, githubUrl, avatarUrl, company, loca
 };
 
 
+const { recalculateUserProfileScore } = require("./projectService");
+const { REVIEW_STATUSES } = require("../constants/statusConstants");
+
 async function cleanupUserData(user) {
-  // Delete reviews on projects owned by this user, then delete owned projects.
   const ownedProjects = await Project.find({ user: user._id }).select("_id");
-  const ownedProjectIds = ownedProjects.map((project) => project._id);
+  const ownedProjectIds = ownedProjects.map((project) => String(project._id));
+  const authoredReviews = await Review.find({ reviewer: user._id }).select("project");
+  const impactedProjectIds = Array.from(
+    new Set(
+      authoredReviews
+        .map((review) => String(review.project))
+        .filter((projectId) => projectId && !ownedProjectIds.includes(projectId))
+    )
+  );
 
   if (ownedProjectIds.length > 0) {
     await Review.deleteMany({ project: { $in: ownedProjectIds } });
   }
 
   await Project.deleteMany({ user: user._id });
-
-  // Delete reviews authored by this user.
   await Review.deleteMany({ reviewer: user._id });
 
-  // Remove from skills
   await Skill.updateMany(
     { users: user._id },
     { $pull: { users: user._id } }
   );
 
   await CertificationRequest.deleteMany({ user: user._id });
-  
+
+  if (impactedProjectIds.length > 0) {
+    const impactedProjects = await Project.find({ _id: { $in: impactedProjectIds } }).select("_id user");
+
+    for (const project of impactedProjects) {
+      const reviews = await Review.find({
+        project: project._id,
+        status: REVIEW_STATUSES.PUBLISHED,
+      });
+      const totalReviews = reviews.length;
+      const sumFor = (field) => reviews.reduce((sum, review) => sum + Number(review[field] || 0), 0);
+      const averageFor = (field) => (totalReviews > 0 ? Number((sumFor(field) / totalReviews).toFixed(2)) : 0);
+
+      await Project.findByIdAndUpdate(project._id, {
+        aggregateRating: averageFor("overallRating"),
+        aggregateCodeQuality: averageFor("codeQualityScore"),
+        aggregateCreativity: averageFor("creativityScore"),
+        aggregateCleanCode: averageFor("cleanCodeScore"),
+        totalReviews,
+        hireVotes: reviews.filter((review) => review.wouldHire === true).length,
+        status: totalReviews > 0 ? "reviewed" : "seeking-review",
+      });
+    }
+
+    const impactedOwnerIds = Array.from(new Set(impactedProjects.map((project) => String(project.user)).filter(Boolean)));
+    for (const ownerId of impactedOwnerIds) {
+      await recalculateUserProfileScore(ownerId);
+    }
+  }
 }
 
-exports.deleteUser = async (id) => {
-  const user = await User.findById(id);
+exports.deleteUser = async (input) => {
+  const actorId = typeof input === "object" && input !== null ? input.actorId : null;
+  const targetUserId = typeof input === "object" && input !== null ? input.targetUserId : input;
+
+  if (!targetUserId) {
+    throw new AppError("User not found.", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  if (actorId && String(actorId) === String(targetUserId)) {
+    throw new AppError("You cannot delete your own account from the admin dashboard.", 403, ERROR_CODES.FORBIDDEN);
+  }
+
+  const actor = actorId ? await User.findById(actorId) : null;
+  if (actorId && !actor) {
+    throw new AppError("User not found.", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const user = await User.findById(targetUserId);
   if (!user) {
     throw new AppError("User not found.", 404, ERROR_CODES.NOT_FOUND);
   }
 
-  await cleanupUserData(user);
-  await User.findByIdAndDelete(id);
+  if (user.isSuperAdmin) {
+    throw new AppError("Super admin accounts cannot be deleted here.", 403, ERROR_CODES.FORBIDDEN);
+  }
 
-  userLogger.logUserDeleted(user._id.toString(), user.name);
+  await cleanupUserData(user);
+  await User.findByIdAndDelete(targetUserId);
+
+  userLogger.logUserDeleted(
+    actor ? actor._id.toString() : user._id.toString(),
+    user._id.toString(),
+    user.name
+  );
 
   return { message: "User deleted successfully." };
 };
@@ -133,7 +192,7 @@ const resolveSkillIds = async (inputs) => {
   }
   return skills.map((s) => s._id);
 };
- 
+
 exports.addSkills = async (userId, skillInputs) => {
   const user = await User.findById(userId);
   if (!user) {

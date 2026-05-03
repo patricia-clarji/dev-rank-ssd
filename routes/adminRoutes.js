@@ -7,6 +7,7 @@ const router = express.Router();
 router.get("/admin", requireRole("admin"), adminController.adminDashboard);
 router.get("/admin/users", requireSuperAdmin, adminController.adminUsers);
 router.post("/admin/users/:id/role", requireSuperAdmin, adminController.updateUserRole);
+router.post("/admin/users/:id/delete", requireSuperAdmin, adminController.deleteUser);
 router.get("/admin/certifications", requireRole("admin"), adminController.adminCertifications);
 router.post("/admin/certifications/:id/approve", requireRole("admin"), adminController.approveCertification);
 router.post("/admin/certifications/:id/reject", requireRole("admin"), adminController.rejectCertification);

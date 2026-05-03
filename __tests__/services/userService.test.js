@@ -59,7 +59,7 @@ describe('userService', () => {
   });
 
   // --- Additional negative/edge-case tests for full coverage ---
-  
+
   it('should throw if user not found on removeSkills', async () => {
     await expect(userService.removeSkills('000000000000000000000000', ['000000000000000000000000'])).rejects.toThrow('User not found');
   });
@@ -101,4 +101,68 @@ describe('userService', () => {
 
     expect(await Review.countDocuments({ project: project._id })).toBe(0);
   });
+
+  it('should block self-deletion from the admin dashboard flow', async () => {
+    const user = await createUser({
+      name: "Test User",
+      email: "test1@test.com",
+      role: "admin",
+      isSuperAdmin: true,
+    });
+
+    await expect(
+      userService.deleteUser({
+        actorId: user._id,
+        targetUserId: user._id,
+      })
+    ).rejects.toThrow("You cannot delete your own account");
+  });
+
+  it('should block deletion of another super admin account', async () => {
+    const superAdmin1 = await createUser({
+      name: "Admin 1",
+      email: "admin1@test.com",
+      role: "admin",
+      isSuperAdmin: true,
+    });
+
+    const superAdmin2 = await createUser({
+      name: "Admin 2",
+      email: "admin2@test.com",
+      role: "admin",
+      isSuperAdmin: true,
+    });
+
+    await expect(
+      userService.deleteUser({
+        actorId: superAdmin1._id,
+        targetUserId: superAdmin2._id,
+      })
+    ).rejects.toThrow("Super admin accounts cannot be deleted");
+  });
+
+  it('should let a super admin delete a user and repair related data', async () => {
+    const superAdmin = await createUser({
+      name: "Admin",
+      email: "admin@test.com",
+      role: "admin",
+      isSuperAdmin: true,
+    });
+
+    const user = await createUser({
+      name: "Normal User",
+      email: "user@test.com",
+    });
+
+    const result = await userService.deleteUser({
+      actorId: superAdmin._id,
+      targetUserId: user._id,
+    });
+
+    const deletedUser = await User.findById(user._id);
+
+    expect(result.message).toBe("User deleted successfully.");
+    expect(deletedUser).toBeNull();
+  });
+
 });
